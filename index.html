@@ -4,29 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학급 대시보드</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-<script>
-  // ↓↓↓ 여기 두 설정값만 한 번 채워주세요 (todaysquiz와 같은 Firebase 프로젝트 값 사용) ↓↓↓
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7": '',
-  };
-  const NEIS_CONFIG = {
-    apiKey: '',       // open.neis.go.kr 에서 발급받은 인증키
-    officeCode: '',    // 시도교육청코드
-    schoolCode: '',    // 학교코드
-  };
-  // ↑↑↑ 여기까지 ↑↑↑
-</script>
+<script src="firebase.js"></script>
 
 <style>
   :root{
@@ -35,7 +17,7 @@
     --wood:#6b4226; --wood-dark:#4a2d19;
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; background:var(--wood-dark); font-family:'Noto Sans KR',sans-serif; color:var(--chalk-white); overflow:hidden; }
+  html,body{ margin:0;padding:0;height:100%; background:var(--wood-dark); font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--chalk-white); overflow:hidden; }
   #app{ position:relative; height:100vh; padding:18px; background:var(--wood); display:flex; }
   #board{
     position:relative; flex:1;
@@ -52,54 +34,53 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
     pointer-events:none; mix-blend-mode:overlay;
   }
-  .label{ font-family:'Gaegu',cursive; font-size:19px; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .card{ position:relative; background:rgba(255,255,255,0.03); border:2px dashed rgba(245,243,230,0.35); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; min-height:0; }
+  .label{ font-size:16px; font-weight:700; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:8px; letter-spacing:.2px; }
+  .card{ position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(245,243,230,0.25); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; min-height:0; }
 
-  #mainRow{ flex:3; display:flex; gap:18px; min-height:0; }
-  #colLeft{ flex:1; display:flex; flex-direction:column; gap:14px; min-height:0; }
+  #mainRow{ flex:3; display:flex; gap:16px; min-height:0; }
+  #colLeft{ flex:1.05; display:flex; flex-direction:column; gap:14px; min-height:0; }
   #colLeft .card{ flex:1; }
-  #colCenter{ flex:1.15; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  #colRight{ flex:1.25; display:flex; flex-direction:column; gap:14px; min-height:0; }
-  #colRight .card{ flex:1; }
+  #clockCard{ flex:1; border-color:rgba(245,243,230,0.35); align-items:center; text-align:center; justify-content:center; }
+  #timetableCard{ flex:1.05; }
+  #mealCard{ flex:0.95; }
   #bottomRow{ flex:1; display:flex; }
 
-  #clockCard{ border-style:solid; border-color:rgba(245,243,230,0.15); align-items:center; text-align:center; width:100%; justify-content:center; }
-  #clockTime{ font-weight:900; font-size:clamp(48px, 6vw, 96px); line-height:1; text-shadow:0 0 18px rgba(242,199,68,0.15); }
-  #clockDate{ font-family:'Gaegu',cursive; font-size:26px; color:var(--chalk-blue); margin-top:8px; }
-  #clockDday{ font-family:'Gaegu',cursive; font-size:17px; color:var(--chalk-pink); margin-top:6px; }
+  #clockTime{ font-weight:800; font-size:clamp(46px, 5.6vw, 88px); line-height:1; letter-spacing:-1px; text-shadow:0 0 18px rgba(242,199,68,0.12); font-variant-numeric: tabular-nums; }
+  #clockDate{ font-size:22px; font-weight:600; color:var(--chalk-blue); margin-top:10px; }
+  #clockDday{ font-size:15px; font-weight:500; color:var(--chalk-pink); margin-top:6px; opacity:.9; }
 
   .tile{ cursor:pointer; justify-content:space-between; transition:background .15s, border-color .15s; }
-  .tile:hover{ background:rgba(255,255,255,0.07); border-color:rgba(245,243,230,0.55); }
-  .tile-preview{ font-size:15px; opacity:0.85; line-height:1.4; overflow:hidden; flex:1; }
-  .tile-empty{ color:rgba(245,243,230,0.4); font-style:italic; font-family:'Gaegu',cursive; }
-  .tile-hint{ font-family:'Gaegu',cursive; font-size:13px; color:var(--chalk-blue); margin-top:6px; opacity:.85; }
+  .tile:hover{ background:rgba(255,255,255,0.08); border-color:rgba(245,243,230,0.5); }
+  .tile-preview{ font-size:15px; font-weight:500; opacity:0.85; line-height:1.45; overflow:hidden; flex:1; }
+  .tile-empty{ color:rgba(245,243,230,0.4); font-size:14px; }
+  .tile-hint{ font-size:12px; font-weight:600; color:var(--chalk-blue); margin-top:6px; opacity:.85; }
   .tile-badge-row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .tile-badge{ font-size:13px; padding:3px 9px; border-radius:12px; font-weight:700; }
+  .tile-badge{ font-size:13px; padding:4px 10px; border-radius:12px; font-weight:700; }
   .tile-badge.absent{ background:rgba(232,160,180,0.18); color:var(--chalk-pink); }
   .tile-badge.out{ background:rgba(143,193,227,0.18); color:var(--chalk-blue); }
   .tile-badge.present{ background:rgba(159,216,166,0.18); color:var(--chalk-green); }
 
-  .tt-override-badge{ font-family:'Gaegu',cursive; font-size:12px; color:var(--chalk-pink); margin-left:8px; }
+  .tt-override-badge{ font-size:12px; font-weight:700; color:var(--chalk-pink); margin-left:8px; }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; }
-  #todayPeriodList li{ display:flex; align-items:center; gap:12px; padding:6px 4px; border-bottom:1px dashed rgba(245,243,230,0.15); font-size:17px; font-weight:700; }
-  #todayPeriodList li .p-num{ font-family:'Gaegu',cursive; font-weight:400; opacity:.65; width:48px; font-size:14px; }
-  #todayPeriodList .tt-empty{ color:rgba(245,243,230,0.4); font-style:italic; font-family:'Gaegu',cursive; font-size:15px; }
+  #todayPeriodList li{ display:flex; align-items:center; gap:12px; padding:7px 4px; border-bottom:1px dashed rgba(245,243,230,0.15); font-size:17px; font-weight:700; }
+  #todayPeriodList li .p-num{ font-weight:500; opacity:.6; width:52px; font-size:13px; }
+  #todayPeriodList .tt-empty{ color:rgba(245,243,230,0.4); font-weight:500; font-size:15px; }
 
-  #mealCard .meal-list{ list-style:none; margin:0; padding:0; font-size:16px; line-height:1.55; overflow-y:auto; flex:1;}
-  .meal-status{ font-family:'Gaegu',cursive; opacity:.7; font-size:14px; }
+  #mealCard .meal-list{ list-style:none; margin:0; padding:0; font-size:16px; font-weight:500; line-height:1.6; overflow-y:auto; flex:1;}
+  .meal-status{ font-weight:600; opacity:.75; font-size:13px; }
 
   #quizCard{ flex-direction:row; align-items:center; gap:22px; width:100%; }
-  #quizCard .quiz-question{ font-size:22px; font-weight:700; margin-bottom:10px; }
+  #quizCard .quiz-question{ font-size:21px; font-weight:700; margin-bottom:10px; }
   #quizCard .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; }
-  #quizCard .quiz-choice{ border:2px solid rgba(245,243,230,0.3); border-radius:8px; padding:8px 14px; font-size:16px; }
-  #quizCard .quiz-badge{ font-family:'Gaegu',cursive; color:var(--chalk-pink); font-size:13px; margin-top:10px; }
+  #quizCard .quiz-choice{ border:1px solid rgba(245,243,230,0.3); border-radius:8px; padding:8px 14px; font-size:15px; font-weight:500; }
+  #quizCard .quiz-badge{ font-size:13px; font-weight:600; color:var(--chalk-pink); margin-top:10px; }
 
   .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
-  .modal-box{ width:min(680px,92vw); max-height:80vh; overflow-y:auto; background:#26463d; border-radius:12px; padding:22px 26px; border:1px solid rgba(245,243,230,0.15); position:relative; }
-  .modal-box h2{ font-family:'Gaegu',cursive; color:var(--chalk-yellow); margin-top:0; }
+  .modal-box{ width:min(680px,92vw); max-height:80vh; overflow-y:auto; background:#26463d; border-radius:14px; padding:24px 28px; border:1px solid rgba(245,243,230,0.15); position:relative; }
+  .modal-box h2{ font-size:19px; font-weight:700; color:var(--chalk-yellow); margin-top:0; }
   .close-x{ position:absolute; top:14px; right:16px; background:none; border:none; color:var(--chalk-white); font-size:20px; cursor:pointer; }
-  .notice-modal-body{ font-size:21px; line-height:1.6; white-space:pre-wrap; }
+  .notice-modal-body{ font-size:19px; font-weight:500; line-height:1.65; white-space:pre-wrap; }
 </style>
 </head>
 <body>
@@ -121,23 +102,19 @@
         <div class="tile-hint">탭하여 전체 보기 →</div>
       </div>
     </div>
-    <div id="colCenter">
-      <div class="card" id="clockCard">
-        <div id="clockTime">--:--:--</div>
-        <div id="clockDate">-</div>
-        <div id="clockDday"></div>
-      </div>
+    <div class="card" id="clockCard">
+      <div id="clockTime">--:--:--</div>
+      <div id="clockDate">-</div>
+      <div id="clockDday"></div>
     </div>
-    <div id="colRight">
-      <div class="card" id="timetableCard">
-        <div class="label">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시 변경됨</span></div>
-        <ul id="todayPeriodList"></ul>
-      </div>
-      <div class="card" id="mealCard">
-        <div class="label">🍱 오늘의 급식</div>
-        <div class="meal-status" id="mealStatus">불러오는 중...</div>
-        <ul class="meal-list" id="mealList"></ul>
-      </div>
+    <div class="card" id="timetableCard">
+      <div class="label">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시 변경됨</span></div>
+      <ul id="todayPeriodList"></ul>
+    </div>
+    <div class="card" id="mealCard">
+      <div class="label">🍱 오늘의 급식</div>
+      <div class="meal-status" id="mealStatus">불러오는 중...</div>
+      <ul class="meal-list" id="mealList"></ul>
     </div>
   </div>
   <div id="bottomRow">
@@ -246,16 +223,18 @@ async function loadTimetable(){
   list.innerHTML = filled.length ? filled.map(p=>`<li><span class="p-num">${p.idx}교시</span><span>${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
-/* 급식 (NEIS) */
+/* 급식 (NEIS) - 설정값은 DB(config/neis)에서 읽어옴 */
 async function loadMeal(){
   const statusEl = document.getElementById('mealStatus');
   const listEl = document.getElementById('mealList');
-  if(!NEIS_CONFIG.apiKey || !NEIS_CONFIG.officeCode || !NEIS_CONFIG.schoolCode){
-    statusEl.textContent = 'board.html 상단의 NEIS_CONFIG 값을 채워주세요.'; return;
+  const cfgSnap = await db.ref('config/neis').once('value');
+  const cfg = cfgSnap.val() || {};
+  if(!cfg.apiKey || !cfg.officeCode || !cfg.schoolCode){
+    statusEl.textContent = 'admin.html > 급식 설정에서 학교를 등록해주세요.'; return;
   }
   statusEl.textContent = '불러오는 중...'; listEl.innerHTML='';
   try{
-    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${encodeURIComponent(NEIS_CONFIG.apiKey)}&Type=json&ATPT_OFCDC_SC_CODE=${NEIS_CONFIG.officeCode}&SD_SCHUL_CODE=${NEIS_CONFIG.schoolCode}&MLSV_YMD=${todayStrCompact()}`;
+    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${encodeURIComponent(cfg.apiKey)}&Type=json&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${todayStrCompact()}`;
     const res = await fetch(url); const json = await res.json();
     const rows = json?.mealServiceDietInfo?.[1]?.row;
     if(!rows || !rows.length){ statusEl.textContent = '오늘은 급식 정보가 없습니다.'; return; }

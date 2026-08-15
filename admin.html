@@ -3,125 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학급 대시보드 - 관리자</title>
+<title>학급 대시보드 · 관리자</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
 
 <script>
-  // board.html과 동일한 값을 넣어주세요 (databaseURL 꼭 포함)
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
-  };
-  // 여기에 원하는 비밀번호를 직접 정해서 넣어주세요.
-  // 주의: 이 파일 소스를 볼 수 있는 사람은 이 비밀번호도 볼 수 있어요.
-  // (화면 접근만 막는 용도이지, 데이터베이스 자체를 잠그는 건 아니에요)
-  const ADMIN_PASSWORD = 'sugar';
+  // 원하는 관리자 비밀번호를 직접 정해서 넣어주세요.
+  const ADMIN_PASSWORD = '여기에_비밀번호를_적어주세요';
 </script>
 
 <style>
-  :root{ --green:#1f3d36; --yellow:#e2a33a; --pink:#d16a86; --blue:#3f7ea6; --gray:#6b7280; --bg:#f4f3ef; }
+  :root{
+    --bg:#f2f3f5; --card:#ffffff; --primary:#2f6f5e; --primary-dark:#245549;
+    --primary-soft:#e7f1ee; --accent:#e0956b; --danger:#e0556f; --danger-soft:#fbe9ec;
+    --text:#1f2430; --muted:#8a8f98; --border:#e7e8ec;
+    --shadow: 0 1px 2px rgba(16,24,32,.04), 0 6px 16px rgba(16,24,32,.06);
+  }
   *{box-sizing:border-box;}
-  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif; background:var(--bg); color:#222; }
-  header{ background:var(--green); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
-  header h1{ font-size:18px; margin:0; }
-  #logoutBtn{ background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:6px 12px; border-radius:6px; font-size:13px; cursor:pointer; }
-  main{ max-width:720px; margin:0 auto; padding:16px; }
+  body{ margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  header{ background:var(--primary); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
+  #logoutBtn{ background:rgba(255,255,255,0.16); border:none; color:#fff; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; }
+  #logoutBtn:hover{ background:rgba(255,255,255,0.26); }
+  main{ max-width:760px; margin:0 auto; padding:20px 16px 60px; }
 
-  #loginBox{ max-width:360px; margin:60px auto; background:#fff; border-radius:12px; padding:28px; box-shadow:0 2px 10px rgba(0,0,0,0.08); }
-  #loginBox h2{ margin-top:0; font-size:18px; }
-  #loginBox input{ width:100%; padding:11px 12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px; font-size:15px; }
-  #loginBox button{ width:100%; padding:12px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; }
-  #loginError{ color:var(--pink); font-size:13px; margin-top:8px; min-height:16px; }
+  #loginBox{ max-width:340px; margin:80px auto; background:var(--card); border-radius:20px; padding:32px 28px; box-shadow:var(--shadow); text-align:center; }
+  #loginBox .lock-icon{ font-size:34px; margin-bottom:6px; }
+  #loginBox h2{ margin:0 0 20px; font-size:17px; font-weight:700; }
+  #loginBox input{ width:100%; padding:13px 14px; margin-bottom:12px; border:1.5px solid var(--border); border-radius:12px; font-size:15px; text-align:center; outline:none; transition:border-color .15s; }
+  #loginBox input:focus{ border-color:var(--primary); }
+  #loginBox button{ width:100%; padding:13px; background:var(--primary); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
+  #loginBox button:hover{ background:var(--primary-dark); }
+  #loginError{ color:var(--danger); font-size:13px; margin-top:10px; min-height:16px; font-weight:600; }
 
-  .tabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
-  .tab-btn{ background:#fff; border:1px solid #ddd; padding:9px 14px; border-radius:20px; font-size:13px; white-space:nowrap; cursor:pointer; }
-  .tab-btn.active{ background:var(--green); color:#fff; border-color:var(--green); font-weight:700; }
-  .tab-panel{ display:none; } .tab-panel.active{ display:block; }
+  .tabs{ display:flex; gap:4px; background:#e7e8ec; padding:4px; border-radius:14px; margin-bottom:20px; overflow-x:auto; }
+  .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
+  .tab-btn.active{ background:#fff; color:var(--primary); box-shadow:var(--shadow); }
+  .tab-panel{ display:none; } .tab-panel.active{ display:block; animation:fadeIn .2s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
 
-  .section{ background:#fff; border-radius:12px; padding:18px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-  .section h3{ margin:0 0 10px; font-size:15px; color:var(--green); }
-  .field{ margin-bottom:12px; }
-  .field label{ display:block; font-size:13px; color:#555; margin-bottom:4px; }
-  .field input, .field textarea, .field select{ width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; }
-  .field textarea{ min-height:80px; resize:vertical; }
-  .btn{ background:var(--green); color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; margin-right:6px; margin-top:4px; }
-  .btn.secondary{ background:#eee; color:#333; }
-  .btn.danger{ background:var(--pink); }
-  .msg{ font-size:13px; color:var(--green); margin-left:6px; }
-  .hint{ font-size:12px; color:#888; margin-top:4px; }
+  .section{ background:var(--card); border-radius:18px; padding:20px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .section h3{ margin:0 0 14px; font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px; }
+  .section h3 .sub{ font-weight:500; color:var(--muted); font-size:12px; margin-left:auto; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .field input, .field textarea, .field select{ width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; outline:none; transition:border-color .15s; background:#fff; }
+  .field input:focus, .field textarea:focus{ border-color:var(--primary); }
+  .field textarea{ min-height:88px; resize:vertical; line-height:1.5; }
+  .btn{ background:var(--primary); color:#fff; border:none; padding:11px 18px; border-radius:11px; font-weight:700; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; transition:background .15s; }
+  .btn:hover{ background:var(--primary-dark); }
+  .btn.secondary{ background:var(--primary-soft); color:var(--primary); }
+  .btn.secondary:hover{ background:#d9ebe5; }
+  .btn.danger{ background:var(--danger-soft); color:var(--danger); }
+  .btn.danger:hover{ background:#f7d3da; }
+  .msg{ font-size:12.5px; color:var(--primary); margin-left:6px; font-weight:600; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .divider{ height:1px; background:var(--border); margin:18px 0; }
 
-  .roster-row, .att-row, .notice-hist-row{ display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #eee; flex-wrap:wrap; }
-  .roster-row .name{ flex:1; font-size:14px; }
-  .att-row .name{ width:100px; font-weight:700; font-size:14px; }
-  .pill{ border:1px solid #ccc; background:#fafafa; padding:6px 12px; border-radius:16px; font-size:13px; cursor:pointer; }
-  .pill.on-present{ background:var(--green); color:#fff; border-color:var(--green); }
-  .pill.on-out{ background:var(--blue); color:#fff; border-color:var(--blue); }
-  .att-status{ font-size:12px; color:#888; width:110px; }
-  .del-link{ background:none; border:none; color:var(--pink); font-size:13px; cursor:pointer; text-decoration:underline; }
-  .summary-row{ display:flex; gap:14px; font-size:13px; margin-bottom:10px; flex-wrap:wrap; }
-  .summary-row b{ color:var(--green); }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{ background:var(--primary-soft); color:var(--primary); padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:none; }
+  .chip:hover{ background:#d9ebe5; }
+  .chip.empty{ background:var(--border); color:var(--muted); }
 
-  .notice-hist-row{ flex-direction:column; align-items:flex-start; cursor:pointer; }
-  .notice-hist-date{ font-weight:700; font-size:14px; }
-  .notice-hist-preview{ font-size:12px; color:#777; }
-  .notice-hist-body{ display:none; width:100%; margin-top:8px; font-size:13px; white-space:pre-wrap; background:#f8f8f6; padding:10px; border-radius:8px; }
-  .notice-hist-row.open .notice-hist-body{ display:block; }
+  .roster-row, .att-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .roster-row:last-child, .att-row:last-child{ border-bottom:none; }
+  .roster-row .name{ flex:1; font-size:14px; font-weight:600; }
+  .att-row .name{ width:96px; font-weight:700; font-size:14px; }
+  .pill{ border:1.5px solid var(--border); background:#fafafa; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; color:var(--text); }
+  .pill.on-present{ background:var(--primary); color:#fff; border-color:var(--primary); }
+  .pill.on-out{ background:#3f7ea6; color:#fff; border-color:#3f7ea6; }
+  .att-status{ font-size:12px; color:var(--muted); font-weight:600; width:104px; }
+  .del-link{ background:none; border:none; color:var(--danger); font-size:12.5px; cursor:pointer; font-weight:600; }
+  .summary-row{ display:flex; gap:16px; font-size:13px; margin-bottom:14px; flex-wrap:wrap; color:var(--muted); font-weight:600; }
+  .summary-row b{ color:var(--primary); font-size:15px; }
 
-  .tt-row{ display:flex; gap:6px; margin-bottom:8px; align-items:center; flex-wrap:wrap; }
-  .tt-row .day-label{ width:28px; font-weight:700; font-size:13px; }
-  .tt-row input{ flex:1; min-width:60px; padding:7px 8px; font-size:13px; border:1px solid #ddd; border-radius:6px; }
+  table.tt-table{ width:100%; border-collapse:collapse; }
+  table.tt-table th, table.tt-table td{ padding:6px; text-align:center; }
+  table.tt-table th{ font-size:12.5px; font-weight:700; color:var(--muted); }
+  table.tt-table td:first-child, table.tt-table th:first-child{ width:44px; font-size:12px; color:var(--muted); font-weight:600; }
+  table.tt-table input{ width:100%; padding:8px 4px; border:1.5px solid var(--border); border-radius:8px; font-size:12.5px; text-align:center; outline:none; }
+  table.tt-table input:focus{ border-color:var(--primary); }
+
+  #schoolSearchResults{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .school-item{ padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; }
+  .school-item:hover{ border-color:var(--primary); background:var(--primary-soft); }
+  .school-item.selected{ border-color:var(--primary); background:var(--primary-soft); font-weight:700; }
 </style>
 </head>
 <body>
 
 <div id="loginBox">
-  <h2>🔒 관리자 비밀번호</h2>
-  <input type="password" id="loginPassword" placeholder="비밀번호">
-  <button id="loginBtn">입장</button>
+  <div class="lock-icon">🔒</div>
+  <h2>관리자 비밀번호</h2>
+  <input type="password" id="loginPassword" placeholder="비밀번호 입력">
+  <button id="loginBtn">입장하기</button>
   <div id="loginError"></div>
 </div>
 
 <div id="adminApp" style="display:none;">
   <header>
-    <h1>학급 대시보드 · 관리자</h1>
+    <h1>🎒 학급 대시보드 관리자</h1>
     <button id="logoutBtn">로그아웃</button>
   </header>
   <main>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="today">오늘 입력</button>
-      <button class="tab-btn" data-tab="history">지난 기록</button>
+      <button class="tab-btn active" data-tab="notice">조회·종례</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
+      <button class="tab-btn" data-tab="meal">급식 설정</button>
     </div>
 
-    <div class="tab-panel active" id="tab-today">
+    <div class="tab-panel active" id="tab-notice">
       <div class="section">
-        <h3>📣 조회사항 / 🌇 종례사항 <span id="todayDateLabel" style="font-weight:400;color:#888;"></span></h3>
+        <h3>📣 조회 · 종례 관리 <span class="sub" id="noticeDateSub"></span></h3>
+        <div class="field"><label>날짜 선택</label><input type="date" id="noticeDate"></div>
         <div class="field"><label>조회사항</label><textarea id="inputMorning"></textarea></div>
         <div class="field"><label>종례사항</label><textarea id="inputClosing"></textarea></div>
-        <button class="btn" id="saveTodayBtn">저장</button>
-        <span class="msg" id="saveTodayMsg"></span>
+        <button class="btn" id="saveNoticeBtn">이 날짜에 저장</button>
+        <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
+        <span class="msg" id="noticeMsg"></span>
       </div>
-    </div>
-
-    <div class="tab-panel" id="tab-history">
       <div class="section">
-        <h3>지난 조회/종례 기록</h3>
-        <p class="hint">날짜를 탭하면 내용이 펼쳐져요. 최근 60일까지 보여줍니다.</p>
-        <div id="historyList">불러오는 중...</div>
+        <h3>최근 등록된 날짜</h3>
+        <p class="hint">탭하면 해당 날짜 내용이 위 칸에 바로 불러와져요.</p>
+        <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
       </div>
     </div>
 
     <div class="tab-panel" id="tab-attendance">
       <div class="section">
-        <h3>출결 체크 <span id="attDateLabel" style="font-weight:400;color:#888;"></span></h3>
+        <h3>🙋 오늘 출결 체크 <span class="sub" id="attDateLabel"></span></h3>
         <p class="hint">출석/조퇴만 누르면 됩니다. 아무것도 안 누르면 자동 결석 처리돼요.</p>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
@@ -130,12 +145,12 @@
 
     <div class="tab-panel" id="tab-roster">
       <div class="section">
-        <h3>학생 추가</h3>
+        <h3>👤 학생 추가</h3>
         <div class="field">
           <label>이름 하나씩 추가</label>
-          <div style="display:flex; gap:6px;">
+          <div style="display:flex; gap:8px;">
             <input type="text" id="rosterAddInput" placeholder="이름 입력 후 Enter">
-            <button class="btn" id="rosterAddBtn" style="margin:0;">추가</button>
+            <button class="btn" id="rosterAddBtn" style="margin:0; white-space:nowrap;">추가</button>
           </div>
         </div>
         <div class="field">
@@ -150,16 +165,18 @@
         </div>
       </div>
       <div class="section">
-        <h3>현재 명단</h3>
+        <h3>현재 명단 <span class="sub" id="rosterCountLabel"></span></h3>
         <div id="rosterList">불러오는 중...</div>
       </div>
     </div>
 
     <div class="tab-panel" id="tab-timetable">
       <div class="section">
-        <h3>주간 기본 시간표</h3>
-        <p class="hint">요일별 교시 과목을 입력하고 요일별로 저장하세요.</p>
-        <div id="weeklyEditor"></div>
+        <h3>📚 주간 기본 시간표</h3>
+        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 아래 저장 버튼 한 번이면 전체 반영돼요.</p>
+        <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
+        <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
+        <span class="msg" id="weeklyMsg"></span>
       </div>
       <div class="section">
         <h3>특정 날짜만 임시 변경</h3>
@@ -169,6 +186,24 @@
         <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
         <span class="msg" id="overrideMsg"></span>
         <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-meal">
+      <div class="section">
+        <h3>🍱 나이스(NEIS) 급식 연동</h3>
+        <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
+        <div class="field"><label>학교명으로 검색</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="schoolSearchInput" placeholder="예: 세종한솔초등학교">
+            <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
+          </div>
+        </div>
+        <div id="schoolSearchResults"></div>
+        <div class="divider"></div>
+        <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
+        <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
+        <span class="msg" id="neisMsg"></span>
       </div>
     </div>
   </main>
@@ -188,7 +223,7 @@ function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).sl
 const app = firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 
-/* ---- 로그인 (간단 비밀번호, 브라우저 탭 기준으로 유지) ---- */
+/* ---- 로그인 ---- */
 function showAdmin(){
   document.getElementById('loginBox').style.display = 'none';
   document.getElementById('adminApp').style.display = 'block';
@@ -197,19 +232,11 @@ function showAdmin(){
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const pw = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
-  if(pw === ADMIN_PASSWORD){
-    sessionStorage.setItem('dashboardAdminOk', '1');
-    errEl.textContent = '';
-    showAdmin();
-  } else {
-    errEl.textContent = '비밀번호가 올바르지 않습니다.';
-  }
+  if(pw === ADMIN_PASSWORD){ sessionStorage.setItem('dashboardAdminOk','1'); errEl.textContent=''; showAdmin(); }
+  else{ errEl.textContent = '비밀번호가 올바르지 않습니다.'; }
 });
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  sessionStorage.removeItem('dashboardAdminOk');
-  location.reload();
-});
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ sessionStorage.removeItem('dashboardAdminOk'); location.reload(); });
 if(sessionStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
 
 /* ---- 탭 ---- */
@@ -225,54 +252,58 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 let initedOnce = false;
 async function initAdmin(){
   if(initedOnce) return; initedOnce = true;
-  document.getElementById('todayDateLabel').textContent = '('+todayStr()+')';
+  document.getElementById('noticeDate').value = todayStr();
   document.getElementById('attDateLabel').textContent = '('+todayStr()+')';
   document.getElementById('overrideDate').value = todayStr();
-  await loadTodayNotice();
-  await loadHistory();
+  await loadNoticeForDate(todayStr());
+  await loadRecentChips();
   await loadRoster();
   await loadAttendanceTab();
   await loadWeeklyEditor();
   await loadOverrideEditor();
+  await loadNeisForm();
 }
 
-/* ---- 오늘 입력 ---- */
-async function loadTodayNotice(){
-  const snap = await db.ref('notices/'+todayStr()).once('value');
+/* ---- 조회·종례 (달력) ---- */
+async function loadNoticeForDate(date){
+  const snap = await db.ref('notices/'+date).once('value');
   const data = snap.val() || {};
   document.getElementById('inputMorning').value = data.morning || '';
   document.getElementById('inputClosing').value = data.closing || '';
+  document.getElementById('noticeDateSub').textContent = date;
 }
-document.getElementById('saveTodayBtn').addEventListener('click', async ()=>{
+document.getElementById('noticeDate').addEventListener('change', (e)=> loadNoticeForDate(e.target.value || todayStr()));
+document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
   const morning = document.getElementById('inputMorning').value;
   const closing = document.getElementById('inputClosing').value;
-  await db.ref('notices/'+todayStr()).set({ date: todayStr(), morning, closing });
-  document.getElementById('saveTodayMsg').textContent = '저장됐어요 ✓';
-  setTimeout(()=>document.getElementById('saveTodayMsg').textContent='', 2000);
-  await loadHistory();
+  await db.ref('notices/'+date).set({ date, morning, closing });
+  document.getElementById('noticeMsg').textContent = '저장됐어요 ✓';
+  setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
+  await loadRecentChips();
 });
-
-/* ---- 지난 기록 ---- */
-async function loadHistory(){
-  const box = document.getElementById('historyList');
-  const snap = await db.ref('notices').orderByKey().limitToLast(60).once('value');
+document.getElementById('deleteNoticeBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  await db.ref('notices/'+date).remove();
+  document.getElementById('inputMorning').value = '';
+  document.getElementById('inputClosing').value = '';
+  document.getElementById('noticeMsg').textContent = '삭제됐어요 ✓';
+  setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
+  await loadRecentChips();
+});
+async function loadRecentChips(){
+  const box = document.getElementById('recentNoticeChips');
+  const snap = await db.ref('notices').orderByKey().limitToLast(20).once('value');
   const val = snap.val() || {};
-  const dates = Object.keys(val).sort().reverse(); // 최신 날짜가 위로
-  if(!dates.length){ box.innerHTML = '<p class="hint">기록이 없습니다.</p>'; return; }
-  box.innerHTML = dates.map(date=>{
-    const n = val[date];
-    const prev = (n.morning||'').split('\n')[0] || (n.closing||'').split('\n')[0] || '(내용 없음)';
-    return `<div class="notice-hist-row" data-date="${date}">
-      <div class="notice-hist-date">${date}</div>
-      <div class="notice-hist-preview">${escapeHtml(prev)}</div>
-      <div class="notice-hist-body">
-        <b>조회:</b> ${n.morning ? escapeHtml(n.morning).replaceAll('\n','<br>') : '(없음)'}<br><br>
-        <b>종례:</b> ${n.closing ? escapeHtml(n.closing).replaceAll('\n','<br>') : '(없음)'}
-      </div>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('.notice-hist-row').forEach(row=>{
-    row.addEventListener('click', ()=> row.classList.toggle('open'));
+  const dates = Object.keys(val).sort().reverse();
+  if(!dates.length){ box.innerHTML = '<span class="chip empty">기록이 없습니다</span>'; return; }
+  box.innerHTML = dates.map(d=>`<button class="chip" data-date="${d}">${d}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      document.getElementById('noticeDate').value = c.dataset.date;
+      loadNoticeForDate(c.dataset.date);
+      document.getElementById('tab-notice').scrollIntoView({behavior:'smooth', block:'start'});
+    });
   });
 }
 
@@ -284,6 +315,7 @@ async function getRosterList(){
 }
 async function loadRoster(){
   const roster = await getRosterList();
+  document.getElementById('rosterCountLabel').textContent = roster.length+'명';
   const box = document.getElementById('rosterList');
   box.innerHTML = roster.length ? roster.map(s=>`
     <div class="roster-row">
@@ -367,39 +399,41 @@ async function loadAttendanceTab(){
   });
 }
 
-/* ---- 시간표 ---- */
+/* ---- 시간표: 요일=열, 교시=행 ---- */
 async function loadWeeklyEditor(){
-  const wrap = document.getElementById('weeklyEditor');
-  wrap.innerHTML = '';
+  const dayData = {};
   for(const k of WEEK_KEYS){
     const snap = await db.ref('timetableWeekly/'+k).once('value');
     const val = snap.val();
-    const periods = val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
-    const row = document.createElement('div');
-    row.className = 'tt-row';
-    row.innerHTML = `<span class="day-label">${WEEK_LABEL[k]}</span>` +
-      periods.map((v,i)=>`<input type="text" data-day="${k}" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}" placeholder="${i+1}교시">`).join('') +
-      ` <button class="btn secondary" data-save-day="${k}" style="margin:4px 0;">저장</button>`;
-    wrap.appendChild(row);
+    dayData[k] = val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
   }
-  wrap.querySelectorAll('[data-save-day]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const k = btn.dataset.saveDay;
-      const periods = [];
-      wrap.querySelectorAll(`input[data-day="${k}"]`).forEach(inp=> periods[Number(inp.dataset.idx)] = inp.value);
-      await db.ref('timetableWeekly/'+k).set({periods});
-      btn.textContent = '저장됨 ✓';
-      setTimeout(()=> btn.textContent='저장', 1500);
-    });
-  });
+  const wrap = document.getElementById('weeklyEditorWrap');
+  let html = '<table class="tt-table"><thead><tr><th>교시</th>' + WEEK_KEYS.map(k=>`<th>${WEEK_LABEL[k]}</th>`).join('') + '</tr></thead><tbody>';
+  for(let p=0; p<DEFAULT_PERIODS; p++){
+    html += `<tr><td>${p+1}교시</td>` + WEEK_KEYS.map(k=>`<td><input type="text" data-day="${k}" data-idx="${p}" value="${(dayData[k][p]||'').replace(/"/g,'&quot;')}"></td>`).join('') + '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
 }
+document.getElementById('saveWeeklyBtn').addEventListener('click', async ()=>{
+  const updates = {};
+  WEEK_KEYS.forEach(k=>{
+    const periods = [];
+    document.querySelectorAll(`#weeklyEditorWrap input[data-day="${k}"]`).forEach(inp=> periods[Number(inp.dataset.idx)] = inp.value);
+    updates['timetableWeekly/'+k+'/periods'] = periods;
+  });
+  await db.ref().update(updates);
+  document.getElementById('weeklyMsg').textContent = '저장됐어요 ✓';
+  setTimeout(()=>document.getElementById('weeklyMsg').textContent='', 2000);
+});
+
 async function loadOverrideEditor(){
   const date = document.getElementById('overrideDate').value || todayStr();
   const snap = await db.ref('timetableOverride/'+date).once('value');
   const val = snap.val();
   const periods = val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
   const wrap = document.getElementById('overrideEditor');
-  wrap.innerHTML = `<div class="tt-row">` + periods.map((v,i)=>`<input type="text" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}" placeholder="${i+1}교시">`).join('') + `</div>`;
+  wrap.innerHTML = `<div style="display:flex; gap:6px; flex-wrap:wrap;">` + periods.map((v,i)=>`<input type="text" style="width:70px; padding:8px; border:1.5px solid var(--border); border-radius:8px; font-size:13px;" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}" placeholder="${i+1}교시">`).join('') + `</div>`;
   await renderOverrideListView();
 }
 document.getElementById('overrideDate').addEventListener('change', loadOverrideEditor);
@@ -425,9 +459,53 @@ async function renderOverrideListView(){
   const snap = await db.ref('timetableOverride').once('value');
   const val = snap.val() || {};
   const dates = Object.keys(val).sort();
-  const box = document.getElementById('overrideListView');
-  box.textContent = dates.length ? ('임시 변경된 날짜: ' + dates.join(', ')) : '등록된 임시 변경이 없습니다.';
+  document.getElementById('overrideListView').textContent = dates.length ? ('임시 변경된 날짜: ' + dates.join(', ')) : '등록된 임시 변경이 없습니다.';
 }
+
+/* ---- 급식(NEIS) 설정 ---- */
+let selectedSchool = null;
+async function loadNeisForm(){
+  const snap = await db.ref('config/neis').once('value');
+  const cfg = snap.val() || {};
+  document.getElementById('neisKey').value = cfg.apiKey || '';
+  document.getElementById('currentSchoolLabel').textContent = cfg.schoolName || '없음';
+  if(cfg.schoolName && cfg.officeCode && cfg.schoolCode){
+    selectedSchool = { schoolName: cfg.schoolName, officeCode: cfg.officeCode, schoolCode: cfg.schoolCode };
+  }
+}
+document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
+  const key = document.getElementById('neisKey').value.trim();
+  const name = document.getElementById('schoolSearchInput').value.trim();
+  const box = document.getElementById('schoolSearchResults');
+  if(!key || !name){ box.innerHTML = '<p class="hint">인증키와 학교명을 먼저 입력하세요.</p>'; return; }
+  box.innerHTML = '<p class="hint">검색 중...</p>';
+  try{
+    const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${encodeURIComponent(key)}&Type=json&SCHUL_NM=${encodeURIComponent(name)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const rows = json?.schoolInfo?.[1]?.row || [];
+    if(!rows.length){ box.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>'; return; }
+    box.innerHTML = rows.map((r,i)=>`<div class="school-item" data-i="${i}">${r.SCHUL_NM} <span style="color:var(--muted); font-weight:500;">(${r.LCTN_SC_NM})</span></div>`).join('');
+    box.querySelectorAll('.school-item').forEach((el,i)=>{
+      el.addEventListener('click', ()=>{
+        box.querySelectorAll('.school-item').forEach(x=>x.classList.remove('selected'));
+        el.classList.add('selected');
+        const r = rows[i];
+        selectedSchool = { schoolName: r.SCHUL_NM, officeCode: r.ATPT_OFCDC_SC_CODE, schoolCode: r.SD_SCHUL_CODE };
+      });
+    });
+  }catch(e){ box.innerHTML = '<p class="hint">검색 중 오류가 발생했습니다.</p>'; }
+});
+document.getElementById('saveNeisBtn').addEventListener('click', async ()=>{
+  const key = document.getElementById('neisKey').value.trim();
+  const msgEl = document.getElementById('neisMsg');
+  if(!key){ msgEl.textContent = 'API 인증키를 입력해주세요.'; return; }
+  if(!selectedSchool){ msgEl.textContent = '검색 후 학교를 선택해주세요.'; return; }
+  await db.ref('config/neis').set({ apiKey: key, ...selectedSchool });
+  document.getElementById('currentSchoolLabel').textContent = selectedSchool.schoolName;
+  msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=>msgEl.textContent='', 2000);
+});
 </script>
 </body>
 </html>
