@@ -8,7 +8,32 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="firebase.js"></script>
+
+<script>
+  // ① 이 대시보드 전용으로 새로 만든 Firebase 프로젝트 값
+  //    (조회/종례/출결/시간표/명단/급식설정이 여기에 저장됩니다)
+  const DASHBOARD_FIREBASE_CONFIG = {
+   apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
+  authDomain: "classboard-58841.firebaseapp.com",
+  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
+  projectId: "classboard-58841",
+  storageBucket: "classboard-58841.firebasestorage.app",
+  messagingSenderId: "961369750358",
+  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
+  };
+
+  // ② todaysquiz가 쓰고 있는 기존 Firebase 프로젝트 값
+  //    (여기서는 quizzes 데이터를 읽기만 합니다 - 절대 안 건드려요)
+  const QUIZ_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAKlIm_ZDD4ICyROlSskTKP5fpSixkSeIU",
+  authDomain: "todaysquiz-5167d.firebaseapp.com",
+  databaseURL: "https://todaysquiz-5167d-default-rtdb.firebaseio.com",
+  projectId: "todaysquiz-5167d",
+  storageBucket: "todaysquiz-5167d.firebasestorage.app",
+  messagingSenderId: "582156880416",
+  appId: "1:582156880416:web:3f750531895cdc5f9a4a45"
+  };
+</script>
 
 <style>
   :root{
@@ -145,9 +170,14 @@ function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1
 function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-let app, db;
+let db, quizDb;
 function initFirebase(){
-  if(!app){ app = firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); }
+  if(!db){
+    const dashboardApp = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG, 'dashboard');
+    db = dashboardApp.database();
+    const quizApp = firebase.initializeApp(QUIZ_FIREBASE_CONFIG, 'quiz');
+    quizDb = quizApp.database();
+  }
 }
 
 /* 시계 */
@@ -250,8 +280,8 @@ async function loadQuiz(){
   const cEl = document.getElementById('quizChoices');
   const bEl = document.getElementById('quizBadge');
   try{
-    let snap = await db.ref('quizzes/'+todayStr()).once('value');
-    if(!snap.exists()) snap = await db.ref('quizzes/'+todayStrCompact()).once('value');
+    let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
+    if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
     if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; bEl.textContent=''; return; }
     const data = snap.val();
     const question = data.question || data.title || data.text || '(문제 필드명을 확인해주세요)';
