@@ -3,30 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학급 대시보드 - 관리자</title>
+<title>학급 대시보드 · 관리자</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
-  // 이 대시보드 전용으로 새로 만든 Firebase 프로젝트 값
-  // (index.html의 DASHBOARD_FIREBASE_CONFIG와 동일한 값이어야 해요.
-  //  퀴즈 프로젝트 값은 여기 필요 없어요 - admin은 퀴즈 데이터를 건드리지 않아요)
- const DASHBOARD_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
+  const DASHBOARD_FIREBASE_CONFIG = {
+    apiKey: "", authDomain: "", databaseURL: "", projectId: "",
+    storageBucket: "", messagingSenderId: "", appId: "",
   };
-
-  // 원하는 관리자 비밀번호를 직접 정해서 넣어주세요.
-  const ADMIN_PASSWORD = 'sugar';
+  const ADMIN_PASSWORD = '여기에_비밀번호를_적어주세요';
 </script>
-
 
 <style>
   :root{
@@ -40,20 +29,18 @@
   header{ background:var(--primary); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
   header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
   #logoutBtn{ background:rgba(255,255,255,0.16); border:none; color:#fff; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; }
-  #logoutBtn:hover{ background:rgba(255,255,255,0.26); }
   main{ max-width:760px; margin:0 auto; padding:20px 16px 60px; }
 
   #loginBox{ max-width:340px; margin:80px auto; background:var(--card); border-radius:20px; padding:32px 28px; box-shadow:var(--shadow); text-align:center; }
   #loginBox .lock-icon{ font-size:34px; margin-bottom:6px; }
   #loginBox h2{ margin:0 0 20px; font-size:17px; font-weight:700; }
-  #loginBox input{ width:100%; padding:13px 14px; margin-bottom:12px; border:1.5px solid var(--border); border-radius:12px; font-size:15px; text-align:center; outline:none; transition:border-color .15s; }
+  #loginBox input{ width:100%; padding:13px 14px; margin-bottom:12px; border:1.5px solid var(--border); border-radius:12px; font-size:15px; text-align:center; outline:none; }
   #loginBox input:focus{ border-color:var(--primary); }
   #loginBox button{ width:100%; padding:13px; background:var(--primary); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
-  #loginBox button:hover{ background:var(--primary-dark); }
   #loginError{ color:var(--danger); font-size:13px; margin-top:10px; min-height:16px; font-weight:600; }
 
   .tabs{ display:flex; gap:4px; background:#e7e8ec; padding:4px; border-radius:14px; margin-bottom:20px; overflow-x:auto; }
-  .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
+  .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
   .tab-btn.active{ background:#fff; color:var(--primary); box-shadow:var(--shadow); }
   .tab-panel{ display:none; } .tab-panel.active{ display:block; animation:fadeIn .2s ease; }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
@@ -63,23 +50,26 @@
   .section h3 .sub{ font-weight:500; color:var(--muted); font-size:12px; margin-left:auto; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:6px; }
-  .field input, .field textarea, .field select{ width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; outline:none; transition:border-color .15s; background:#fff; }
+  .field input, .field textarea, .field select{ width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; outline:none; background:#fff; }
   .field input:focus, .field textarea:focus{ border-color:var(--primary); }
   .field textarea{ min-height:88px; resize:vertical; line-height:1.5; }
-  .btn{ background:var(--primary); color:#fff; border:none; padding:11px 18px; border-radius:11px; font-weight:700; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; transition:background .15s; }
+  .btn{ background:var(--primary); color:#fff; border:none; padding:11px 18px; border-radius:11px; font-weight:700; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; }
   .btn:hover{ background:var(--primary-dark); }
   .btn.secondary{ background:var(--primary-soft); color:var(--primary); }
-  .btn.secondary:hover{ background:#d9ebe5; }
   .btn.danger{ background:var(--danger-soft); color:var(--danger); }
-  .btn.danger:hover{ background:#f7d3da; }
   .msg{ font-size:12.5px; color:var(--primary); margin-left:6px; font-weight:600; }
   .hint{ font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5; }
   .divider{ height:1px; background:var(--border); margin:18px 0; }
 
   .chip-row{ display:flex; gap:8px; flex-wrap:wrap; }
   .chip{ background:var(--primary-soft); color:var(--primary); padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:none; }
-  .chip:hover{ background:#d9ebe5; }
-  .chip.empty{ background:var(--border); color:var(--muted); }
+  .chip.empty{ background:var(--border); color:var(--muted); cursor:default; }
+
+  .publish-row{ display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px 14px; background:var(--bg); border-radius:12px; }
+  .publish-row span{ font-size:13px; font-weight:600; color:var(--muted); }
+  .publish-btn{ padding:7px 16px; border-radius:20px; font-weight:700; font-size:12.5px; cursor:pointer; border:none; }
+  .publish-btn.on{ background:var(--primary); color:#fff; }
+  .publish-btn.off{ background:var(--border); color:var(--muted); }
 
   .roster-row, .att-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
   .roster-row:last-child, .att-row:last-child{ border-bottom:none; }
@@ -99,6 +89,24 @@
   table.tt-table td:first-child, table.tt-table th:first-child{ width:44px; font-size:12px; color:var(--muted); font-weight:600; }
   table.tt-table input{ width:100%; padding:8px 4px; border:1.5px solid var(--border); border-radius:8px; font-size:12.5px; text-align:center; outline:none; }
   table.tt-table input:focus{ border-color:var(--primary); }
+
+  .collapse-header{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+  .collapse-header .chev{ transition:transform .2s; color:var(--muted); }
+  .collapse-header.open .chev{ transform:rotate(180deg); }
+  .collapse-body{ display:none; margin-top:14px; }
+  .collapse-body.open{ display:block; }
+
+  .history-row{ padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+  .history-row:last-child{ border-bottom:none; }
+  .history-top{ display:flex; align-items:center; gap:8px; }
+  .history-date{ font-weight:700; font-size:14px; }
+  .history-badge{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .history-badge.on{ background:var(--primary-soft); color:var(--primary); }
+  .history-badge.off{ background:var(--border); color:var(--muted); }
+  .history-preview{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .history-body{ display:none; margin-top:10px; font-size:13px; white-space:pre-wrap; background:var(--bg); padding:12px; border-radius:10px; }
+  .history-row.open .history-body{ display:block; }
+  .history-edit-link{ display:inline-block; margin-top:8px; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer; }
 
   #schoolSearchResults{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
   .school-item{ padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; }
@@ -124,26 +132,38 @@
   <main>
     <div class="tabs">
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
+      <button class="tab-btn" data-tab="history">지난 기록</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
-      <button class="tab-btn" data-tab="meal">급식 설정</button>
     </div>
 
     <div class="tab-panel active" id="tab-notice">
       <div class="section">
-        <h3>📣 조회 · 종례 관리 <span class="sub" id="noticeDateSub"></span></h3>
-        <div class="field"><label>날짜 선택</label><input type="date" id="noticeDate"></div>
+        <h3>📣 조회 · 종례 작성 <span class="sub" id="noticeDateSub"></span></h3>
+        <div class="field"><label>날짜</label><input type="date" id="noticeDate"></div>
+        <div class="publish-row">
+          <span>학생 화면 공개 상태</span>
+          <button class="publish-btn off" id="publishToggle">비공개</button>
+        </div>
         <div class="field"><label>조회사항</label><textarea id="inputMorning"></textarea></div>
         <div class="field"><label>종례사항</label><textarea id="inputClosing"></textarea></div>
-        <button class="btn" id="saveNoticeBtn">이 날짜에 저장</button>
+        <button class="btn" id="saveNoticeBtn">저장</button>
         <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
         <span class="msg" id="noticeMsg"></span>
       </div>
       <div class="section">
-        <h3>최근 등록된 날짜</h3>
-        <p class="hint">탭하면 해당 날짜 내용이 위 칸에 바로 불러와져요.</p>
+        <h3>최근 내용 불러오기</h3>
+        <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요 (날짜는 안 바뀌어요). 어제랑 같은 공지 다시 쓸 때 편해요.</p>
         <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-history">
+      <div class="section">
+        <h3>지난 조회·종례 기록</h3>
+        <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
+        <div id="historyList">불러오는 중...</div>
       </div>
     </div>
 
@@ -174,7 +194,6 @@
         <div class="field">
           <label>CSV 파일 업로드</label>
           <input type="file" id="rosterCsvInput" accept=".csv">
-          <p class="hint">한 줄에 이름 하나(콤마로 여러 칸이면 첫 칸을 이름으로 사용).</p>
         </div>
       </div>
       <div class="section">
@@ -186,37 +205,25 @@
     <div class="tab-panel" id="tab-timetable">
       <div class="section">
         <h3>📚 주간 기본 시간표</h3>
-        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 아래 저장 버튼 한 번이면 전체 반영돼요.</p>
+        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 저장 버튼 한 번이면 전체 반영돼요.</p>
         <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
         <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
         <span class="msg" id="weeklyMsg"></span>
       </div>
       <div class="section">
-        <h3>특정 날짜만 임시 변경</h3>
-        <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
-        <div id="overrideEditor"></div>
-        <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
-        <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
-        <span class="msg" id="overrideMsg"></span>
-        <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
-      </div>
-    </div>
-
-    <div class="tab-panel" id="tab-meal">
-      <div class="section">
-        <h3>🍱 나이스(NEIS) 급식 연동</h3>
-        <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
-        <div class="field"><label>학교명으로 검색</label>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="schoolSearchInput" placeholder="예: 세종한솔초등학교">
-            <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
-          </div>
+        <div class="collapse-header" id="overrideCollapseHeader">
+          <h3 style="margin:0;">특정 날짜만 임시 변경</h3>
+          <span class="chev">▾</span>
         </div>
-        <div id="schoolSearchResults"></div>
-        <div class="divider"></div>
-        <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
-        <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
-        <span class="msg" id="neisMsg"></span>
+        <div class="collapse-body" id="overrideCollapseBody">
+          <p class="hint" style="margin-top:12px;">날짜를 고르면 그 요일 기본 시간표가 자동으로 채워져요. 바뀌는 과목만 수정하고 저장하세요.</p>
+          <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
+          <div id="overrideEditor"></div>
+          <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
+          <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
+          <span class="msg" id="overrideMsg"></span>
+          <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
+        </div>
       </div>
     </div>
   </main>
@@ -225,6 +232,7 @@
 <script>
 const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
 const WEEK_LABEL = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
+const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DEFAULT_PERIODS = 7;
 const STATUS_LABEL = {present:'출석', out:'조퇴'};
 
@@ -232,6 +240,7 @@ function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
 
 const app = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG);
 const db = firebase.database();
@@ -253,12 +262,17 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{ sessionStor
 
 /* ---- 탭 ---- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-  });
+  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+});
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+}
+
+/* ---- 접기/펼치기 ---- */
+document.getElementById('overrideCollapseHeader').addEventListener('click', ()=>{
+  document.getElementById('overrideCollapseHeader').classList.toggle('open');
+  document.getElementById('overrideCollapseBody').classList.toggle('open');
 });
 
 let initedOnce = false;
@@ -269,52 +283,107 @@ async function initAdmin(){
   document.getElementById('overrideDate').value = todayStr();
   await loadNoticeForDate(todayStr());
   await loadRecentChips();
+  await loadHistoryList();
   await loadRoster();
   await loadAttendanceTab();
   await loadWeeklyEditor();
   await loadOverrideEditor();
-  await loadNeisForm();
 }
 
-/* ---- 조회·종례 (달력) ---- */
+/* ---- 조회·종례 작성 ---- */
+let currentPublished = false;
+function setPublishBtn(on){
+  currentPublished = on;
+  const btn = document.getElementById('publishToggle');
+  btn.textContent = on ? '공개 중' : '비공개';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+document.getElementById('publishToggle').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  setPublishBtn(!currentPublished);
+  await db.ref('notices/'+date+'/published').set(currentPublished);
+  await loadHistoryList();
+});
 async function loadNoticeForDate(date){
   const snap = await db.ref('notices/'+date).once('value');
   const data = snap.val() || {};
   document.getElementById('inputMorning').value = data.morning || '';
   document.getElementById('inputClosing').value = data.closing || '';
   document.getElementById('noticeDateSub').textContent = date;
+  setPublishBtn(!!data.published);
 }
 document.getElementById('noticeDate').addEventListener('change', (e)=> loadNoticeForDate(e.target.value || todayStr()));
 document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   const morning = document.getElementById('inputMorning').value;
   const closing = document.getElementById('inputClosing').value;
-  await db.ref('notices/'+date).set({ date, morning, closing });
+  await db.ref('notices/'+date).set({ date, morning, closing, published: currentPublished });
   document.getElementById('noticeMsg').textContent = '저장됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
-  await loadRecentChips();
+  await loadRecentChips(); await loadHistoryList();
 });
 document.getElementById('deleteNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   await db.ref('notices/'+date).remove();
   document.getElementById('inputMorning').value = '';
   document.getElementById('inputClosing').value = '';
+  setPublishBtn(false);
   document.getElementById('noticeMsg').textContent = '삭제됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
-  await loadRecentChips();
+  await loadRecentChips(); await loadHistoryList();
 });
 async function loadRecentChips(){
   const box = document.getElementById('recentNoticeChips');
-  const snap = await db.ref('notices').orderByKey().limitToLast(20).once('value');
+  const snap = await db.ref('notices').orderByKey().limitToLast(15).once('value');
   const val = snap.val() || {};
   const dates = Object.keys(val).sort().reverse();
   if(!dates.length){ box.innerHTML = '<span class="chip empty">기록이 없습니다</span>'; return; }
   box.innerHTML = dates.map(d=>`<button class="chip" data-date="${d}">${d}</button>`).join('');
   box.querySelectorAll('.chip').forEach(c=>{
     c.addEventListener('click', ()=>{
-      document.getElementById('noticeDate').value = c.dataset.date;
-      loadNoticeForDate(c.dataset.date);
-      document.getElementById('tab-notice').scrollIntoView({behavior:'smooth', block:'start'});
+      const n = val[c.dataset.date];
+      document.getElementById('inputMorning').value = n.morning || '';
+      document.getElementById('inputClosing').value = n.closing || '';
+    });
+  });
+}
+
+/* ---- 지난 기록 (읽기+수정 이동) ---- */
+async function loadHistoryList(){
+  const box = document.getElementById('historyList');
+  const snap = await db.ref('notices').orderByKey().limitToLast(60).once('value');
+  const val = snap.val() || {};
+  const dates = Object.keys(val).sort().reverse();
+  if(!dates.length){ box.innerHTML = '<p class="hint">기록이 없습니다.</p>'; return; }
+  box.innerHTML = dates.map(date=>{
+    const n = val[date];
+    const prev = (n.morning||'').split('\n')[0] || (n.closing||'').split('\n')[0] || '(내용 없음)';
+    return `<div class="history-row" data-date="${date}">
+      <div class="history-top">
+        <span class="history-date">${date}</span>
+        <span class="history-badge ${n.published?'on':'off'}">${n.published?'공개':'비공개'}</span>
+      </div>
+      <div class="history-preview">${escapeHtml(prev)}</div>
+      <div class="history-body">
+        <b>조회:</b> ${n.morning ? escapeHtml(n.morning).replaceAll('\n','<br>') : '(없음)'}<br><br>
+        <b>종례:</b> ${n.closing ? escapeHtml(n.closing).replaceAll('\n','<br>') : '(없음)'}
+        <div class="history-edit-link" data-edit="${date}">✏️ 이 날짜 수정하기</div>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.history-row').forEach(row=>{
+    row.addEventListener('click', (e)=>{
+      if(e.target.dataset.edit) return;
+      row.classList.toggle('open');
+    });
+  });
+  box.querySelectorAll('[data-edit]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const date = el.dataset.edit;
+      document.getElementById('noticeDate').value = date;
+      loadNoticeForDate(date);
+      switchTab('notice');
     });
   });
 }
@@ -412,13 +481,14 @@ async function loadAttendanceTab(){
 }
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */
+async function getWeeklyPeriods(dayKey){
+  const snap = await db.ref('timetableWeekly/'+dayKey).once('value');
+  const val = snap.val();
+  return val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
+}
 async function loadWeeklyEditor(){
   const dayData = {};
-  for(const k of WEEK_KEYS){
-    const snap = await db.ref('timetableWeekly/'+k).once('value');
-    const val = snap.val();
-    dayData[k] = val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
-  }
+  for(const k of WEEK_KEYS){ dayData[k] = await getWeeklyPeriods(k); }
   const wrap = document.getElementById('weeklyEditorWrap');
   let html = '<table class="tt-table"><thead><tr><th>교시</th>' + WEEK_KEYS.map(k=>`<th>${WEEK_LABEL[k]}</th>`).join('') + '</tr></thead><tbody>';
   for(let p=0; p<DEFAULT_PERIODS; p++){
@@ -443,7 +513,13 @@ async function loadOverrideEditor(){
   const date = document.getElementById('overrideDate').value || todayStr();
   const snap = await db.ref('timetableOverride/'+date).once('value');
   const val = snap.val();
-  const periods = val && val.periods ? val.periods : new Array(DEFAULT_PERIODS).fill('');
+  let periods;
+  if(val && val.periods){
+    periods = val.periods; // 이미 임시변경이 있으면 그걸 보여줌
+  } else {
+    const dow = dowKeyOf(date);
+    periods = WEEK_KEYS.includes(dow) ? await getWeeklyPeriods(dow) : new Array(DEFAULT_PERIODS).fill('');
+  }
   const wrap = document.getElementById('overrideEditor');
   wrap.innerHTML = `<div style="display:flex; gap:6px; flex-wrap:wrap;">` + periods.map((v,i)=>`<input type="text" style="width:70px; padding:8px; border:1.5px solid var(--border); border-radius:8px; font-size:13px;" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}" placeholder="${i+1}교시">`).join('') + `</div>`;
   await renderOverrideListView();
@@ -474,53 +550,7 @@ async function renderOverrideListView(){
   document.getElementById('overrideListView').textContent = dates.length ? ('임시 변경된 날짜: ' + dates.join(', ')) : '등록된 임시 변경이 없습니다.';
 }
 
-/* ---- 급식(NEIS) 설정 ---- */
-let selectedSchool = null;
-async function loadNeisForm(){
-  const snap = await db.ref('config/neis').once('value');
-  const cfg = snap.val() || {};
-  document.getElementById('neisKey').value = cfg.apiKey || '';
-  document.getElementById('currentSchoolLabel').textContent = cfg.schoolName || '없음';
-  if(cfg.schoolName && cfg.officeCode && cfg.schoolCode){
-    selectedSchool = { schoolName: cfg.schoolName, officeCode: cfg.officeCode, schoolCode: cfg.schoolCode };
-  }
-}
-document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
-  const key = document.getElementById('neisKey').value.trim();
-  const name = document.getElementById('schoolSearchInput').value.trim();
-  const box = document.getElementById('schoolSearchResults');
-  if(!key || !name){ box.innerHTML = '<p class="hint">인증키와 학교명을 먼저 입력하세요.</p>'; return; }
-  box.innerHTML = '<p class="hint">검색 중...</p>';
-  try{
-    const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${encodeURIComponent(key)}&Type=json&SCHUL_NM=${encodeURIComponent(name)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const rows = json?.schoolInfo?.[1]?.row || [];
-    if(!rows.length){ box.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>'; return; }
-    box.innerHTML = rows.map((r,i)=>`<div class="school-item" data-i="${i}">${r.SCHUL_NM} <span style="color:var(--muted); font-weight:500;">(${r.LCTN_SC_NM})</span></div>`).join('');
-    box.querySelectorAll('.school-item').forEach((el,i)=>{
-      el.addEventListener('click', ()=>{
-        box.querySelectorAll('.school-item').forEach(x=>x.classList.remove('selected'));
-        el.classList.add('selected');
-        const r = rows[i];
-        selectedSchool = { schoolName: r.SCHUL_NM, officeCode: r.ATPT_OFCDC_SC_CODE, schoolCode: r.SD_SCHUL_CODE };
-      });
-    });
-  }catch(e){ box.innerHTML = '<p class="hint">검색 중 오류가 발생했습니다.</p>'; }
-});
-document.getElementById('saveNeisBtn').addEventListener('click', async ()=>{
-  const key = document.getElementById('neisKey').value.trim();
-  const msgEl = document.getElementById('neisMsg');
-  if(!key){ msgEl.textContent = 'API 인증키를 입력해주세요.'; return; }
-  if(!selectedSchool){ msgEl.textContent = '검색 후 학교를 선택해주세요.'; return; }
-  await db.ref('config/neis').set({ apiKey: key, ...selectedSchool });
-  document.getElementById('currentSchoolLabel').textContent = selectedSchool.schoolName;
-  msgEl.textContent = '저장됐어요 ✓';
-  setTimeout(()=>msgEl.textContent='', 2000);
-});
-
-/* 로그인이 이미 되어있던 탭이면 자동으로 관리자 화면 표시
-   (모든 함수/변수 선언이 끝난 뒤 맨 마지막에 실행되어야 안전합니다) */
+/* 로그인이 이미 되어있던 탭이면 자동으로 관리자 화면 표시 (모든 선언이 끝난 뒤 실행) */
 if(sessionStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
 </script>
 </body>

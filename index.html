@@ -10,28 +10,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
-  // ① 이 대시보드 전용으로 새로 만든 Firebase 프로젝트 값
-  //    (조회/종례/출결/시간표/명단/급식설정이 여기에 저장됩니다)
   const DASHBOARD_FIREBASE_CONFIG = {
-   apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
+    apiKey: "", authDomain: "", databaseURL: "", projectId: "",
+    storageBucket: "", messagingSenderId: "", appId: "",
   };
-
-  // ② todaysquiz가 쓰고 있는 기존 Firebase 프로젝트 값
-  //    (여기서는 quizzes 데이터를 읽기만 합니다 - 절대 안 건드려요)
   const QUIZ_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAKlIm_ZDD4ICyROlSskTKP5fpSixkSeIU",
-  authDomain: "todaysquiz-5167d.firebaseapp.com",
-  databaseURL: "https://todaysquiz-5167d-default-rtdb.firebaseio.com",
-  projectId: "todaysquiz-5167d",
-  storageBucket: "todaysquiz-5167d.firebasestorage.app",
-  messagingSenderId: "582156880416",
-  appId: "1:582156880416:web:3f750531895cdc5f9a4a45"
+    apiKey: "", authDomain: "", databaseURL: "", projectId: "",
+    storageBucket: "", messagingSenderId: "", appId: "",
   };
 </script>
 
@@ -52,104 +37,85 @@
       var(--board-green);
     border-radius:6px;
     box-shadow: inset 0 0 60px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.4);
-    padding:26px 30px; display:flex; flex-direction:column; gap:18px; overflow:hidden;
+    padding:26px 30px; display:flex; min-height:0; overflow:hidden;
   }
   #board::before{
     content:""; position:absolute; inset:0;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
     pointer-events:none; mix-blend-mode:overlay;
   }
-  .label{ font-size:16px; font-weight:700; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:8px; letter-spacing:.2px; }
+  .label{ font-size:22px; font-weight:800; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:10px; letter-spacing:-.2px; }
   .card{ position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(245,243,230,0.25); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; min-height:0; }
 
-  #mainRow{ flex:3; display:flex; gap:16px; min-height:0; }
-  #colLeft{ flex:1.05; display:flex; flex-direction:column; gap:14px; min-height:0; }
-  #colLeft .card{ flex:1; }
-  #clockCard{ flex:1; border-color:rgba(245,243,230,0.35); align-items:center; text-align:center; justify-content:center; }
-  #timetableCard{ flex:1.05; }
-  #mealCard{ flex:0.95; }
-  #bottomRow{ flex:1; display:flex; }
+  #mainRow{ flex:1; display:flex; gap:16px; min-height:0; }
+  #clockCard{ flex:2; border-color:rgba(245,243,230,0.35); align-items:center; text-align:center; justify-content:center; }
+  #timetableCard{ flex:0.85; }
+  #quizCard{ flex:0.95; }
 
-  #clockTime{ font-weight:800; font-size:clamp(46px, 5.6vw, 88px); line-height:1; letter-spacing:-1px; text-shadow:0 0 18px rgba(242,199,68,0.12); font-variant-numeric: tabular-nums; }
-  #clockDate{ font-size:22px; font-weight:600; color:var(--chalk-blue); margin-top:10px; }
-  #clockDday{ font-size:15px; font-weight:500; color:var(--chalk-pink); margin-top:6px; opacity:.9; }
+  #clockTime{ font-weight:800; font-size:clamp(58px, 7.5vw, 130px); line-height:1; letter-spacing:-1px; text-shadow:0 0 18px rgba(242,199,68,0.12); font-variant-numeric: tabular-nums; }
+  #clockDate{ font-size:26px; font-weight:700; color:var(--chalk-blue); margin-top:12px; }
+  #clockDday{ font-size:18px; font-weight:600; color:var(--chalk-pink); margin-top:8px; opacity:.9; }
 
-  .tile{ cursor:pointer; justify-content:space-between; transition:background .15s, border-color .15s; }
-  .tile:hover{ background:rgba(255,255,255,0.08); border-color:rgba(245,243,230,0.5); }
-  .tile-preview{ font-size:15px; font-weight:500; opacity:0.85; line-height:1.45; overflow:hidden; flex:1; }
-  .tile-empty{ color:rgba(245,243,230,0.4); font-size:14px; }
-  .tile-hint{ font-size:12px; font-weight:600; color:var(--chalk-blue); margin-top:6px; opacity:.85; }
-  .tile-badge-row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .tile-badge{ font-size:13px; padding:4px 10px; border-radius:12px; font-weight:700; }
-  .tile-badge.absent{ background:rgba(232,160,180,0.18); color:var(--chalk-pink); }
-  .tile-badge.out{ background:rgba(143,193,227,0.18); color:var(--chalk-blue); }
-  .tile-badge.present{ background:rgba(159,216,166,0.18); color:var(--chalk-green); }
+  #quickBtnRow{ display:flex; gap:12px; margin-top:26px; }
+  .quick-btn{ cursor:pointer; background:rgba(255,255,255,0.06); border:1.5px solid rgba(245,243,230,0.3); color:var(--chalk-white); padding:12px 22px; border-radius:24px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px; transition:background .15s, border-color .15s, transform .1s; }
+  .quick-btn:hover{ background:rgba(255,255,255,0.12); border-color:rgba(245,243,230,0.6); }
+  .quick-btn:active{ transform:scale(0.97); }
 
-  .tt-override-badge{ font-size:12px; font-weight:700; color:var(--chalk-pink); margin-left:8px; }
+  .tt-override-badge{ font-size:14px; font-weight:700; color:var(--chalk-pink); margin-left:8px; }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; }
-  #todayPeriodList li{ display:flex; align-items:center; gap:12px; padding:7px 4px; border-bottom:1px dashed rgba(245,243,230,0.15); font-size:17px; font-weight:700; }
-  #todayPeriodList li .p-num{ font-weight:500; opacity:.6; width:52px; font-size:13px; }
-  #todayPeriodList .tt-empty{ color:rgba(245,243,230,0.4); font-weight:500; font-size:15px; }
+  #todayPeriodList li{ display:flex; align-items:center; gap:14px; padding:9px 4px; border-bottom:1px dashed rgba(245,243,230,0.15); font-size:20px; font-weight:700; }
+  #todayPeriodList li .p-num{ font-weight:500; opacity:.6; width:56px; font-size:15px; }
+  #todayPeriodList .tt-empty{ color:rgba(245,243,230,0.4); font-weight:600; font-size:17px; }
 
-  #mealCard .meal-list{ list-style:none; margin:0; padding:0; font-size:16px; font-weight:500; line-height:1.6; overflow-y:auto; flex:1;}
-  .meal-status{ font-weight:600; opacity:.75; font-size:13px; }
+  #mealCard .meal-list{ list-style:none; margin:0; padding:0; font-size:19px; font-weight:600; line-height:1.6; overflow-y:auto; flex:1;}
+  .meal-status{ font-weight:700; opacity:.8; font-size:15px; }
 
-  #quizCard{ flex-direction:row; align-items:center; gap:22px; width:100%; }
-  #quizCard .quiz-question{ font-size:21px; font-weight:700; margin-bottom:10px; }
-  #quizCard .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; }
-  #quizCard .quiz-choice{ border:1px solid rgba(245,243,230,0.3); border-radius:8px; padding:8px 14px; font-size:15px; font-weight:500; }
+  #quizCard .quiz-question{ font-size:22px; font-weight:700; margin-bottom:10px; line-height:1.4; overflow-y:auto; }
+  #quizCard .quiz-choices{ display:flex; flex-wrap:wrap; gap:8px; }
+  #quizCard .quiz-choice{ border:1px solid rgba(245,243,230,0.3); border-radius:8px; padding:7px 12px; font-size:16px; font-weight:600; }
   #quizCard .quiz-badge{ font-size:13px; font-weight:600; color:var(--chalk-pink); margin-top:10px; }
+  #quizCard .quiz-raw{ font-size:13px; font-family:monospace; white-space:pre-wrap; opacity:.7; overflow-y:auto; }
 
   .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
-  .modal-box{ width:min(680px,92vw); max-height:80vh; overflow-y:auto; background:#26463d; border-radius:14px; padding:24px 28px; border:1px solid rgba(245,243,230,0.15); position:relative; }
-  .modal-box h2{ font-size:19px; font-weight:700; color:var(--chalk-yellow); margin-top:0; }
-  .close-x{ position:absolute; top:14px; right:16px; background:none; border:none; color:var(--chalk-white); font-size:20px; cursor:pointer; }
-  .notice-modal-body{ font-size:19px; font-weight:500; line-height:1.65; white-space:pre-wrap; }
+  .modal-box{ width:min(680px,92vw); max-height:82vh; overflow-y:auto; background:#26463d; border-radius:14px; padding:26px 30px; border:1px solid rgba(245,243,230,0.15); position:relative; }
+  .modal-box h2{ font-size:22px; font-weight:800; color:var(--chalk-yellow); margin-top:0; }
+  .close-x{ position:absolute; top:16px; right:18px; background:none; border:none; color:var(--chalk-white); font-size:24px; cursor:pointer; }
+  .notice-modal-body{ font-size:21px; font-weight:500; line-height:1.7; white-space:pre-wrap; }
+
+  .att-summary{ font-size:15px; font-weight:700; color:var(--chalk-blue); margin-bottom:14px; }
+  .att-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px dashed rgba(245,243,230,0.18); }
+  .att-row .att-name{ width:110px; font-size:17px; font-weight:700; }
+  .att-pill{ border:1.5px solid rgba(245,243,230,0.35); background:rgba(255,255,255,0.05); color:var(--chalk-white); padding:8px 16px; border-radius:20px; font-size:15px; font-weight:700; cursor:pointer; }
+  .att-pill.on-present{ background:var(--chalk-green); color:#1f3d36; border-color:var(--chalk-green); }
+  .att-pill.on-out{ background:var(--chalk-blue); color:#1f3d36; border-color:var(--chalk-blue); }
+  .att-status{ font-size:13px; font-weight:600; opacity:.75; width:110px; }
+  .att-reset{ background:none; border:none; color:var(--chalk-pink); font-size:13px; font-weight:600; cursor:pointer; }
 </style>
 </head>
 <body>
 <div id="app"><div id="board">
   <div id="mainRow">
-    <div id="colLeft">
-      <div class="card tile" id="attendTile">
-        <div class="label">🙋 출결 현황</div>
-        <div class="tile-badge-row" id="attendBadges"></div>
-      </div>
-      <div class="card tile" id="morningTile">
-        <div class="label">📣 조회사항</div>
-        <div class="tile-preview" id="morningPreview"></div>
-        <div class="tile-hint">탭하여 전체 보기 →</div>
-      </div>
-      <div class="card tile" id="closingTile">
-        <div class="label">🌇 종례사항</div>
-        <div class="tile-preview" id="closingPreview"></div>
-        <div class="tile-hint">탭하여 전체 보기 →</div>
-      </div>
-    </div>
     <div class="card" id="clockCard">
       <div id="clockTime">--:--:--</div>
       <div id="clockDate">-</div>
       <div id="clockDday"></div>
+      <div id="quickBtnRow">
+        <div class="quick-btn" id="attendTile">🙋 출결</div>
+        <div class="quick-btn" id="morningTile">📣 조회</div>
+        <div class="quick-btn" id="closingTile">🌇 종례</div>
+      </div>
     </div>
     <div class="card" id="timetableCard">
       <div class="label">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시 변경됨</span></div>
       <ul id="todayPeriodList"></ul>
     </div>
-    <div class="card" id="mealCard">
-      <div class="label">🍱 오늘의 급식</div>
-      <div class="meal-status" id="mealStatus">불러오는 중...</div>
-      <ul class="meal-list" id="mealList"></ul>
-    </div>
-  </div>
-  <div id="bottomRow">
     <div class="card" id="quizCard">
-      <div class="quiz-body">
-        <div class="label" style="margin-bottom:8px;">🧩 오늘의 퀴즈</div>
-        <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
-        <div class="quiz-choices" id="quizChoices"></div>
-        <div class="quiz-badge" id="quizBadge"></div>
-      </div>
+      <div class="label">🧩 오늘의 퀴즈</div>
+      <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
+      <div class="quiz-choices" id="quizChoices"></div>
+      <div class="quiz-raw" id="quizRaw"></div>
+      <div class="quiz-badge" id="quizBadge"></div>
     </div>
   </div>
 </div></div>
@@ -162,12 +128,23 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="attendanceModalOverlay">
+  <div class="modal-box">
+    <button class="close-x" id="closeAttModal">✕</button>
+    <h2>🙋 출결 체크</h2>
+    <div class="att-summary" id="attSummary"></div>
+    <div id="attRosterList"></div>
+  </div>
+</div>
+
 <script>
 const DAYS_KR = ['일','월','화','수','목','금','토'];
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
+const STATUS_LABEL = {present:'출석', out:'조퇴'};
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
+function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let db, quizDb;
@@ -180,7 +157,6 @@ function initFirebase(){
   }
 }
 
-/* 시계 */
 function tickClock(){
   const now = new Date();
   document.getElementById('clockTime').textContent = [now.getHours(),now.getMinutes(),now.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
@@ -190,49 +166,73 @@ function tickClock(){
 }
 setInterval(tickClock,1000); tickClock();
 
-/* 조회/종례 */
-function preview(text,len=38){ if(!text) return ''; const t=text.split('\n')[0]; return t.length>len? t.slice(0,len)+'…' : t; }
-async function loadNotice(){
+/* 조회/종례 - 공개 상태(published)일 때만 내용 노출 */
+document.getElementById('morningTile').addEventListener('click', async ()=>{
   const snap = await db.ref('notices/'+todayStr()).once('value');
-  const data = snap.exists() ? snap.val() : null;
-  document.getElementById('morningPreview').innerHTML = data && data.morning ? escapeHtml(preview(data.morning)) : '<span class="tile-empty">등록된 내용이 없습니다</span>';
-  document.getElementById('closingPreview').innerHTML = data && data.closing ? escapeHtml(preview(data.closing)) : '<span class="tile-empty">등록된 내용이 없습니다</span>';
-  window.__todayNotice = data;
-}
-document.getElementById('morningTile').addEventListener('click', ()=>{
-  const d = window.__todayNotice;
+  const d = snap.val();
   document.getElementById('noticeModalTitle').textContent = '📣 조회사항';
-  document.getElementById('noticeModalBody').innerHTML = d && d.morning ? escapeHtml(d.morning).replaceAll('\n','<br>') : '<span class="tile-empty">등록된 조회사항이 없습니다.</span>';
+  document.getElementById('noticeModalBody').innerHTML = (d && d.published && d.morning) ? escapeHtml(d.morning).replaceAll('\n','<br>') : '아직 공개된 조회사항이 없습니다.';
   document.getElementById('noticeModalOverlay').classList.add('open');
 });
-document.getElementById('closingTile').addEventListener('click', ()=>{
-  const d = window.__todayNotice;
+document.getElementById('closingTile').addEventListener('click', async ()=>{
+  const snap = await db.ref('notices/'+todayStr()).once('value');
+  const d = snap.val();
   document.getElementById('noticeModalTitle').textContent = '🌇 종례사항';
-  document.getElementById('noticeModalBody').innerHTML = d && d.closing ? escapeHtml(d.closing).replaceAll('\n','<br>') : '<span class="tile-empty">등록된 종례사항이 없습니다.</span>';
+  document.getElementById('noticeModalBody').innerHTML = (d && d.published && d.closing) ? escapeHtml(d.closing).replaceAll('\n','<br>') : '아직 공개된 종례사항이 없습니다.';
   document.getElementById('noticeModalOverlay').classList.add('open');
 });
 document.getElementById('closeNoticeModal').addEventListener('click', ()=> document.getElementById('noticeModalOverlay').classList.remove('open'));
 document.getElementById('noticeModalOverlay').addEventListener('click',(e)=>{ if(e.target.id==='noticeModalOverlay') e.currentTarget.classList.remove('open'); });
 
-/* 출결 요약 (읽기 전용) */
-async function loadAttendance(){
-  const [rosterSnap, attSnap] = await Promise.all([
-    db.ref('roster').once('value'),
-    db.ref('attendance/'+todayStr()).once('value')
-  ]);
-  const rosterObj = rosterSnap.val() || {};
-  const roster = Object.keys(rosterObj).map(id=>({id, ...rosterObj[id]}));
+async function getRosterList(){
+  const snap = await db.ref('roster').once('value');
+  const val = snap.val() || {};
+  return Object.keys(val).map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+}
+async function renderAttendancePopup(){
+  const roster = await getRosterList();
+  const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   const att = attSnap.val() || {};
   let present=0, out=0;
-  roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; });
+  roster.forEach(s=>{ const st = att[s.id]?.status; if(st==='present') present++; else if(st==='out') out++; });
   const absent = roster.length - present - out;
-  document.getElementById('attendBadges').innerHTML = `
-    <span class="tile-badge present">출석 ${present}</span>
-    <span class="tile-badge out">조퇴 ${out}</span>
-    <span class="tile-badge absent">결석 ${absent}</span>`;
+  document.getElementById('attSummary').textContent = `전체 ${roster.length}명 · 출석 ${present} · 조퇴 ${out} · 결석(자동) ${absent}`;
+  const box = document.getElementById('attRosterList');
+  if(!roster.length){ box.innerHTML = '<p>등록된 학생이 없습니다. 관리자 페이지에서 먼저 등록해주세요.</p>'; return; }
+  box.innerHTML = roster.map(s=>{
+    const rec = att[s.id];
+    return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
+      <span class="att-name">${escapeHtml(s.name)}</span>
+      <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
+      <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
+      <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '결석(자동)'}</span>
+      ${rec ? '<button class="att-reset" data-reset="1">지우기</button>' : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.att-row').forEach(row=>{
+    const id = row.dataset.id, name = row.dataset.name;
+    row.querySelectorAll('.att-pill').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        await renderAttendancePopup();
+      });
+    });
+    const resetBtn = row.querySelector('[data-reset]');
+    if(resetBtn){
+      resetBtn.addEventListener('click', async ()=>{
+        await db.ref(`attendance/${todayStr()}/${id}`).remove();
+        await renderAttendancePopup();
+      });
+    }
+  });
 }
+document.getElementById('attendTile').addEventListener('click', async ()=>{
+  await renderAttendancePopup();
+  document.getElementById('attendanceModalOverlay').classList.add('open');
+});
+document.getElementById('closeAttModal').addEventListener('click', ()=> document.getElementById('attendanceModalOverlay').classList.remove('open'));
+document.getElementById('attendanceModalOverlay').addEventListener('click',(e)=>{ if(e.target.id==='attendanceModalOverlay') e.currentTarget.classList.remove('open'); });
 
-/* 시간표 */
 async function loadTimetable(){
   const now = new Date();
   const dowKey = DAY_KEYS[now.getDay()];
@@ -253,47 +253,32 @@ async function loadTimetable(){
   list.innerHTML = filled.length ? filled.map(p=>`<li><span class="p-num">${p.idx}교시</span><span>${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
-/* 급식 (NEIS) - 설정값은 DB(config/neis)에서 읽어옴 */
-async function loadMeal(){
-  const statusEl = document.getElementById('mealStatus');
-  const listEl = document.getElementById('mealList');
-  const cfgSnap = await db.ref('config/neis').once('value');
-  const cfg = cfgSnap.val() || {};
-  if(!cfg.apiKey || !cfg.officeCode || !cfg.schoolCode){
-    statusEl.textContent = 'admin.html > 급식 설정에서 학교를 등록해주세요.'; return;
-  }
-  statusEl.textContent = '불러오는 중...'; listEl.innerHTML='';
-  try{
-    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${encodeURIComponent(cfg.apiKey)}&Type=json&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${todayStrCompact()}`;
-    const res = await fetch(url); const json = await res.json();
-    const rows = json?.mealServiceDietInfo?.[1]?.row;
-    if(!rows || !rows.length){ statusEl.textContent = '오늘은 급식 정보가 없습니다.'; return; }
-    statusEl.textContent = rows[0].MMEAL_SC_NM || '';
-    const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
-    listEl.innerHTML = items.map(i=>`<li>${escapeHtml(i)}</li>`).join('');
-  }catch(e){ statusEl.textContent = '급식 정보를 가져오지 못했습니다.'; }
-}
-
-/* 퀴즈 */
 async function loadQuiz(){
   const qEl = document.getElementById('quizQuestion');
   const cEl = document.getElementById('quizChoices');
   const bEl = document.getElementById('quizBadge');
+  const rEl = document.getElementById('quizRaw');
+  rEl.textContent = '';
   try{
     let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
     if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; bEl.textContent=''; return; }
     const data = snap.val();
-    const question = data.question || data.title || data.text || '(문제 필드명을 확인해주세요)';
-    const choices = data.choices || data.options || [];
-    qEl.textContent = question;
-    cEl.innerHTML = Array.isArray(choices) ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
-    bEl.textContent = '정답 확인 및 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →';
+    const question = data.question || data.title || data.text || data.q || null;
+    const choices = data.choices || data.options || data.answers || [];
+    if(question){
+      qEl.textContent = question;
+      cEl.innerHTML = Array.isArray(choices) ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
+      bEl.textContent = '정답 확인 및 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →';
+    } else {
+      qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
+      rEl.textContent = JSON.stringify(data, null, 2);
+    }
   }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다.'; }
 }
 
 async function loadAll(){
-  await Promise.all([loadNotice(), loadAttendance(), loadTimetable(), loadMeal(), loadQuiz()]);
+  await Promise.all([loadTimetable(), loadQuiz()]);
 }
 initFirebase();
 loadAll();
