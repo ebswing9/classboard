@@ -6,83 +6,93 @@
 <title>학급 대시보드</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
 
 <style>
   :root{
-    --board-green:#1f3d36; --chalk-white:#f5f3e6; --chalk-yellow:#f2c744;
-    --chalk-pink:#e8a0b4; --chalk-blue:#8fc1e3; --chalk-green:#9fd8a6;
-    --wood:#6b4226; --wood-dark:#4a2d19;
+    --bg1:#fdf3f6; --bg2:#eef1fd; --bg3:#fbf6e9;
+    --card:#ffffff;
+    --pink:#ffd3e0; --pink-deep:#f78fb3;
+    --mint:#c8f0e2; --mint-deep:#5fc9a8;
+    --lav:#e2dcfb; --lav-deep:#a48ef0;
+    --yellow:#fff0bf; --yellow-deep:#f6c445;
+    --sky:#d3ecfb; --sky-deep:#6cb8ea;
+    --text:#4a4458; --muted:#a79fc0; --line:#f0e9f7;
+    --shadow: 0 10px 28px rgba(160,140,190,0.16);
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; background:var(--wood-dark); font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--chalk-white); overflow:hidden; }
-  #app{ position:relative; height:100vh; padding:18px; background:var(--wood); display:flex; }
-  #board{
-    position:relative; flex:1;
-    background:
-      radial-gradient(ellipse at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
-      radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.04), transparent 45%),
-      var(--board-green);
-    border-radius:6px;
-    box-shadow: inset 0 0 60px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.4);
-    padding:26px 30px; display:flex; min-height:0; overflow:hidden;
+  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; }
+  body{
+    background: radial-gradient(circle at 8% 12%, var(--pink) 0%, transparent 32%),
+                radial-gradient(circle at 92% 15%, var(--sky) 0%, transparent 34%),
+                radial-gradient(circle at 15% 90%, var(--yellow) 0%, transparent 30%),
+                radial-gradient(circle at 88% 88%, var(--lav) 0%, transparent 34%),
+                linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    background-attachment: fixed;
   }
-  #board::before{
-    content:""; position:absolute; inset:0;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-    pointer-events:none; mix-blend-mode:overlay;
+  #app{ height:100vh; padding:22px; display:flex; }
+  #board{ flex:1; display:flex; flex-direction:column; gap:18px; min-height:0; }
+
+  .headfont{ font-family:'Jua',sans-serif; }
+  .label{ font-size:19px; font-weight:400; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .card{
+    position:relative; background:var(--card); border-radius:26px; padding:20px 22px;
+    display:flex; flex-direction:column; min-height:0; box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,0.6);
   }
-  .label{ font-size:22px; font-weight:800; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:10px; letter-spacing:-.2px; }
-  #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#c0334a; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
-  .card{ position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(245,243,230,0.25); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; min-height:0; }
 
-  #mainRow{ flex:1; display:flex; gap:16px; min-height:0; }
-  #clockCard{ flex:2; border-color:rgba(245,243,230,0.35); align-items:center; text-align:center; justify-content:center; }
-  #timetableCard{ flex:0.85; }
-  #quizCard{ flex:0.95; }
+  #mainRow{ flex:1; display:flex; gap:18px; min-height:0; }
+  #clockCard{ flex:1.75; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:1; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:0.95; background:linear-gradient(160deg, #fff, var(--lav) 220%); }
 
-  #clockTime{ font-weight:800; font-size:clamp(58px, 7.5vw, 130px); line-height:1; letter-spacing:-1px; text-shadow:0 0 18px rgba(242,199,68,0.12); font-variant-numeric: tabular-nums; }
-  #clockDate{ font-size:26px; font-weight:700; color:var(--chalk-blue); margin-top:12px; }
-  #clockDday{ font-size:18px; font-weight:600; color:var(--chalk-pink); margin-top:8px; opacity:.9; }
+  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(56px, 7vw, 118px); line-height:1; color:var(--text); }
+  #clockDate{ font-size:23px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
+  #clockDday{ font-size:16px; font-weight:600; color:var(--muted); margin-top:6px; }
+  #ddayWidget{ font-family:'Jua',sans-serif; font-size:17px; color:#7a5ea8; margin-top:16px; background:var(--lav); padding:9px 20px; border-radius:20px; display:none; }
 
-  #quickBtnRow{ display:flex; gap:12px; margin-top:26px; }
-  #ddayWidget{ font-size:19px; font-weight:700; color:var(--chalk-green); margin-top:16px; background:rgba(255,255,255,0.06); padding:10px 22px; border-radius:20px; }
-  .quick-btn{ cursor:pointer; background:rgba(255,255,255,0.06); border:1.5px solid rgba(245,243,230,0.3); color:var(--chalk-white); padding:12px 22px; border-radius:24px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px; transition:background .15s, border-color .15s, transform .1s; }
-  .quick-btn:hover{ background:rgba(255,255,255,0.12); border-color:rgba(245,243,230,0.6); }
+  #quickBtnRow{ display:flex; gap:12px; margin-top:24px; }
+  .quick-btn{
+    cursor:pointer; border:none; color:var(--text); padding:13px 22px; border-radius:22px;
+    font-size:16px; font-weight:700; display:flex; align-items:center; gap:7px;
+    transition:transform .12s, filter .15s; box-shadow:0 4px 10px rgba(160,140,190,0.18);
+  }
+  .quick-btn:hover{ filter:brightness(1.04); transform:translateY(-2px); }
   .quick-btn:active{ transform:scale(0.97); }
+  #attendTile{ background:var(--mint); }
+  #morningTile{ background:var(--yellow); }
+  #closingTile{ background:var(--pink); }
 
-  .tt-override-badge{ font-size:14px; font-weight:700; color:var(--chalk-pink); margin-left:8px; }
-  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; }
-  #todayPeriodList li{ display:flex; align-items:center; gap:14px; padding:9px 4px; border-bottom:1px dashed rgba(245,243,230,0.15); font-size:20px; font-weight:700; }
-  #todayPeriodList li .p-num{ font-weight:500; opacity:.6; width:56px; font-size:15px; }
-  #todayPeriodList .tt-empty{ color:rgba(245,243,230,0.4); font-weight:600; font-size:17px; }
+  .tt-override-badge{ font-size:12px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 10px; border-radius:10px; margin-left:8px; }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; align-content:start; }
+  .period-chip{ border-radius:16px; padding:12px 12px; display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; }
+  .p-badge{ width:26px; height:26px; min-width:26px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); }
+  .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tt-empty{ color:var(--muted); font-weight:600; font-size:15px; grid-column: 1 / -1; }
 
-  #mealCard .meal-list{ list-style:none; margin:0; padding:0; font-size:19px; font-weight:600; line-height:1.6; overflow-y:auto; flex:1;}
-  .meal-status{ font-weight:700; opacity:.8; font-size:15px; }
-
-  #quizCard .quiz-question{ font-size:22px; font-weight:700; margin-bottom:10px; line-height:1.4; overflow-y:auto; }
+  #quizCard .quiz-question{ font-size:20px; font-weight:700; margin-bottom:12px; line-height:1.45; overflow-y:auto; }
   #quizCard .quiz-choices{ display:flex; flex-wrap:wrap; gap:8px; }
-  #quizCard .quiz-choice{ border:1px solid rgba(245,243,230,0.3); border-radius:8px; padding:7px 12px; font-size:16px; font-weight:600; }
-  #quizCard .quiz-badge{ font-size:13px; font-weight:600; color:var(--chalk-pink); margin-top:10px; }
-  #quizCard .quiz-raw{ font-size:13px; font-family:monospace; white-space:pre-wrap; opacity:.7; overflow-y:auto; }
+  #quizCard .quiz-choice{ background:rgba(255,255,255,0.75); border-radius:12px; padding:8px 14px; font-size:15px; font-weight:700; }
+  #quizCard .quiz-raw{ font-size:12px; font-family:monospace; white-space:pre-wrap; opacity:.65; overflow-y:auto; }
 
-  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; }
+  #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(74,68,88,0.35); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
-  .modal-box{ width:min(680px,92vw); max-height:82vh; overflow-y:auto; background:#26463d; border-radius:14px; padding:26px 30px; border:1px solid rgba(245,243,230,0.15); position:relative; }
-  .modal-box h2{ font-size:22px; font-weight:800; color:var(--chalk-yellow); margin-top:0; }
-  .close-x{ position:absolute; top:16px; right:18px; background:none; border:none; color:var(--chalk-white); font-size:24px; cursor:pointer; }
-  .notice-modal-body{ font-size:21px; font-weight:500; line-height:1.7; white-space:pre-wrap; }
+  .modal-box{ width:min(640px,92vw); max-height:80vh; overflow-y:auto; background:#fff; border-radius:26px; padding:28px 30px; box-shadow:var(--shadow); position:relative; }
+  .modal-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; color:var(--pink-deep); margin-top:0; }
+  .close-x{ position:absolute; top:16px; right:18px; background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:16px; cursor:pointer; }
+  .notice-modal-body{ font-size:19px; font-weight:500; line-height:1.7; white-space:pre-wrap; }
 
-  .att-summary{ font-size:15px; font-weight:700; color:var(--chalk-blue); margin-bottom:14px; }
-  .att-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px dashed rgba(245,243,230,0.18); }
-  .att-row .att-name{ width:110px; font-size:17px; font-weight:700; }
-  .att-pill{ border:1.5px solid rgba(245,243,230,0.35); background:rgba(255,255,255,0.05); color:var(--chalk-white); padding:8px 16px; border-radius:20px; font-size:15px; font-weight:700; cursor:pointer; }
-  .att-pill.on-present{ background:var(--chalk-green); color:#1f3d36; border-color:var(--chalk-green); }
-  .att-pill.on-out{ background:var(--chalk-blue); color:#1f3d36; border-color:var(--chalk-blue); }
-  .att-status{ font-size:13px; font-weight:600; opacity:.75; width:110px; }
-  .att-reset{ background:none; border:none; color:var(--chalk-pink); font-size:13px; font-weight:600; cursor:pointer; }
+  .att-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .att-row .att-name{ flex:1; font-size:17px; font-weight:700; }
+  .att-pill{ border:none; background:var(--line); color:var(--text); padding:9px 18px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; }
+  .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
+  .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
+  .att-reset{ background:none; border:none; color:var(--pink-deep); font-size:13px; font-weight:600; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -93,7 +103,7 @@
       <div id="clockTime">--:--:--</div>
       <div id="clockDate">-</div>
       <div id="clockDday"></div>
-      <div id="ddayWidget" style="display:none;"></div>
+      <div id="ddayWidget"></div>
       <div id="quickBtnRow">
         <div class="quick-btn" id="attendTile">🙋 출결</div>
         <div class="quick-btn" id="morningTile">📣 조회</div>
@@ -101,15 +111,14 @@
       </div>
     </div>
     <div class="card" id="timetableCard">
-      <div class="label">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시 변경됨</span></div>
+      <div class="label headfont">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시변경</span></div>
       <ul id="todayPeriodList"></ul>
     </div>
     <div class="card" id="quizCard">
-      <div class="label">🧩 오늘의 퀴즈</div>
+      <div class="label headfont">🧩 오늘의 퀴즈</div>
       <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
       <div class="quiz-choices" id="quizChoices"></div>
       <div class="quiz-raw" id="quizRaw"></div>
-      <div class="quiz-badge" id="quizBadge"></div>
     </div>
   </div>
 </div></div>
@@ -126,7 +135,6 @@
   <div class="modal-box">
     <button class="close-x" id="closeAttModal">✕</button>
     <h2>🙋 출결 체크</h2>
-    <div class="att-summary" id="attSummary"></div>
     <div id="attRosterList"></div>
   </div>
 </div>
@@ -135,7 +143,7 @@
 const DAYS_KR = ['일','월','화','수','목','금','토'];
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
-const STATUS_LABEL = {present:'출석', out:'조퇴'};
+const CHIP_COLORS = ['pink','mint','yellow','lav','sky'];
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
@@ -145,7 +153,7 @@ let db, quizDb;
 function initFirebase(){
   const banner = document.getElementById('configErrorBanner');
   if(typeof DASHBOARD_FIREBASE_CONFIG === 'undefined' || !DASHBOARD_FIREBASE_CONFIG.apiKey){
-    banner.textContent = '⚠️ firebase.js를 찾지 못했거나 설정값이 비어있어요. index.html과 같은 폴더에 firebase.js가 올라가 있는지, 안의 값이 채워져 있는지 확인해주세요.';
+    banner.textContent = '⚠️ firebase.js를 찾지 못했거나 설정값이 비어있어요. index.html과 같은 폴더에 firebase.js가 올라가 있는지 확인해주세요.';
     banner.style.display = 'block';
     return false;
   }
@@ -169,24 +177,25 @@ function tickClock(){
 }
 setInterval(tickClock,1000); tickClock();
 
-/* 조회/종례 - 공개 상태(published)일 때만 내용 노출 */
+/* 조회/종례 - 각각 개별 공개상태 확인 */
 document.getElementById('morningTile').addEventListener('click', async ()=>{
   const snap = await db.ref('notices/'+todayStr()).once('value');
   const d = snap.val();
   document.getElementById('noticeModalTitle').textContent = '📣 조회사항';
-  document.getElementById('noticeModalBody').innerHTML = (d && d.published && d.morning) ? escapeHtml(d.morning).replaceAll('\n','<br>') : '아직 공개된 조회사항이 없습니다.';
+  document.getElementById('noticeModalBody').innerHTML = (d && d.morningPublished && d.morning) ? escapeHtml(d.morning).replaceAll('\n','<br>') : '아직 공개된 조회사항이 없습니다.';
   document.getElementById('noticeModalOverlay').classList.add('open');
 });
 document.getElementById('closingTile').addEventListener('click', async ()=>{
   const snap = await db.ref('notices/'+todayStr()).once('value');
   const d = snap.val();
   document.getElementById('noticeModalTitle').textContent = '🌇 종례사항';
-  document.getElementById('noticeModalBody').innerHTML = (d && d.published && d.closing) ? escapeHtml(d.closing).replaceAll('\n','<br>') : '아직 공개된 종례사항이 없습니다.';
+  document.getElementById('noticeModalBody').innerHTML = (d && d.closingPublished && d.closing) ? escapeHtml(d.closing).replaceAll('\n','<br>') : '아직 공개된 종례사항이 없습니다.';
   document.getElementById('noticeModalOverlay').classList.add('open');
 });
 document.getElementById('closeNoticeModal').addEventListener('click', ()=> document.getElementById('noticeModalOverlay').classList.remove('open'));
 document.getElementById('noticeModalOverlay').addEventListener('click',(e)=>{ if(e.target.id==='noticeModalOverlay') e.currentTarget.classList.remove('open'); });
 
+/* 출결 - 학생에게 아무 정보도 노출하지 않음, 버튼으로만 체크 */
 async function getRosterList(){
   const snap = await db.ref('roster').once('value');
   const val = snap.val() || {};
@@ -196,10 +205,6 @@ async function renderAttendancePopup(){
   const roster = await getRosterList();
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   const att = attSnap.val() || {};
-  let present=0, out=0;
-  roster.forEach(s=>{ const st = att[s.id]?.status; if(st==='present') present++; else if(st==='out') out++; });
-  const absent = roster.length - present - out;
-  document.getElementById('attSummary').textContent = `전체 ${roster.length}명 · 출석 ${present} · 조퇴 ${out} · 결석(자동) ${absent}`;
   const box = document.getElementById('attRosterList');
   if(!roster.length){ box.innerHTML = '<p>등록된 학생이 없습니다. 관리자 페이지에서 먼저 등록해주세요.</p>'; return; }
   box.innerHTML = roster.map(s=>{
@@ -208,7 +213,6 @@ async function renderAttendancePopup(){
       <span class="att-name">${escapeHtml(s.name)}</span>
       <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
       <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
-      <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '결석(자동)'}</span>
       ${rec ? '<button class="att-reset" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -246,33 +250,31 @@ async function loadTimetable(){
   const list = document.getElementById('todayPeriodList');
   if(!WEEK_KEYS.includes(dowKey) && !override){ badge.style.display='none'; list.innerHTML='<li class="tt-empty">오늘은 수업이 없는 날이에요.</li>'; return; }
   let periods;
-  if(override){ periods = override; badge.style.display='inline'; }
+  if(override){ periods = override; badge.style.display='inline-block'; }
   else{
     const wSnap = await db.ref('timetableWeekly/'+dowKey).once('value');
     periods = wSnap.exists() ? (wSnap.val().periods || []) : [];
     badge.style.display='none';
   }
   const filled = periods.map((v,i)=>({idx:i+1,val:v})).filter(p=>p.val && p.val.trim());
-  list.innerHTML = filled.length ? filled.map(p=>`<li><span class="p-num">${p.idx}교시</span><span>${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
+  list.innerHTML = filled.length ? filled.map((p,i)=>`<li class="period-chip" style="background:var(--${CHIP_COLORS[i%CHIP_COLORS.length]});"><span class="p-badge">${p.idx}</span><span class="p-subject">${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
 async function loadQuiz(){
   const qEl = document.getElementById('quizQuestion');
   const cEl = document.getElementById('quizChoices');
-  const bEl = document.getElementById('quizBadge');
   const rEl = document.getElementById('quizRaw');
   rEl.textContent = '';
   try{
     let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
-    if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; bEl.textContent=''; return; }
+    if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; return; }
     const data = snap.val();
     const question = data.meta?.questionText || data.question || data.title || data.text || data.q || null;
     const choices = data.choices || data.options || data.answers || [];
     if(question){
       qEl.textContent = question;
       cEl.innerHTML = Array.isArray(choices) && choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
-      bEl.textContent = data.meta?.type === 'short' ? '단답형 문제예요 - 정답 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →' : '정답 확인 및 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →';
     } else {
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
       rEl.textContent = JSON.stringify(data, null, 2);

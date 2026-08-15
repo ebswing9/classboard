@@ -6,21 +6,23 @@
 <title>학급 대시보드 · 관리자</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
 
 <style>
   :root{
-    --bg:#f2f3f5; --card:#ffffff; --primary:#2f6f5e; --primary-dark:#245549;
-    --primary-soft:#e7f1ee; --accent:#e0956b; --danger:#e0556f; --danger-soft:#fbe9ec;
-    --text:#1f2430; --muted:#8a8f98; --border:#e7e8ec;
-    --shadow: 0 1px 2px rgba(16,24,32,.04), 0 6px 16px rgba(16,24,32,.06);
+    --bg:#faf5fb; --card:#ffffff; --primary:#c98cc7; --primary-dark:#a869a6;
+    --primary-soft:#f7e9f6; --accent:#ffcf8a; --danger:#f088a0; --danger-soft:#fde8ee;
+    --text:#4a4458; --muted:#a79fc0; --border:#f0e6f2;
+    --shadow: 0 4px 16px rgba(180,140,190,.10), 0 10px 28px rgba(180,140,190,.10);
   }
   *{box-sizing:border-box;}
   body{ margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
-  header{ background:var(--primary); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
-  #configErrorBanner{ background:#c0334a; color:#fff; padding:14px 20px; font-size:14px; font-weight:700; display:none; }
+  header{ background:linear-gradient(120deg, #d9a6e0, #c98cc7); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  header h1{ font-family:'Jua',sans-serif; font-weight:400; font-size:18px; margin:0; }
+  #configErrorBanner{ background:#f088a0; color:#fff; padding:14px 20px; font-size:14px; font-weight:700; display:none; }
   header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
   #logoutBtn{ background:rgba(255,255,255,0.16); border:none; color:#fff; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; }
   main{ max-width:760px; margin:0 auto; padding:20px 16px 60px; }
@@ -140,10 +142,14 @@
         <h3>📣 조회 · 종례 작성 <span class="sub" id="noticeDateSub"></span></h3>
         <div class="field"><label>날짜</label><input type="date" id="noticeDate"></div>
         <div class="publish-row">
-          <span>학생 화면 공개 상태</span>
-          <button class="publish-btn off" id="publishToggle">비공개</button>
+          <span>조회사항 공개</span>
+          <button class="publish-btn off" id="publishToggleMorning">비공개</button>
         </div>
         <div class="field"><label>조회사항</label><textarea id="inputMorning"></textarea></div>
+        <div class="publish-row">
+          <span>종례사항 공개</span>
+          <button class="publish-btn off" id="publishToggleClosing">비공개</button>
+        </div>
         <div class="field"><label>종례사항</label><textarea id="inputClosing"></textarea></div>
         <button class="btn" id="saveNoticeBtn">저장</button>
         <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
@@ -319,17 +325,24 @@ async function initAdmin(){
 }
 
 /* ---- 조회·종례 작성 ---- */
-let currentPublished = false;
-function setPublishBtn(on){
-  currentPublished = on;
-  const btn = document.getElementById('publishToggle');
+let morningPublished = false;
+let closingPublished = false;
+function setPublishBtn(which, on){
+  if(which==='morning'){ morningPublished = on; } else { closingPublished = on; }
+  const btn = document.getElementById(which==='morning' ? 'publishToggleMorning' : 'publishToggleClosing');
   btn.textContent = on ? '공개 중' : '비공개';
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
-document.getElementById('publishToggle').addEventListener('click', async ()=>{
+document.getElementById('publishToggleMorning').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
-  setPublishBtn(!currentPublished);
-  await db.ref('notices/'+date+'/published').set(currentPublished);
+  setPublishBtn('morning', !morningPublished);
+  await db.ref('notices/'+date+'/morningPublished').set(morningPublished);
+  await loadHistoryList();
+});
+document.getElementById('publishToggleClosing').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  setPublishBtn('closing', !closingPublished);
+  await db.ref('notices/'+date+'/closingPublished').set(closingPublished);
   await loadHistoryList();
 });
 async function loadNoticeForDate(date){
@@ -338,14 +351,15 @@ async function loadNoticeForDate(date){
   document.getElementById('inputMorning').value = data.morning || '';
   document.getElementById('inputClosing').value = data.closing || '';
   document.getElementById('noticeDateSub').textContent = date;
-  setPublishBtn(!!data.published);
+  setPublishBtn('morning', !!data.morningPublished);
+  setPublishBtn('closing', !!data.closingPublished);
 }
 document.getElementById('noticeDate').addEventListener('change', (e)=> loadNoticeForDate(e.target.value || todayStr()));
 document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   const morning = document.getElementById('inputMorning').value;
   const closing = document.getElementById('inputClosing').value;
-  await db.ref('notices/'+date).set({ date, morning, closing, published: currentPublished });
+  await db.ref('notices/'+date).set({ date, morning, closing, morningPublished, closingPublished });
   document.getElementById('noticeMsg').textContent = '저장됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
   await loadRecentChips(); await loadHistoryList();
@@ -355,7 +369,8 @@ document.getElementById('deleteNoticeBtn').addEventListener('click', async ()=>{
   await db.ref('notices/'+date).remove();
   document.getElementById('inputMorning').value = '';
   document.getElementById('inputClosing').value = '';
-  setPublishBtn(false);
+  setPublishBtn('morning', false);
+  setPublishBtn('closing', false);
   document.getElementById('noticeMsg').textContent = '삭제됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
   await loadRecentChips(); await loadHistoryList();
@@ -389,7 +404,8 @@ async function loadHistoryList(){
     return `<div class="history-row" data-date="${date}">
       <div class="history-top">
         <span class="history-date">${date}</span>
-        <span class="history-badge ${n.published?'on':'off'}">${n.published?'공개':'비공개'}</span>
+        <span class="history-badge ${n.morningPublished?'on':'off'}">조회 ${n.morningPublished?'공개':'비공개'}</span>
+        <span class="history-badge ${n.closingPublished?'on':'off'}">종례 ${n.closingPublished?'공개':'비공개'}</span>
       </div>
       <div class="history-preview">${escapeHtml(prev)}</div>
       <div class="history-body">
