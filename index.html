@@ -8,27 +8,7 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-<script>
-  const DASHBOARD_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
-  };
-  const QUIZ_FIREBASE_CONFIG = {
-   apiKey: "AIzaSyAKlIm_ZDD4ICyROlSskTKP5fpSixkSeIU",
-  authDomain: "todaysquiz-5167d.firebaseapp.com",
-  databaseURL: "https://todaysquiz-5167d-default-rtdb.firebaseio.com",
-  projectId: "todaysquiz-5167d",
-  storageBucket: "todaysquiz-5167d.firebasestorage.app",
-  messagingSenderId: "582156880416",
-  appId: "1:582156880416:web:3f750531895cdc5f9a4a45"
-  };
-</script>
+<script src="firebase.js"></script>
 
 <style>
   :root{
@@ -55,6 +35,7 @@
     pointer-events:none; mix-blend-mode:overlay;
   }
   .label{ font-size:22px; font-weight:800; color:var(--chalk-yellow); display:flex; align-items:center; gap:8px; margin-bottom:10px; letter-spacing:-.2px; }
+  #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#c0334a; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
   .card{ position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(245,243,230,0.25); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; min-height:0; }
 
   #mainRow{ flex:1; display:flex; gap:16px; min-height:0; }
@@ -67,6 +48,7 @@
   #clockDday{ font-size:18px; font-weight:600; color:var(--chalk-pink); margin-top:8px; opacity:.9; }
 
   #quickBtnRow{ display:flex; gap:12px; margin-top:26px; }
+  #ddayWidget{ font-size:19px; font-weight:700; color:var(--chalk-green); margin-top:16px; background:rgba(255,255,255,0.06); padding:10px 22px; border-radius:20px; }
   .quick-btn{ cursor:pointer; background:rgba(255,255,255,0.06); border:1.5px solid rgba(245,243,230,0.3); color:var(--chalk-white); padding:12px 22px; border-radius:24px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px; transition:background .15s, border-color .15s, transform .1s; }
   .quick-btn:hover{ background:rgba(255,255,255,0.12); border-color:rgba(245,243,230,0.6); }
   .quick-btn:active{ transform:scale(0.97); }
@@ -104,12 +86,14 @@
 </style>
 </head>
 <body>
+<div id="configErrorBanner"></div>
 <div id="app"><div id="board">
   <div id="mainRow">
     <div class="card" id="clockCard">
       <div id="clockTime">--:--:--</div>
       <div id="clockDate">-</div>
       <div id="clockDday"></div>
+      <div id="ddayWidget" style="display:none;"></div>
       <div id="quickBtnRow">
         <div class="quick-btn" id="attendTile">🙋 출결</div>
         <div class="quick-btn" id="morningTile">📣 조회</div>
@@ -159,12 +143,21 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 
 let db, quizDb;
 function initFirebase(){
+  const banner = document.getElementById('configErrorBanner');
+  if(typeof DASHBOARD_FIREBASE_CONFIG === 'undefined' || !DASHBOARD_FIREBASE_CONFIG.apiKey){
+    banner.textContent = '⚠️ firebase.js를 찾지 못했거나 설정값이 비어있어요. index.html과 같은 폴더에 firebase.js가 올라가 있는지, 안의 값이 채워져 있는지 확인해주세요.';
+    banner.style.display = 'block';
+    return false;
+  }
   if(!db){
     const dashboardApp = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG, 'dashboard');
     db = dashboardApp.database();
-    const quizApp = firebase.initializeApp(QUIZ_FIREBASE_CONFIG, 'quiz');
-    quizDb = quizApp.database();
+    if(QUIZ_FIREBASE_CONFIG.apiKey){
+      const quizApp = firebase.initializeApp(QUIZ_FIREBASE_CONFIG, 'quiz');
+      quizDb = quizApp.database();
+    }
   }
+  return true;
 }
 
 function tickClock(){
@@ -274,12 +267,12 @@ async function loadQuiz(){
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
     if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; bEl.textContent=''; return; }
     const data = snap.val();
-    const question = data.question || data.title || data.text || data.q || null;
+    const question = data.meta?.questionText || data.question || data.title || data.text || data.q || null;
     const choices = data.choices || data.options || data.answers || [];
     if(question){
       qEl.textContent = question;
-      cEl.innerHTML = Array.isArray(choices) ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
-      bEl.textContent = '정답 확인 및 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →';
+      cEl.innerHTML = Array.isArray(choices) && choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
+      bEl.textContent = data.meta?.type === 'short' ? '단답형 문제예요 - 정답 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →' : '정답 확인 및 제출은 학생 개인 화면(todaysquiz)에서 해주세요 →';
     } else {
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
       rEl.textContent = JSON.stringify(data, null, 2);
@@ -287,12 +280,29 @@ async function loadQuiz(){
   }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다.'; }
 }
 
-async function loadAll(){
-  await Promise.all([loadTimetable(), loadQuiz()]);
+async function loadDday(){
+  const snap = await db.ref('config/dday').once('value');
+  const cfg = snap.val();
+  const el = document.getElementById('ddayWidget');
+  if(!cfg || !cfg.date || !cfg.label){ el.style.display = 'none'; return; }
+  const target = new Date(cfg.date+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diffDays = Math.round((target - now) / 86400000);
+  let text;
+  if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
+  else if(diffDays === 0) text = `${cfg.label} D-DAY`;
+  else text = `${cfg.label} D+${Math.abs(diffDays)}`;
+  el.textContent = '🎈 ' + text;
+  el.style.display = 'inline-block';
 }
-initFirebase();
-loadAll();
-setInterval(loadAll, 5*60*1000);
+
+async function loadAll(){
+  await Promise.all([loadTimetable(), loadQuiz(), loadDday()]);
+}
+if(initFirebase()){
+  loadAll();
+  setInterval(loadAll, 5*60*1000);
+}
 </script>
 </body>
 </html>

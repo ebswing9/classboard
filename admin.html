@@ -8,19 +8,7 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-<script>
-  const DASHBOARD_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCp3vLQM0aKX7s1ArE2YD3BsLNHcbQQJFE",
-  authDomain: "classboard-58841.firebaseapp.com",
-  databaseURL: "https://classboard-58841-default-rtdb.firebaseio.com",
-  projectId: "classboard-58841",
-  storageBucket: "classboard-58841.firebasestorage.app",
-  messagingSenderId: "961369750358",
-  appId: "1:961369750358:web:86a2d7a9c25f1e6204b4f7"
-  };
-  const ADMIN_PASSWORD = 'sugar';
-</script>
+<script src="firebase.js"></script>
 
 <style>
   :root{
@@ -32,6 +20,7 @@
   *{box-sizing:border-box;}
   body{ margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
   header{ background:var(--primary); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  #configErrorBanner{ background:#c0334a; color:#fff; padding:14px 20px; font-size:14px; font-weight:700; display:none; }
   header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
   #logoutBtn{ background:rgba(255,255,255,0.16); border:none; color:#fff; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; }
   main{ max-width:760px; margin:0 auto; padding:20px 16px 60px; }
@@ -120,6 +109,7 @@
 </style>
 </head>
 <body>
+<div id="configErrorBanner"></div>
 
 <div id="loginBox">
   <div class="lock-icon">🔒</div>
@@ -127,6 +117,7 @@
   <input type="password" id="loginPassword" placeholder="비밀번호 입력">
   <button id="loginBtn">입장하기</button>
   <div id="loginError"></div>
+  <p class="hint" style="margin-top:14px;">처음 접속이신가요? 기본 비밀번호는 <b>admin1234</b> 예요. 로그인 후 설정 탭에서 꼭 바꿔주세요.</p>
 </div>
 
 <div id="adminApp" style="display:none;">
@@ -141,6 +132,7 @@
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
+      <button class="tab-btn" data-tab="settings">설정</button>
     </div>
 
     <div class="tab-panel active" id="tab-notice">
@@ -231,6 +223,24 @@
         </div>
       </div>
     </div>
+
+    <div class="tab-panel" id="tab-settings">
+      <div class="section">
+        <h3>🔑 관리자 비밀번호 변경</h3>
+        <div class="field"><label>새 비밀번호</label><input type="password" id="newPasswordInput" placeholder="새 비밀번호 입력"></div>
+        <button class="btn" id="savePasswordBtn">비밀번호 변경</button>
+        <span class="msg" id="passwordMsg"></span>
+      </div>
+      <div class="section">
+        <h3>🎈 D-Day 문구</h3>
+        <p class="hint">대시보드 시계 아래에 "여름방학까지 D-12" 같은 문구가 표시돼요. 비워두면 안 보여요.</p>
+        <div class="field"><label>문구 (예: 여름방학까지)</label><input type="text" id="ddayLabelInput" placeholder="여름방학까지"></div>
+        <div class="field"><label>기준 날짜</label><input type="date" id="ddayDateInput"></div>
+        <button class="btn" id="saveDdayBtn">저장</button>
+        <button class="btn danger" id="clearDdayBtn">문구 지우기</button>
+        <span class="msg" id="ddayMsg"></span>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -247,23 +257,35 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
 
-const app = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG);
-const db = firebase.database();
+const banner = document.getElementById('configErrorBanner');
+let app, db;
+if(typeof DASHBOARD_FIREBASE_CONFIG === 'undefined' || !DASHBOARD_FIREBASE_CONFIG.apiKey){
+  banner.textContent = '⚠️ firebase.js를 찾지 못했거나 설정값이 비어있어요. admin.html과 같은 폴더에 firebase.js가 올라가 있는지 확인해주세요.';
+  banner.style.display = 'block';
+} else {
+  app = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG);
+  db = firebase.database();
+}
 
-/* ---- 로그인 ---- */
+/* ---- 로그인 (비밀번호는 DB에 저장, 최초 기본값 admin1234) ---- */
+async function getAdminPassword(){
+  const snap = await db.ref('config/adminPassword').once('value');
+  return snap.exists() ? snap.val() : 'admin1234';
+}
 function showAdmin(){
   document.getElementById('loginBox').style.display = 'none';
   document.getElementById('adminApp').style.display = 'block';
   initAdmin();
 }
-document.getElementById('loginBtn').addEventListener('click', ()=>{
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
   const pw = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
-  if(pw === ADMIN_PASSWORD){ sessionStorage.setItem('dashboardAdminOk','1'); errEl.textContent=''; showAdmin(); }
+  const realPw = await getAdminPassword();
+  if(pw === realPw){ localStorage.setItem('dashboardAdminOk','1'); errEl.textContent=''; showAdmin(); }
   else{ errEl.textContent = '비밀번호가 올바르지 않습니다.'; }
 });
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
-document.getElementById('logoutBtn').addEventListener('click', ()=>{ sessionStorage.removeItem('dashboardAdminOk'); location.reload(); });
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('dashboardAdminOk'); location.reload(); });
 
 /* ---- 탭 ---- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -293,6 +315,7 @@ async function initAdmin(){
   await loadAttendanceTab();
   await loadWeeklyEditor();
   await loadOverrideEditor();
+  await loadSettingsForm();
 }
 
 /* ---- 조회·종례 작성 ---- */
@@ -526,7 +549,10 @@ async function loadOverrideEditor(){
     periods = WEEK_KEYS.includes(dow) ? await getWeeklyPeriods(dow) : new Array(DEFAULT_PERIODS).fill('');
   }
   const wrap = document.getElementById('overrideEditor');
-  wrap.innerHTML = `<div style="display:flex; gap:6px; flex-wrap:wrap;">` + periods.map((v,i)=>`<input type="text" style="width:70px; padding:8px; border:1.5px solid var(--border); border-radius:8px; font-size:13px;" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}" placeholder="${i+1}교시">`).join('') + `</div>`;
+  let html = '<table class="tt-table"><thead><tr>' + periods.map((v,i)=>`<th>${i+1}교시</th>`).join('') + '</tr></thead><tbody><tr>' +
+    periods.map((v,i)=>`<td><input type="text" data-idx="${i}" value="${(v||'').replace(/"/g,'&quot;')}"></td>`).join('') +
+    '</tr></tbody></table>';
+  wrap.innerHTML = html;
   await renderOverrideListView();
 }
 document.getElementById('overrideDate').addEventListener('change', loadOverrideEditor);
@@ -555,8 +581,41 @@ async function renderOverrideListView(){
   document.getElementById('overrideListView').textContent = dates.length ? ('임시 변경된 날짜: ' + dates.join(', ')) : '등록된 임시 변경이 없습니다.';
 }
 
-/* 로그인이 이미 되어있던 탭이면 자동으로 관리자 화면 표시 (모든 선언이 끝난 뒤 실행) */
-if(sessionStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
+/* ---- 설정: 비밀번호 변경 / D-Day ---- */
+async function loadSettingsForm(){
+  const snap = await db.ref('config/dday').once('value');
+  const cfg = snap.val();
+  document.getElementById('ddayLabelInput').value = cfg?.label || '';
+  document.getElementById('ddayDateInput').value = cfg?.date || '';
+}
+document.getElementById('savePasswordBtn').addEventListener('click', async ()=>{
+  const newPw = document.getElementById('newPasswordInput').value.trim();
+  const msgEl = document.getElementById('passwordMsg');
+  if(!newPw){ msgEl.textContent = '새 비밀번호를 입력해주세요.'; return; }
+  await db.ref('config/adminPassword').set(newPw);
+  document.getElementById('newPasswordInput').value = '';
+  msgEl.textContent = '변경됐어요 ✓ 다음 로그인부터 적용돼요.';
+  setTimeout(()=>msgEl.textContent='', 3000);
+});
+document.getElementById('saveDdayBtn').addEventListener('click', async ()=>{
+  const label = document.getElementById('ddayLabelInput').value.trim();
+  const date = document.getElementById('ddayDateInput').value;
+  const msgEl = document.getElementById('ddayMsg');
+  if(!label || !date){ msgEl.textContent = '문구와 날짜를 모두 입력해주세요.'; return; }
+  await db.ref('config/dday').set({label, date});
+  msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=>msgEl.textContent='', 2000);
+});
+document.getElementById('clearDdayBtn').addEventListener('click', async ()=>{
+  await db.ref('config/dday').remove();
+  document.getElementById('ddayLabelInput').value = '';
+  document.getElementById('ddayDateInput').value = '';
+  document.getElementById('ddayMsg').textContent = '지웠어요 ✓';
+  setTimeout(()=>document.getElementById('ddayMsg').textContent='', 2000);
+});
+
+/* 로그인이 이미 되어있던 브라우저면 자동으로 관리자 화면 표시 (모든 선언이 끝난 뒤 실행) */
+if(db && localStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
 </script>
 </body>
 </html>
