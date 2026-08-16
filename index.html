@@ -37,7 +37,7 @@
   #board{ flex:1; display:flex; flex-direction:column; gap:18px; min-height:0; }
 
   .headfont{ font-family:'Jua',sans-serif; font-weight:400; }
-  .label{ font-size:19px; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .label{ font-size:19px; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .card{
     position:relative; background:var(--card); border-radius:26px; padding:20px 22px;
     display:flex; flex-direction:column; min-height:0; box-shadow:var(--shadow);
@@ -46,39 +46,46 @@
 
   #mainRow{ flex:1; display:flex; gap:18px; min-height:0; }
 
-  /* 아코디언 사이드 패널 (출결/조회/종례) */
+  /* 아코디언 사이드 패널 - 너비 통일 */
   #sidePanel{ width:0; padding:0; overflow:hidden; flex-shrink:0; transition:width .32s cubic-bezier(.4,0,.2,1); background:var(--card); }
-  #sidePanel.open{ width:400px; padding:22px 24px; }
-  #sidePanel.open.type-attendance{ width:480px; }
-  #sidePanelInner{ width:352px; height:100%; display:flex; flex-direction:column; min-height:0; }
-  #sidePanel.open.type-attendance #sidePanelInner{ width:432px; }
+  #sidePanel.open{ width:440px; padding:22px 24px; }
+  #sidePanelInner{ width:392px; height:100%; display:flex; flex-direction:column; min-height:0; }
   .panel-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-shrink:0; }
   .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
   #panelBody{ flex:1; overflow-y:auto; min-height:0; }
-  .notice-body-text{ font-size:19px; font-weight:500; line-height:1.75; white-space:pre-wrap; }
 
-  .att-row{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
-  .att-row .att-name{ flex:1; font-size:17px; font-weight:700; }
-  .att-time{ font-size:12.5px; font-weight:700; color:var(--mint-deep); width:52px; }
-  .att-pill{ border:none; background:var(--line); color:var(--text); padding:9px 17px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; }
+  /* 조회/종례 카드형 표시 */
+  .notice-display{ display:flex; gap:14px; align-items:flex-start; background:var(--line); padding:18px; border-radius:18px; }
+  .notice-display .notice-icon{ font-size:26px; flex-shrink:0; }
+  .notice-display .notice-text{ font-size:18px; font-weight:600; line-height:1.75; white-space:pre-wrap; }
+  .notice-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:50px 10px; color:var(--muted); font-weight:600; text-align:center; }
+  .notice-empty .e-icon{ font-size:40px; }
+
+  /* 출결 - 2열 그리드, 토글식 */
+  .att-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .att-cell{ background:var(--line); border-radius:16px; padding:12px 12px; display:flex; flex-direction:column; gap:8px; }
+  .att-cell .att-name-row{ display:flex; align-items:baseline; justify-content:space-between; }
+  .att-cell .att-name{ font-size:15px; font-weight:800; }
+  .att-cell .att-time{ font-size:11.5px; font-weight:700; color:var(--mint-deep); }
+  .att-cell .att-btns{ display:flex; gap:6px; }
+  .att-pill{ flex:1; border:none; background:#fff; color:var(--text); padding:8px 6px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
-  .att-reset{ background:none; border:none; color:var(--pink-deep); font-size:12.5px; font-weight:600; cursor:pointer; }
 
-  #clockCard{ flex:1.5; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0.62; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #quizCard{ flex:1.35; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+  #clockCard{ flex:0 0 clamp(340px, 32vw, 420px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:0.62; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:1.35; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
-  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(50px, 6.2vw, 108px); line-height:1; color:var(--text); }
-  #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
-  #clockDday{ font-size:15px; font-weight:600; color:var(--muted); margin-top:6px; }
-  #ddayWidget{ font-family:'Jua',sans-serif; font-size:16px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
+  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(48px, 5.6vw, 96px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  #clockDate{ font-size:20px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
+  #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
+  #ddayWidget{ font-family:'Jua',sans-serif; font-size:15px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
   .quick-btn{
-    cursor:pointer; border:none; color:var(--text); padding:12px 18px; border-radius:20px;
-    font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px;
+    cursor:pointer; border:none; color:var(--text); padding:12px 16px; border-radius:20px;
+    font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:6px;
     transition:transform .12s, filter .15s, box-shadow .15s; box-shadow:0 4px 10px rgba(160,140,190,0.16);
   }
   .quick-btn:hover{ filter:brightness(1.04); transform:translateY(-2px); }
@@ -88,24 +95,41 @@
   #morningTile{ background:var(--yellow); }
   #closingTile{ background:var(--pink); }
 
-  .tt-override-badge{ font-size:11px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 9px; border-radius:10px; margin-left:6px; }
-  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
-  .period-chip{ border-radius:14px; padding:11px 13px; display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; }
-  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); }
-  .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .tt-empty{ color:var(--muted); font-weight:600; font-size:14px; }
+  .tt-override-badge{ font-size:11px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 9px; border-radius:10px; margin-left:6px; flex-shrink:0; }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .period-chip{ border-radius:14px; padding:11px 13px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:700; font-size:15px; min-width:0; }
+  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
+  .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .tt-empty{ color:var(--muted); font-weight:600; font-size:14px; text-align:center; }
 
-  /* 퀴즈 카드 */
+  /* 퀴즈 */
   #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:260px; color:rgba(155,127,234,0.09); right:-34px; bottom:-64px; line-height:1; pointer-events:none; user-select:none; }
-  .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; padding:6px 10px; }
-  .quiz-icon{ font-size:34px; }
+  .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
+  .quiz-icon{ font-size:32px; }
   .quiz-question{ font-size:clamp(20px, 2.3vw, 30px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:10px 18px; font-size:16px; font-weight:700; }
   .quiz-hint{ font-size:14px; font-weight:700; color:var(--lav-deep); background:rgba(255,255,255,0.6); padding:7px 16px; border-radius:16px; }
   .quiz-raw{ font-size:12px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:120px; overflow-y:auto; }
+  .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:11px 22px; border-radius:20px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
+  .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
+
+  /* 그리기 답안 제출 오버레이 */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(74,68,88,0.4); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:200; }
+  .modal-overlay.open{ display:flex; }
+  .draw-box{ width:min(760px,94vw); max-height:90vh; overflow-y:auto; background:#fff; border-radius:26px; padding:26px 28px; box-shadow:var(--shadow); position:relative; }
+  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:21px; color:var(--lav-deep); margin:0 0 16px; text-align:center; }
+  .close-x{ position:absolute; top:16px; right:18px; background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; }
+  .name-grid{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .name-pill{ border:none; background:var(--lav); color:var(--text); padding:12px 20px; border-radius:20px; font-size:16px; font-weight:700; cursor:pointer; }
+  .name-pill:hover{ background:var(--lav-deep); color:#fff; }
+  #drawCanvas{ width:100%; height:52vh; border-radius:18px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
+  .draw-actions{ display:flex; gap:10px; justify-content:center; margin-top:16px; }
+  .draw-btn{ border:none; background:var(--line); color:var(--text); padding:11px 20px; border-radius:18px; font-size:14.5px; font-weight:700; cursor:pointer; }
+  .draw-btn.primary{ background:var(--lav-deep); color:#fff; }
+  .draw-done{ text-align:center; font-size:26px; font-weight:800; padding:40px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
 </style>
 </head>
 <body>
@@ -141,15 +165,44 @@
 
     <div class="card" id="quizCard">
       <div class="quiz-inner">
-        <div class="quiz-icon">🧠</div>
+        <div class="quiz-icon">💡</div>
         <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
         <div class="quiz-choices" id="quizChoices"></div>
         <div class="quiz-hint" id="quizHint" style="display:none;"></div>
+        <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;">✏️ 그려서 답안 제출</button>
         <div class="quiz-raw" id="quizRaw"></div>
       </div>
     </div>
   </div>
 </div></div>
+
+<div class="modal-overlay" id="drawOverlay">
+  <div class="draw-box">
+    <button class="close-x" id="closeDrawOverlay">✕</button>
+
+    <div id="drawStepName">
+      <h2>✏️ 누가 그릴까요?</h2>
+      <div class="name-grid" id="drawNameGrid"></div>
+    </div>
+
+    <div id="drawStepCanvas" style="display:none;">
+      <h2 id="drawingForLabel"></h2>
+      <canvas id="drawCanvas" width="900" height="560"></canvas>
+      <div class="draw-actions">
+        <button class="draw-btn" id="backToNameBtn">‹ 다른 사람</button>
+        <button class="draw-btn" id="clearCanvasBtn">🧽 지우기</button>
+        <button class="draw-btn primary" id="submitDrawingBtn">제출하기</button>
+      </div>
+    </div>
+
+    <div id="drawStepDone" style="display:none;">
+      <div class="draw-done">🎉 제출 완료!</div>
+      <div class="draw-actions">
+        <button class="draw-btn primary" id="drawAgainBtn">다음 학생 그리기</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const DAYS_KR = ['일','월','화','수','목','금','토'];
@@ -189,12 +242,12 @@ function tickClock(){
 }
 setInterval(tickClock,1000); tickClock();
 
-/* ---------- 사이드 패널 (아코디언) ---------- */
+/* ---------- 사이드 패널 ---------- */
 const sidePanel = document.getElementById('sidePanel');
 let openPanelType = null;
 
 function closePanel(){
-  sidePanel.classList.remove('open','type-attendance','type-notice');
+  sidePanel.classList.remove('open');
   openPanelType = null;
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
 }
@@ -205,8 +258,7 @@ async function openPanel(type){
   openPanelType = type;
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : 'closingTile')).classList.add('active');
-  sidePanel.classList.remove('type-attendance','type-notice');
-  sidePanel.classList.add('open', type==='attendance' ? 'type-attendance' : 'type-notice');
+  sidePanel.classList.add('open');
 
   if(type==='attendance'){
     document.getElementById('panelTitle').textContent = '🙋 출결 체크';
@@ -228,9 +280,10 @@ async function renderNoticePanel(which){
   const d = snap.val();
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
+  const icon = which==='morning' ? '📣' : '🌇';
   document.getElementById('panelBody').innerHTML = (published && text)
-    ? `<div class="notice-body-text">${escapeHtml(text).replaceAll('\n','<br>')}</div>`
-    : `<div class="notice-body-text" style="color:var(--muted);">아직 공개된 내용이 없습니다.</div>`;
+    ? `<div class="notice-display"><div class="notice-icon">${icon}</div><div class="notice-text">${escapeHtml(text).replaceAll('\n','<br>')}</div></div>`
+    : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
 async function getRosterList(){
@@ -244,31 +297,32 @@ async function renderAttendancePanel(){
   const att = attSnap.val() || {};
   const box = document.getElementById('panelBody');
   if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
-  box.innerHTML = roster.map(s=>{
+  box.innerHTML = '<div class="att-grid">' + roster.map(s=>{
     const rec = att[s.id];
-    return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-      <span class="att-name">${escapeHtml(s.name)}</span>
-      ${rec ? `<span class="att-time">${rec.time}</span>` : ''}
-      <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
-      <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
-      ${rec ? '<button class="att-reset" data-reset="1">지우기</button>' : ''}
+    return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
+      <div class="att-name-row">
+        <span class="att-name">${escapeHtml(s.name)}</span>
+        ${rec ? `<span class="att-time">${rec.time}</span>` : ''}
+      </div>
+      <div class="att-btns">
+        <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
+        <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
+      </div>
     </div>`;
-  }).join('');
-  box.querySelectorAll('.att-row').forEach(row=>{
-    const id = row.dataset.id, name = row.dataset.name;
-    row.querySelectorAll('.att-pill').forEach(btn=>{
+  }).join('') + '</div>';
+  box.querySelectorAll('.att-cell').forEach(cell=>{
+    const id = cell.dataset.id, name = cell.dataset.name;
+    cell.querySelectorAll('.att-pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        const isActive = btn.classList.contains('on-present') || btn.classList.contains('on-out');
+        if(isActive){
+          await db.ref(`attendance/${todayStr()}/${id}`).remove();
+        } else {
+          await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        }
         await renderAttendancePanel();
       });
     });
-    const resetBtn = row.querySelector('[data-reset]');
-    if(resetBtn){
-      resetBtn.addEventListener('click', async ()=>{
-        await db.ref(`attendance/${todayStr()}/${id}`).remove();
-        await renderAttendancePanel();
-      });
-    }
   });
 }
 
@@ -307,7 +361,8 @@ async function loadQuiz(){
   const cEl = document.getElementById('quizChoices');
   const hEl = document.getElementById('quizHint');
   const rEl = document.getElementById('quizRaw');
-  rEl.textContent = ''; hEl.style.display = 'none';
+  const drawBtn = document.getElementById('openDrawBtn');
+  rEl.textContent = ''; hEl.style.display = 'none'; drawBtn.style.display = 'none';
   try{
     let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
@@ -330,6 +385,7 @@ async function loadQuiz(){
           hEl.style.display = 'inline-block';
         }
       }
+      drawBtn.style.display = 'inline-block';
     } else {
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
       rEl.textContent = JSON.stringify(data, null, 2);
@@ -353,6 +409,80 @@ async function loadDday(){
   el.textContent = '🎈 ' + text;
   el.style.display = 'inline-block';
 }
+
+/* ---------- 그려서 답안 제출 ---------- */
+const drawOverlay = document.getElementById('drawOverlay');
+const drawCanvas = document.getElementById('drawCanvas');
+const drawCtx = drawCanvas.getContext('2d');
+let selectedStudent = null;
+let drawing = false;
+
+function resetCanvas(){
+  drawCtx.fillStyle = '#ffffff';
+  drawCtx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCtx.lineWidth = 6;
+  drawCtx.strokeStyle = '#4a4458';
+}
+function getPos(e){
+  const rect = drawCanvas.getBoundingClientRect();
+  const scaleX = drawCanvas.width / rect.width;
+  const scaleY = drawCanvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+}
+drawCanvas.addEventListener('pointerdown', (e)=>{
+  drawing = true;
+  drawCanvas.setPointerCapture(e.pointerId);
+  const p = getPos(e);
+  drawCtx.beginPath();
+  drawCtx.moveTo(p.x, p.y);
+});
+drawCanvas.addEventListener('pointermove', (e)=>{
+  if(!drawing) return;
+  const p = getPos(e);
+  drawCtx.lineTo(p.x, p.y);
+  drawCtx.stroke();
+});
+function stopDrawing(){ drawing = false; }
+drawCanvas.addEventListener('pointerup', stopDrawing);
+drawCanvas.addEventListener('pointerleave', stopDrawing);
+
+async function openDrawOverlay(){
+  const roster = await getRosterList();
+  const grid = document.getElementById('drawNameGrid');
+  grid.innerHTML = roster.length ? roster.map(s=>`<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`).join('') : '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>';
+  grid.querySelectorAll('.name-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedStudent = { id: btn.dataset.id, name: btn.dataset.name };
+      document.getElementById('drawingForLabel').textContent = `✏️ ${selectedStudent.name}님, 답을 그려주세요`;
+      document.getElementById('drawStepName').style.display = 'none';
+      document.getElementById('drawStepCanvas').style.display = 'block';
+      resetCanvas();
+    });
+  });
+  document.getElementById('drawStepName').style.display = 'block';
+  document.getElementById('drawStepCanvas').style.display = 'none';
+  document.getElementById('drawStepDone').style.display = 'none';
+  drawOverlay.classList.add('open');
+}
+document.getElementById('openDrawBtn').addEventListener('click', openDrawOverlay);
+document.getElementById('closeDrawOverlay').addEventListener('click', ()=> drawOverlay.classList.remove('open'));
+document.getElementById('backToNameBtn').addEventListener('click', ()=>{
+  document.getElementById('drawStepCanvas').style.display = 'none';
+  document.getElementById('drawStepName').style.display = 'block';
+});
+document.getElementById('clearCanvasBtn').addEventListener('click', resetCanvas);
+document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>{
+  if(!selectedStudent) return;
+  const dataUrl = drawCanvas.toDataURL('image/png');
+  await db.ref(`quizAnswers/${todayStr()}/${selectedStudent.id}`).set({
+    name: selectedStudent.name, dataUrl, submittedAt: Date.now()
+  });
+  document.getElementById('drawStepCanvas').style.display = 'none';
+  document.getElementById('drawStepDone').style.display = 'block';
+});
+document.getElementById('drawAgainBtn').addEventListener('click', openDrawOverlay);
 
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday()]);
