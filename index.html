@@ -16,11 +16,11 @@
     --bg1:#fdf3f6; --bg2:#eef1fd; --bg3:#fbf6e9;
     --card:#ffffff;
     --pink:#ffd3e0; --pink-deep:#f78fb3;
-    --mint:#c8f0e2; --mint-deep:#5fc9a8;
-    --lav:#e2dcfb; --lav-deep:#a48ef0;
-    --yellow:#fff0bf; --yellow-deep:#f6c445;
-    --sky:#d3ecfb; --sky-deep:#6cb8ea;
-    --text:#4a4458; --muted:#a79fc0; --line:#f0e9f7;
+    --mint:#c8f0e2; --mint-deep:#4fbe9c;
+    --lav:#e2dcfb; --lav-deep:#9b7fea;
+    --yellow:#fff0bf; --yellow-deep:#f0b93a;
+    --sky:#d3ecfb; --sky-deep:#5aa9dd;
+    --text:#4a4458; --muted:#a79fc0; --line:#f2ebf7;
     --shadow: 0 10px 28px rgba(160,140,190,0.16);
   }
   *{box-sizing:border-box;}
@@ -36,8 +36,8 @@
   #app{ height:100vh; padding:22px; display:flex; }
   #board{ flex:1; display:flex; flex-direction:column; gap:18px; min-height:0; }
 
-  .headfont{ font-family:'Jua',sans-serif; }
-  .label{ font-size:19px; font-weight:400; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .headfont{ font-family:'Jua',sans-serif; font-weight:400; }
+  .label{ font-size:19px; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; }
   .card{
     position:relative; background:var(--card); border-radius:26px; padding:20px 22px;
     display:flex; flex-direction:column; min-height:0; box-shadow:var(--shadow);
@@ -45,60 +45,83 @@
   }
 
   #mainRow{ flex:1; display:flex; gap:18px; min-height:0; }
-  #clockCard{ flex:1.75; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:1; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #quizCard{ flex:0.95; background:linear-gradient(160deg, #fff, var(--lav) 220%); }
 
-  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(56px, 7vw, 118px); line-height:1; color:var(--text); }
-  #clockDate{ font-size:23px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
-  #clockDday{ font-size:16px; font-weight:600; color:var(--muted); margin-top:6px; }
-  #ddayWidget{ font-family:'Jua',sans-serif; font-size:17px; color:#7a5ea8; margin-top:16px; background:var(--lav); padding:9px 20px; border-radius:20px; display:none; }
+  /* 아코디언 사이드 패널 (출결/조회/종례) */
+  #sidePanel{ width:0; padding:0; overflow:hidden; flex-shrink:0; transition:width .32s cubic-bezier(.4,0,.2,1); background:var(--card); }
+  #sidePanel.open{ width:400px; padding:22px 24px; }
+  #sidePanel.open.type-attendance{ width:480px; }
+  #sidePanelInner{ width:352px; height:100%; display:flex; flex-direction:column; min-height:0; }
+  #sidePanel.open.type-attendance #sidePanelInner{ width:432px; }
+  .panel-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-shrink:0; }
+  .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
+  .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
+  #panelBody{ flex:1; overflow-y:auto; min-height:0; }
+  .notice-body-text{ font-size:19px; font-weight:500; line-height:1.75; white-space:pre-wrap; }
 
-  #quickBtnRow{ display:flex; gap:12px; margin-top:24px; }
+  .att-row{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+  .att-row .att-name{ flex:1; font-size:17px; font-weight:700; }
+  .att-time{ font-size:12.5px; font-weight:700; color:var(--mint-deep); width:52px; }
+  .att-pill{ border:none; background:var(--line); color:var(--text); padding:9px 17px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; }
+  .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
+  .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
+  .att-reset{ background:none; border:none; color:var(--pink-deep); font-size:12.5px; font-weight:600; cursor:pointer; }
+
+  #clockCard{ flex:1.5; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:0.62; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:1.35; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+
+  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(50px, 6.2vw, 108px); line-height:1; color:var(--text); }
+  #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
+  #clockDday{ font-size:15px; font-weight:600; color:var(--muted); margin-top:6px; }
+  #ddayWidget{ font-family:'Jua',sans-serif; font-size:16px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
+
+  #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
   .quick-btn{
-    cursor:pointer; border:none; color:var(--text); padding:13px 22px; border-radius:22px;
-    font-size:16px; font-weight:700; display:flex; align-items:center; gap:7px;
-    transition:transform .12s, filter .15s; box-shadow:0 4px 10px rgba(160,140,190,0.18);
+    cursor:pointer; border:none; color:var(--text); padding:12px 18px; border-radius:20px;
+    font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px;
+    transition:transform .12s, filter .15s, box-shadow .15s; box-shadow:0 4px 10px rgba(160,140,190,0.16);
   }
   .quick-btn:hover{ filter:brightness(1.04); transform:translateY(-2px); }
   .quick-btn:active{ transform:scale(0.97); }
+  .quick-btn.active{ box-shadow:0 0 0 3px rgba(255,255,255,0.9), 0 4px 12px rgba(160,140,190,0.3); transform:translateY(-1px); }
   #attendTile{ background:var(--mint); }
   #morningTile{ background:var(--yellow); }
   #closingTile{ background:var(--pink); }
 
-  .tt-override-badge{ font-size:12px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 10px; border-radius:10px; margin-left:8px; }
-  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; align-content:start; }
-  .period-chip{ border-radius:16px; padding:12px 12px; display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; }
-  .p-badge{ width:26px; height:26px; min-width:26px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); }
+  .tt-override-badge{ font-size:11px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 9px; border-radius:10px; margin-left:6px; }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .period-chip{ border-radius:14px; padding:11px 13px; display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; }
+  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); }
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .tt-empty{ color:var(--muted); font-weight:600; font-size:15px; grid-column: 1 / -1; }
+  .tt-empty{ color:var(--muted); font-weight:600; font-size:14px; }
 
-  #quizCard .quiz-question{ font-size:20px; font-weight:700; margin-bottom:12px; line-height:1.45; overflow-y:auto; }
-  #quizCard .quiz-choices{ display:flex; flex-wrap:wrap; gap:8px; }
-  #quizCard .quiz-choice{ background:rgba(255,255,255,0.75); border-radius:12px; padding:8px 14px; font-size:15px; font-weight:700; }
-  #quizCard .quiz-raw{ font-size:12px; font-family:monospace; white-space:pre-wrap; opacity:.65; overflow-y:auto; }
+  /* 퀴즈 카드 */
+  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:260px; color:rgba(155,127,234,0.09); right:-34px; bottom:-64px; line-height:1; pointer-events:none; user-select:none; }
+  .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; padding:6px 10px; }
+  .quiz-icon{ font-size:34px; }
+  .quiz-question{ font-size:clamp(20px, 2.3vw, 30px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
+  .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:10px 18px; font-size:16px; font-weight:700; }
+  .quiz-hint{ font-size:14px; font-weight:700; color:var(--lav-deep); background:rgba(255,255,255,0.6); padding:7px 16px; border-radius:16px; }
+  .quiz-raw{ font-size:12px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:120px; overflow-y:auto; }
 
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
-
-  .modal-overlay{ position:fixed; inset:0; background:rgba(74,68,88,0.35); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:100; }
-  .modal-overlay.open{ display:flex; }
-  .modal-box{ width:min(640px,92vw); max-height:80vh; overflow-y:auto; background:#fff; border-radius:26px; padding:28px 30px; box-shadow:var(--shadow); position:relative; }
-  .modal-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; color:var(--pink-deep); margin-top:0; }
-  .close-x{ position:absolute; top:16px; right:18px; background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:16px; cursor:pointer; }
-  .notice-modal-body{ font-size:19px; font-weight:500; line-height:1.7; white-space:pre-wrap; }
-
-  .att-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
-  .att-row .att-name{ flex:1; font-size:17px; font-weight:700; }
-  .att-pill{ border:none; background:var(--line); color:var(--text); padding:9px 18px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; }
-  .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
-  .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
-  .att-reset{ background:none; border:none; color:var(--pink-deep); font-size:13px; font-weight:600; cursor:pointer; }
 </style>
 </head>
 <body>
 <div id="configErrorBanner"></div>
 <div id="app"><div id="board">
   <div id="mainRow">
+    <div class="card" id="sidePanel">
+      <div id="sidePanelInner">
+        <div class="panel-header">
+          <h2 id="panelTitle"></h2>
+          <button class="panel-close" id="panelCloseBtn">✕</button>
+        </div>
+        <div id="panelBody"></div>
+      </div>
+    </div>
+
     <div class="card" id="clockCard">
       <div id="clockTime">--:--:--</div>
       <div id="clockDate">-</div>
@@ -110,34 +133,23 @@
         <div class="quick-btn" id="closingTile">🌇 종례</div>
       </div>
     </div>
+
     <div class="card" id="timetableCard">
       <div class="label headfont">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시변경</span></div>
       <ul id="todayPeriodList"></ul>
     </div>
+
     <div class="card" id="quizCard">
-      <div class="label headfont">🧩 오늘의 퀴즈</div>
-      <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
-      <div class="quiz-choices" id="quizChoices"></div>
-      <div class="quiz-raw" id="quizRaw"></div>
+      <div class="quiz-inner">
+        <div class="quiz-icon">🧠</div>
+        <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
+        <div class="quiz-choices" id="quizChoices"></div>
+        <div class="quiz-hint" id="quizHint" style="display:none;"></div>
+        <div class="quiz-raw" id="quizRaw"></div>
+      </div>
     </div>
   </div>
 </div></div>
-
-<div class="modal-overlay" id="noticeModalOverlay">
-  <div class="modal-box">
-    <button class="close-x" id="closeNoticeModal">✕</button>
-    <h2 id="noticeModalTitle"></h2>
-    <div class="notice-modal-body" id="noticeModalBody"></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="attendanceModalOverlay">
-  <div class="modal-box">
-    <button class="close-x" id="closeAttModal">✕</button>
-    <h2>🙋 출결 체크</h2>
-    <div id="attRosterList"></div>
-  </div>
-</div>
 
 <script>
 const DAYS_KR = ['일','월','화','수','목','금','토'];
@@ -177,40 +189,66 @@ function tickClock(){
 }
 setInterval(tickClock,1000); tickClock();
 
-/* 조회/종례 - 각각 개별 공개상태 확인 */
-document.getElementById('morningTile').addEventListener('click', async ()=>{
-  const snap = await db.ref('notices/'+todayStr()).once('value');
-  const d = snap.val();
-  document.getElementById('noticeModalTitle').textContent = '📣 조회사항';
-  document.getElementById('noticeModalBody').innerHTML = (d && d.morningPublished && d.morning) ? escapeHtml(d.morning).replaceAll('\n','<br>') : '아직 공개된 조회사항이 없습니다.';
-  document.getElementById('noticeModalOverlay').classList.add('open');
-});
-document.getElementById('closingTile').addEventListener('click', async ()=>{
-  const snap = await db.ref('notices/'+todayStr()).once('value');
-  const d = snap.val();
-  document.getElementById('noticeModalTitle').textContent = '🌇 종례사항';
-  document.getElementById('noticeModalBody').innerHTML = (d && d.closingPublished && d.closing) ? escapeHtml(d.closing).replaceAll('\n','<br>') : '아직 공개된 종례사항이 없습니다.';
-  document.getElementById('noticeModalOverlay').classList.add('open');
-});
-document.getElementById('closeNoticeModal').addEventListener('click', ()=> document.getElementById('noticeModalOverlay').classList.remove('open'));
-document.getElementById('noticeModalOverlay').addEventListener('click',(e)=>{ if(e.target.id==='noticeModalOverlay') e.currentTarget.classList.remove('open'); });
+/* ---------- 사이드 패널 (아코디언) ---------- */
+const sidePanel = document.getElementById('sidePanel');
+let openPanelType = null;
 
-/* 출결 - 학생에게 아무 정보도 노출하지 않음, 버튼으로만 체크 */
+function closePanel(){
+  sidePanel.classList.remove('open','type-attendance','type-notice');
+  openPanelType = null;
+  document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
+}
+document.getElementById('panelCloseBtn').addEventListener('click', closePanel);
+
+async function openPanel(type){
+  if(openPanelType === type){ closePanel(); return; }
+  openPanelType = type;
+  document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : 'closingTile')).classList.add('active');
+  sidePanel.classList.remove('type-attendance','type-notice');
+  sidePanel.classList.add('open', type==='attendance' ? 'type-attendance' : 'type-notice');
+
+  if(type==='attendance'){
+    document.getElementById('panelTitle').textContent = '🙋 출결 체크';
+    await renderAttendancePanel();
+  } else if(type==='morning'){
+    document.getElementById('panelTitle').textContent = '📣 조회사항';
+    await renderNoticePanel('morning');
+  } else {
+    document.getElementById('panelTitle').textContent = '🌇 종례사항';
+    await renderNoticePanel('closing');
+  }
+}
+document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
+document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
+document.getElementById('closingTile').addEventListener('click', ()=> openPanel('closing'));
+
+async function renderNoticePanel(which){
+  const snap = await db.ref('notices/'+todayStr()).once('value');
+  const d = snap.val();
+  const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
+  const text = d && (which==='morning' ? d.morning : d.closing);
+  document.getElementById('panelBody').innerHTML = (published && text)
+    ? `<div class="notice-body-text">${escapeHtml(text).replaceAll('\n','<br>')}</div>`
+    : `<div class="notice-body-text" style="color:var(--muted);">아직 공개된 내용이 없습니다.</div>`;
+}
+
 async function getRosterList(){
   const snap = await db.ref('roster').once('value');
   const val = snap.val() || {};
   return Object.keys(val).map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
-async function renderAttendancePopup(){
+async function renderAttendancePanel(){
   const roster = await getRosterList();
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   const att = attSnap.val() || {};
-  const box = document.getElementById('attRosterList');
-  if(!roster.length){ box.innerHTML = '<p>등록된 학생이 없습니다. 관리자 페이지에서 먼저 등록해주세요.</p>'; return; }
+  const box = document.getElementById('panelBody');
+  if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
   box.innerHTML = roster.map(s=>{
     const rec = att[s.id];
     return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <span class="att-name">${escapeHtml(s.name)}</span>
+      ${rec ? `<span class="att-time">${rec.time}</span>` : ''}
       <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
       <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
       ${rec ? '<button class="att-reset" data-reset="1">지우기</button>' : ''}
@@ -221,25 +259,20 @@ async function renderAttendancePopup(){
     row.querySelectorAll('.att-pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
-        await renderAttendancePopup();
+        await renderAttendancePanel();
       });
     });
     const resetBtn = row.querySelector('[data-reset]');
     if(resetBtn){
       resetBtn.addEventListener('click', async ()=>{
         await db.ref(`attendance/${todayStr()}/${id}`).remove();
-        await renderAttendancePopup();
+        await renderAttendancePanel();
       });
     }
   });
 }
-document.getElementById('attendTile').addEventListener('click', async ()=>{
-  await renderAttendancePopup();
-  document.getElementById('attendanceModalOverlay').classList.add('open');
-});
-document.getElementById('closeAttModal').addEventListener('click', ()=> document.getElementById('attendanceModalOverlay').classList.remove('open'));
-document.getElementById('attendanceModalOverlay').addEventListener('click',(e)=>{ if(e.target.id==='attendanceModalOverlay') e.currentTarget.classList.remove('open'); });
 
+/* ---------- 시간표 ---------- */
 async function loadTimetable(){
   const now = new Date();
   const dowKey = DAY_KEYS[now.getDay()];
@@ -260,11 +293,21 @@ async function loadTimetable(){
   list.innerHTML = filled.length ? filled.map((p,i)=>`<li class="period-chip" style="background:var(--${CHIP_COLORS[i%CHIP_COLORS.length]});"><span class="p-badge">${p.idx}</span><span class="p-subject">${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
+/* ---------- 퀴즈 ---------- */
+function formatRemaining(ms){
+  const now = Date.now();
+  const diff = ms - now;
+  if(diff <= 0) return null;
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  return h > 0 ? `${h}시간 ${m}분 남음` : `${m}분 남음`;
+}
 async function loadQuiz(){
   const qEl = document.getElementById('quizQuestion');
   const cEl = document.getElementById('quizChoices');
+  const hEl = document.getElementById('quizHint');
   const rEl = document.getElementById('quizRaw');
-  rEl.textContent = '';
+  rEl.textContent = ''; hEl.style.display = 'none';
   try{
     let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
@@ -275,6 +318,18 @@ async function loadQuiz(){
     if(question){
       qEl.textContent = question;
       cEl.innerHTML = Array.isArray(choices) && choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
+      if(!choices.length && data.meta?.type === 'short'){
+        hEl.textContent = '✏️ 단답형 문제예요';
+        hEl.style.display = 'inline-block';
+      }
+      const closeAt = data.meta?.closeAt;
+      if(closeAt){
+        const remain = formatRemaining(closeAt);
+        if(remain){
+          hEl.textContent = (hEl.style.display==='inline-block' ? hEl.textContent + ' · ' : '⏰ ') + '마감까지 ' + remain;
+          hEl.style.display = 'inline-block';
+        }
+      }
     } else {
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
       rEl.textContent = JSON.stringify(data, null, 2);
@@ -282,6 +337,7 @@ async function loadQuiz(){
   }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다.'; }
 }
 
+/* ---------- D-Day ---------- */
 async function loadDday(){
   const snap = await db.ref('config/dday').once('value');
   const cfg = snap.val();
@@ -300,6 +356,8 @@ async function loadDday(){
 
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday()]);
+  if(openPanelType === 'attendance') await renderAttendancePanel();
+  else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
 }
 if(initFirebase()){
   loadAll();
