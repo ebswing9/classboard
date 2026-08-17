@@ -643,18 +643,32 @@ async function loadQuizAnswers(date){
   if(!entries.length){ box.innerHTML = '<p class="hint">이 날짜에 제출된 답안이 없습니다.</p>'; return; }
   box.innerHTML = entries.map(e=>{
     const time = e.submittedAt ? new Date(e.submittedAt).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';
-    return `<div style="background:#fff; border-radius:16px; padding:10px; box-shadow:var(--shadow);">
+    const v = e.verdict;
+    return `<div style="background:#fff; border-radius:16px; padding:10px; box-shadow:var(--shadow); border:2px solid ${v==='correct'?'var(--mint)':v==='incorrect'?'var(--danger)':'transparent'};">
       <img src="${e.dataUrl}" style="width:100%; border-radius:10px; border:1px solid var(--border); background:#fff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
         <span style="font-weight:700; font-size:13px;">${escapeHtml(e.name)}</span>
         <span style="font-size:11px; color:var(--muted);">${time}</span>
       </div>
-      <button class="del-link" data-del="${e.id}" style="margin-top:4px;">삭제</button>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="pill ${v==='correct'?'on-present':''}" data-verdict="correct" data-id="${e.id}" style="flex:1; padding:6px 4px; font-size:12px;">정답</button>
+        <button class="pill ${v==='incorrect'?'on-out':''}" data-verdict="incorrect" data-id="${e.id}" style="flex:1; padding:6px 4px; font-size:12px;">오답</button>
+      </div>
+      <button class="del-link" data-reset="${e.id}" style="margin-top:6px;">🔄 재제출 허용</button>
     </div>`;
   }).join('');
-  box.querySelectorAll('[data-del]').forEach(btn=>{
+  box.querySelectorAll('[data-verdict]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      await db.ref('quizAnswers/'+date+'/'+btn.dataset.del).remove();
+      const id = btn.dataset.id;
+      const current = val[id].verdict;
+      const next = current === btn.dataset.verdict ? null : btn.dataset.verdict;
+      await db.ref('quizAnswers/'+date+'/'+id+'/verdict').set(next);
+      await loadQuizAnswers(date);
+    });
+  });
+  box.querySelectorAll('[data-reset]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await db.ref('quizAnswers/'+date+'/'+btn.dataset.reset).remove();
       await loadQuizAnswers(date);
     });
   });

@@ -46,7 +46,6 @@
 
   #mainRow{ flex:1; display:flex; gap:18px; min-height:0; }
 
-  /* 아코디언 사이드 패널 - 너비 통일 */
   #sidePanel{ width:0; padding:0; overflow:hidden; flex-shrink:0; transition:width .32s cubic-bezier(.4,0,.2,1); background:var(--card); }
   #sidePanel.open{ width:440px; padding:22px 24px; }
   #sidePanelInner{ width:392px; height:100%; display:flex; flex-direction:column; min-height:0; }
@@ -55,14 +54,14 @@
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
   #panelBody{ flex:1; overflow-y:auto; min-height:0; }
 
-  /* 조회/종례 카드형 표시 */
-  .notice-display{ display:flex; gap:14px; align-items:flex-start; background:var(--line); padding:18px; border-radius:18px; }
-  .notice-display .notice-icon{ font-size:26px; flex-shrink:0; }
-  .notice-display .notice-text{ font-size:18px; font-weight:600; line-height:1.75; white-space:pre-wrap; }
+  /* 조회/종례 - 체크박스형 항목 */
+  .notice-list{ display:flex; flex-direction:column; gap:10px; }
+  .notice-item{ display:flex; align-items:flex-start; gap:12px; background:var(--line); padding:14px 16px; border-radius:16px; }
+  .notice-checkbox{ width:22px; height:22px; min-width:22px; border-radius:7px; background:#fff; margin-top:2px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
+  .notice-item-text{ font-size:17px; font-weight:600; line-height:1.55; }
   .notice-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:50px 10px; color:var(--muted); font-weight:600; text-align:center; }
   .notice-empty .e-icon{ font-size:40px; }
 
-  /* 출결 - 2열 그리드, 토글식 */
   .att-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
   .att-cell{ background:var(--line); border-radius:16px; padding:12px 12px; display:flex; flex-direction:column; gap:8px; }
   .att-cell .att-name-row{ display:flex; align-items:baseline; justify-content:space-between; }
@@ -73,12 +72,12 @@
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:0 0 clamp(340px, 32vw, 420px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0.62; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #quizCard{ flex:1.35; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+  #clockCard{ flex:0 0 clamp(420px, 40vw, 540px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:0.34; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:1.0; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
-  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(48px, 5.6vw, 96px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
-  #clockDate{ font-size:20px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
+  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
   #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
   #ddayWidget{ font-family:'Jua',sans-serif; font-size:15px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
@@ -95,41 +94,42 @@
   #morningTile{ background:var(--yellow); }
   #closingTile{ background:var(--pink); }
 
-  .tt-override-badge{ font-size:11px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 9px; border-radius:10px; margin-left:6px; flex-shrink:0; }
+  .tt-override-badge{ font-size:10.5px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 8px; border-radius:10px; margin-left:6px; flex-shrink:0; }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
-  .period-chip{ border-radius:14px; padding:11px 13px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:700; font-size:15px; min-width:0; }
-  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
+  .period-chip{ border-radius:14px; padding:10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:14px; min-width:0; }
+  .p-badge{ width:22px; height:22px; min-width:22px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-  .tt-empty{ color:var(--muted); font-weight:600; font-size:14px; text-align:center; }
+  .tt-empty{ color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
 
-  /* 퀴즈 */
-  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:260px; color:rgba(155,127,234,0.09); right:-34px; bottom:-64px; line-height:1; pointer-events:none; user-select:none; }
+  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(155,127,234,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
-  .quiz-icon{ font-size:32px; }
-  .quiz-question{ font-size:clamp(20px, 2.3vw, 30px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
+  .quiz-icon{ font-size:30px; }
+  .quiz-question{ font-size:clamp(18px, 2vw, 26px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-  .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:10px 18px; font-size:16px; font-weight:700; }
-  .quiz-hint{ font-size:14px; font-weight:700; color:var(--lav-deep); background:rgba(255,255,255,0.6); padding:7px 16px; border-radius:16px; }
-  .quiz-raw{ font-size:12px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:120px; overflow-y:auto; }
-  .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:11px 22px; border-radius:20px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
+  .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:9px 16px; font-size:15px; font-weight:700; }
+  .quiz-hint{ font-size:13px; font-weight:700; color:var(--lav-deep); background:rgba(255,255,255,0.6); padding:6px 14px; border-radius:16px; }
+  .quiz-raw{ font-size:11px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:100px; overflow-y:auto; }
+  .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
 
-  /* 그리기 답안 제출 오버레이 */
-  .modal-overlay{ position:fixed; inset:0; background:rgba(74,68,88,0.4); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:200; }
-  .modal-overlay.open{ display:flex; }
-  .draw-box{ width:min(760px,94vw); max-height:90vh; overflow-y:auto; background:#fff; border-radius:26px; padding:26px 28px; box-shadow:var(--shadow); position:relative; }
-  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:21px; color:var(--lav-deep); margin:0 0 16px; text-align:center; }
-  .close-x{ position:absolute; top:16px; right:18px; background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; }
-  .name-grid{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-  .name-pill{ border:none; background:var(--lav); color:var(--text); padding:12px 20px; border-radius:20px; font-size:16px; font-weight:700; cursor:pointer; }
+  /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
+  #drawOverlay{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:200; display:none; }
+  #drawOverlay.open{ display:block; }
+  .draw-box{ width:340px; background:#fff; border-radius:22px; padding:18px 20px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); }
+  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:16px; color:var(--lav-deep); margin:0 0 12px; text-align:center; }
+  .close-x{ position:absolute; top:10px; right:10px; background:var(--line); border:none; width:26px; height:26px; border-radius:50%; color:var(--text); font-size:12px; cursor:pointer; }
+  .name-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-height:220px; overflow-y:auto; }
+  .name-pill{ border:none; background:var(--lav); color:var(--text); padding:9px 15px; border-radius:16px; font-size:14px; font-weight:700; cursor:pointer; }
   .name-pill:hover{ background:var(--lav-deep); color:#fff; }
-  #drawCanvas{ width:100%; height:52vh; border-radius:18px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
-  .draw-actions{ display:flex; gap:10px; justify-content:center; margin-top:16px; }
-  .draw-btn{ border:none; background:var(--line); color:var(--text); padding:11px 20px; border-radius:18px; font-size:14.5px; font-weight:700; cursor:pointer; }
+  .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; }
+  .name-pill.done:hover{ background:var(--line); color:var(--muted); }
+  #drawCanvas{ width:100%; height:130px; border-radius:14px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
+  .draw-actions{ display:flex; gap:8px; justify-content:center; margin-top:12px; }
+  .draw-btn{ border:none; background:var(--line); color:var(--text); padding:9px 14px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
   .draw-btn.primary{ background:var(--lav-deep); color:#fff; }
-  .draw-done{ text-align:center; font-size:26px; font-weight:800; padding:40px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
+  .draw-done{ text-align:center; font-size:18px; font-weight:800; padding:16px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
 </style>
 </head>
 <body>
@@ -159,7 +159,7 @@
     </div>
 
     <div class="card" id="timetableCard">
-      <div class="label headfont">📚 오늘 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시변경</span></div>
+      <div class="label headfont">📚 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시변경</span></div>
       <ul id="todayPeriodList"></ul>
     </div>
 
@@ -176,7 +176,7 @@
   </div>
 </div></div>
 
-<div class="modal-overlay" id="drawOverlay">
+<div id="drawOverlay">
   <div class="draw-box">
     <button class="close-x" id="closeDrawOverlay">✕</button>
 
@@ -187,19 +187,16 @@
 
     <div id="drawStepCanvas" style="display:none;">
       <h2 id="drawingForLabel"></h2>
-      <canvas id="drawCanvas" width="900" height="560"></canvas>
+      <canvas id="drawCanvas" width="520" height="220"></canvas>
       <div class="draw-actions">
-        <button class="draw-btn" id="backToNameBtn">‹ 다른 사람</button>
+        <button class="draw-btn" id="backToNameBtn">‹ 다른사람</button>
         <button class="draw-btn" id="clearCanvasBtn">🧽 지우기</button>
-        <button class="draw-btn primary" id="submitDrawingBtn">제출하기</button>
+        <button class="draw-btn primary" id="submitDrawingBtn">제출</button>
       </div>
     </div>
 
     <div id="drawStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료!</div>
-      <div class="draw-actions">
-        <button class="draw-btn primary" id="drawAgainBtn">다음 학생 그리기</button>
-      </div>
     </div>
   </div>
 </div>
@@ -275,14 +272,18 @@ document.getElementById('attendTile').addEventListener('click', ()=> openPanel('
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
 document.getElementById('closingTile').addEventListener('click', ()=> openPanel('closing'));
 
+function renderNoticeList(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
+  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item"><span class="notice-checkbox">✓</span><span class="notice-item-text">${escapeHtml(l)}</span></div>`).join('') + `</div>`;
+}
 async function renderNoticePanel(which){
   const snap = await db.ref('notices/'+todayStr()).once('value');
   const d = snap.val();
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
-  const icon = which==='morning' ? '📣' : '🌇';
   document.getElementById('panelBody').innerHTML = (published && text)
-    ? `<div class="notice-display"><div class="notice-icon">${icon}</div><div class="notice-text">${escapeHtml(text).replaceAll('\n','<br>')}</div></div>`
+    ? renderNoticeList(text)
     : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
@@ -297,7 +298,12 @@ async function renderAttendancePanel(){
   const att = attSnap.val() || {};
   const box = document.getElementById('panelBody');
   if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
-  box.innerHTML = '<div class="att-grid">' + roster.map(s=>{
+
+  const checked = roster.filter(s=>att[s.id]).sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+  const unchecked = roster.filter(s=>!att[s.id]);
+  const ordered = [...checked, ...unchecked];
+
+  box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
     return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <div class="att-name-row">
@@ -410,7 +416,7 @@ async function loadDday(){
   el.style.display = 'inline-block';
 }
 
-/* ---------- 그려서 답안 제출 ---------- */
+/* ---------- 그려서 답안 제출 (작은 하단 패널, 배경 안 가림) ---------- */
 const drawOverlay = document.getElementById('drawOverlay');
 const drawCanvas = document.getElementById('drawCanvas');
 const drawCtx = drawCanvas.getContext('2d');
@@ -422,7 +428,7 @@ function resetCanvas(){
   drawCtx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
   drawCtx.lineCap = 'round';
   drawCtx.lineJoin = 'round';
-  drawCtx.lineWidth = 6;
+  drawCtx.lineWidth = 4;
   drawCtx.strokeStyle = '#4a4458';
 }
 function getPos(e){
@@ -450,12 +456,19 @@ drawCanvas.addEventListener('pointerleave', stopDrawing);
 
 async function openDrawOverlay(){
   const roster = await getRosterList();
+  const answeredSnap = await db.ref('quizAnswers/'+todayStr()).once('value');
+  const answered = answeredSnap.val() || {};
   const grid = document.getElementById('drawNameGrid');
-  grid.innerHTML = roster.length ? roster.map(s=>`<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`).join('') : '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>';
-  grid.querySelectorAll('.name-pill').forEach(btn=>{
+  grid.innerHTML = roster.length ? roster.map(s=>{
+    const done = !!answered[s.id];
+    return done
+      ? `<button class="name-pill done" disabled>${escapeHtml(s.name)} ✅</button>`
+      : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`;
+  }).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
+  grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       selectedStudent = { id: btn.dataset.id, name: btn.dataset.name };
-      document.getElementById('drawingForLabel').textContent = `✏️ ${selectedStudent.name}님, 답을 그려주세요`;
+      document.getElementById('drawingForLabel').textContent = `✏️ ${selectedStudent.name}님`;
       document.getElementById('drawStepName').style.display = 'none';
       document.getElementById('drawStepCanvas').style.display = 'block';
       resetCanvas();
@@ -475,14 +488,14 @@ document.getElementById('backToNameBtn').addEventListener('click', ()=>{
 document.getElementById('clearCanvasBtn').addEventListener('click', resetCanvas);
 document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>{
   if(!selectedStudent) return;
-  const dataUrl = drawCanvas.toDataURL('image/png');
+  const dataUrl = drawCanvas.toDataURL('image/jpeg', 0.82);
   await db.ref(`quizAnswers/${todayStr()}/${selectedStudent.id}`).set({
     name: selectedStudent.name, dataUrl, submittedAt: Date.now()
   });
   document.getElementById('drawStepCanvas').style.display = 'none';
   document.getElementById('drawStepDone').style.display = 'block';
+  setTimeout(()=>{ drawOverlay.classList.remove('open'); }, 1300);
 });
-document.getElementById('drawAgainBtn').addEventListener('click', openDrawOverlay);
 
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday()]);
