@@ -43,6 +43,8 @@
   .tabs{ display:flex; gap:4px; background:#e7e8ec; padding:4px; border-radius:14px; margin-bottom:20px; overflow-x:auto; }
   .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
   .tab-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
+  .filter-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
+  .filter-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
   .tab-panel{ display:none; } .tab-panel.active{ display:block; animation:fadeIn .2s ease; }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
 
@@ -79,6 +81,7 @@
   .pill{ border:1.5px solid var(--border); background:#fafafa; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; color:var(--text); }
   .pill.on-present{ background:var(--mint); color:var(--mint-text); border-color:var(--mint); }
   .pill.on-out{ background:var(--sky); color:var(--sky-text); border-color:var(--sky); }
+  .pill.on-absent{ background:var(--danger-soft); color:var(--danger-text); border-color:var(--danger-soft); }
   .att-status{ font-size:12px; color:var(--muted); font-weight:600; width:104px; }
   .del-link{ background:none; border:none; color:var(--danger); font-size:12.5px; cursor:pointer; font-weight:600; }
   .summary-row{ display:flex; gap:16px; font-size:13px; margin-bottom:14px; flex-wrap:wrap; color:var(--muted); font-weight:600; }
@@ -179,7 +182,8 @@
     <div class="tab-panel" id="tab-attendance">
       <div class="section">
         <h3>🙋 오늘 출결 체크 <span class="sub" id="attDateLabel"></span></h3>
-        <p class="hint">출석/조퇴만 누르면 됩니다. 아무것도 안 누르면 자동 결석 처리돼요.</p>
+        <p class="hint">출석/조퇴/결석 버튼으로 체크하세요. 아무것도 안 누르면 미체크 상태예요.</p>
+        <button class="btn secondary" id="markAllPresentBtn" style="margin-bottom:10px;">전체 출석 체크</button>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
       </div>
@@ -246,6 +250,11 @@
       <div class="section">
         <h3>✏️ 퀴즈 답안 확인</h3>
         <div class="field"><label>날짜</label><input type="date" id="quizAnswerDate"></div>
+        <div class="tabs" id="verdictFilterTabs" style="margin-bottom:14px;">
+          <button class="filter-btn active" data-filter="all">전체</button>
+          <button class="filter-btn" data-filter="correct">정답만</button>
+          <button class="filter-btn" data-filter="incorrect">오답만</button>
+        </div>
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
     </div>
@@ -275,7 +284,7 @@ const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
 const WEEK_LABEL = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DEFAULT_PERIODS = 7;
-const STATUS_LABEL = {present:'출석', out:'조퇴'};
+const STATUS_LABEL = {present:'출석', out:'조퇴', absent:'결석'};
 
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
@@ -526,10 +535,10 @@ async function loadAttendanceTab(){
   const roster = await getRosterList();
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   const att = attSnap.val() || {};
-  let present=0, out=0;
-  roster.forEach(s=>{ const st = att[s.id]?.status; if(st==='present') present++; else if(st==='out') out++; });
-  const absent = roster.length - present - out;
-  document.getElementById('attSummary').innerHTML = `<span>전체 <b>${roster.length}</b></span><span>출석 <b>${present}</b></span><span>조퇴 <b>${out}</b></span><span>결석(자동) <b>${absent}</b></span>`;
+  let present=0, out=0, absentCount=0;
+  roster.forEach(s=>{ const st = att[s.id]?.status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
+  const unchecked = roster.length - present - out - absentCount;
+  document.getElementById('attSummary').innerHTML = `<span>전체 <b>${roster.length}</b></span><span>출석 <b>${present}</b></span><span>조퇴 <b>${out}</b></span><span>결석 <b>${absentCount}</b></span><span>미체크 <b>${unchecked}</b></span>`;
   const box = document.getElementById('attList');
   if(!roster.length){ box.innerHTML = '<p class="hint">학생 명단 탭에서 먼저 등록해주세요.</p>'; return; }
   box.innerHTML = roster.map(s=>{
@@ -538,7 +547,8 @@ async function loadAttendanceTab(){
       <span class="name">${escapeHtml(s.name)}</span>
       <button class="pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
-      <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '결석(자동)'}</span>
+      <button class="pill ${rec?.status==='absent'?'on-absent':''}" data-status="absent">결석</button>
+      <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -559,6 +569,16 @@ async function loadAttendanceTab(){
     }
   });
 }
+document.getElementById('markAllPresentBtn').addEventListener('click', async ()=>{
+  const roster = await getRosterList();
+  if(!roster.length) return;
+  if(!confirm(`전체 ${roster.length}명을 출석으로 체크할까요?`)) return;
+  const time = nowHHMM();
+  const updates = {};
+  roster.forEach(s => updates[`attendance/${todayStr()}/${s.id}`] = { name: s.name, status: 'present', time });
+  await db.ref().update(updates);
+  await loadAttendanceTab();
+});
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */
 async function getWeeklyPeriods(dayKey){
@@ -634,13 +654,23 @@ async function renderOverrideListView(){
 }
 
 /* ---- 퀴즈 답안 확인 ---- */
+let quizAnswerFilter = 'all';
+document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    quizAnswerFilter = btn.dataset.filter;
+    loadQuizAnswers(document.getElementById('quizAnswerDate').value || todayStr());
+  });
+});
 async function loadQuizAnswers(date){
   const box = document.getElementById('quizAnswerGrid');
   box.innerHTML = '불러오는 중...';
   const snap = await db.ref('quizAnswers/'+date).once('value');
   const val = snap.val() || {};
-  const entries = Object.keys(val).map(id=>({id, ...val[id]})).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
-  if(!entries.length){ box.innerHTML = '<p class="hint">이 날짜에 제출된 답안이 없습니다.</p>'; return; }
+  let entries = Object.keys(val).map(id=>({id, ...val[id]})).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
+  if(quizAnswerFilter !== 'all'){ entries = entries.filter(e => e.verdict === quizAnswerFilter); }
+  if(!entries.length){ box.innerHTML = '<p class="hint">해당하는 답안이 없습니다.</p>'; return; }
   box.innerHTML = entries.map(e=>{
     const time = e.submittedAt ? new Date(e.submittedAt).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';
     const v = e.verdict;
@@ -654,7 +684,7 @@ async function loadQuizAnswers(date){
         <button class="pill ${v==='correct'?'on-present':''}" data-verdict="correct" data-id="${e.id}" style="flex:1; padding:6px 4px; font-size:12px;">정답</button>
         <button class="pill ${v==='incorrect'?'on-out':''}" data-verdict="incorrect" data-id="${e.id}" style="flex:1; padding:6px 4px; font-size:12px;">오답</button>
       </div>
-      <button class="del-link" data-reset="${e.id}" style="margin-top:6px;">🔄 재제출 허용</button>
+      <button class="del-link" data-reset="${e.id}" style="margin-top:6px;">↺ 초기화</button>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-verdict]').forEach(btn=>{

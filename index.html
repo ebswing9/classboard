@@ -57,7 +57,9 @@
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
   .notice-item{ display:flex; align-items:flex-start; gap:12px; background:var(--line); padding:14px 16px; border-radius:16px; }
-  .notice-checkbox{ width:22px; height:22px; min-width:22px; border-radius:7px; background:#fff; margin-top:2px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
+  .notice-checkbox{ width:20px; height:20px; min-width:20px; margin-top:3px; cursor:default; }
+  .notice-checkbox.morning{ accent-color: var(--yellow-deep); }
+  .notice-checkbox.closing{ accent-color: var(--pink-deep); }
   .notice-item-text{ font-size:17px; font-weight:600; line-height:1.55; }
   .notice-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:50px 10px; color:var(--muted); font-weight:600; text-align:center; }
   .notice-empty .e-icon{ font-size:40px; }
@@ -73,8 +75,8 @@
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
   #clockCard{ flex:0 0 clamp(420px, 40vw, 540px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0.34; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #quizCard{ flex:1.0; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+  #timetableCard{ flex:0.4; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:0.8; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
@@ -94,7 +96,6 @@
   #morningTile{ background:var(--yellow); }
   #closingTile{ background:var(--pink); }
 
-  .tt-override-badge{ font-size:10.5px; font-weight:700; color:#fff; background:var(--pink-deep); padding:3px 8px; border-radius:10px; margin-left:6px; flex-shrink:0; }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
   .period-chip{ border-radius:14px; padding:10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:14px; min-width:0; }
   .p-badge{ width:22px; height:22px; min-width:22px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
@@ -107,7 +108,6 @@
   .quiz-question{ font-size:clamp(18px, 2vw, 26px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:9px 16px; font-size:15px; font-weight:700; }
-  .quiz-hint{ font-size:13px; font-weight:700; color:var(--lav-deep); background:rgba(255,255,255,0.6); padding:6px 14px; border-radius:16px; }
   .quiz-raw{ font-size:11px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:100px; overflow-y:auto; }
   .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
@@ -117,19 +117,19 @@
   /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
   #drawOverlay{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:200; display:none; }
   #drawOverlay.open{ display:block; }
-  .draw-box{ width:340px; background:#fff; border-radius:22px; padding:18px 20px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); }
-  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:16px; color:var(--lav-deep); margin:0 0 12px; text-align:center; }
-  .close-x{ position:absolute; top:10px; right:10px; background:var(--line); border:none; width:26px; height:26px; border-radius:50%; color:var(--text); font-size:12px; cursor:pointer; }
-  .name-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-height:220px; overflow-y:auto; }
-  .name-pill{ border:none; background:var(--lav); color:var(--text); padding:9px 15px; border-radius:16px; font-size:14px; font-weight:700; cursor:pointer; }
+  .draw-box{ width:260px; background:#fff; border-radius:20px; padding:14px 16px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); }
+  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:14px; color:var(--lav-deep); margin:0 0 10px; text-align:center; }
+  .close-x{ position:absolute; top:8px; right:8px; background:var(--line); border:none; width:22px; height:22px; border-radius:50%; color:var(--text); font-size:11px; cursor:pointer; }
+  .name-grid{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:180px; overflow-y:auto; }
+  .name-pill{ border:none; background:var(--lav); color:var(--text); padding:7px 12px; border-radius:14px; font-size:12.5px; font-weight:700; cursor:pointer; }
   .name-pill:hover{ background:var(--lav-deep); color:#fff; }
-  .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; }
+  .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; opacity:.55; }
   .name-pill.done:hover{ background:var(--line); color:var(--muted); }
-  #drawCanvas{ width:100%; height:130px; border-radius:14px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
-  .draw-actions{ display:flex; gap:8px; justify-content:center; margin-top:12px; }
-  .draw-btn{ border:none; background:var(--line); color:var(--text); padding:9px 14px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
-  .draw-btn.primary{ background:var(--lav-deep); color:#fff; }
-  .draw-done{ text-align:center; font-size:18px; font-weight:800; padding:16px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
+  #drawCanvas{ width:100%; height:90px; border-radius:12px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
+  .draw-actions{ display:flex; align-items:center; gap:6px; margin-top:10px; }
+  .draw-btn{ border:none; background:var(--line); color:var(--text); padding:8px 12px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; }
+  .draw-btn.primary{ background:var(--lav-deep); color:#fff; flex:1; padding:9px 12px; font-size:13px; }
+  .draw-done{ text-align:center; font-size:16px; font-weight:800; padding:12px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
 </style>
 </head>
 <body>
@@ -159,16 +159,15 @@
     </div>
 
     <div class="card" id="timetableCard">
-      <div class="label headfont">📚 시간표 <span id="ttOverrideBadge" class="tt-override-badge" style="display:none;">임시변경</span></div>
+      <div class="label headfont">📚 시간표</div>
       <ul id="todayPeriodList"></ul>
     </div>
 
     <div class="card" id="quizCard">
       <div class="quiz-inner">
-        <div class="quiz-icon">💡</div>
+        <div class="quiz-icon">🧩</div>
         <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
         <div class="quiz-choices" id="quizChoices"></div>
-        <div class="quiz-hint" id="quizHint" style="display:none;"></div>
         <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;">✏️ 그려서 답안 제출</button>
         <div class="quiz-raw" id="quizRaw"></div>
       </div>
@@ -190,8 +189,8 @@
       <canvas id="drawCanvas" width="520" height="220"></canvas>
       <div class="draw-actions">
         <button class="draw-btn" id="backToNameBtn">‹ 다른사람</button>
-        <button class="draw-btn" id="clearCanvasBtn">🧽 지우기</button>
         <button class="draw-btn primary" id="submitDrawingBtn">제출</button>
+        <button class="draw-btn" id="clearCanvasBtn">지우기</button>
       </div>
     </div>
 
@@ -272,10 +271,10 @@ document.getElementById('attendTile').addEventListener('click', ()=> openPanel('
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
 document.getElementById('closingTile').addEventListener('click', ()=> openPanel('closing'));
 
-function renderNoticeList(text){
+function renderNoticeList(text, which){
   const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
   if(!lines.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
-  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item"><span class="notice-checkbox">✓</span><span class="notice-item-text">${escapeHtml(l)}</span></div>`).join('') + `</div>`;
+  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item"><input type="checkbox" class="notice-checkbox ${which}" checked disabled><span class="notice-item-text">${escapeHtml(l)}</span></div>`).join('') + `</div>`;
 }
 async function renderNoticePanel(which){
   const snap = await db.ref('notices/'+todayStr()).once('value');
@@ -283,7 +282,7 @@ async function renderNoticePanel(which){
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
   document.getElementById('panelBody').innerHTML = (published && text)
-    ? renderNoticeList(text)
+    ? renderNoticeList(text, which)
     : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
@@ -339,36 +338,25 @@ async function loadTimetable(){
   const dateKey = todayStr();
   const overrideSnap = await db.ref('timetableOverride/'+dateKey).once('value');
   const override = overrideSnap.exists() ? overrideSnap.val().periods : null;
-  const badge = document.getElementById('ttOverrideBadge');
   const list = document.getElementById('todayPeriodList');
-  if(!WEEK_KEYS.includes(dowKey) && !override){ badge.style.display='none'; list.innerHTML='<li class="tt-empty">오늘은 수업이 없는 날이에요.</li>'; return; }
+  if(!WEEK_KEYS.includes(dowKey) && !override){ list.innerHTML='<li class="tt-empty">오늘은 수업이 없는 날이에요.</li>'; return; }
   let periods;
-  if(override){ periods = override; badge.style.display='inline-block'; }
+  if(override){ periods = override; }
   else{
     const wSnap = await db.ref('timetableWeekly/'+dowKey).once('value');
     periods = wSnap.exists() ? (wSnap.val().periods || []) : [];
-    badge.style.display='none';
   }
   const filled = periods.map((v,i)=>({idx:i+1,val:v})).filter(p=>p.val && p.val.trim());
   list.innerHTML = filled.length ? filled.map((p,i)=>`<li class="period-chip" style="background:var(--${CHIP_COLORS[i%CHIP_COLORS.length]});"><span class="p-badge">${p.idx}</span><span class="p-subject">${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
 /* ---------- 퀴즈 ---------- */
-function formatRemaining(ms){
-  const now = Date.now();
-  const diff = ms - now;
-  if(diff <= 0) return null;
-  const h = Math.floor(diff/3600000);
-  const m = Math.floor((diff%3600000)/60000);
-  return h > 0 ? `${h}시간 ${m}분 남음` : `${m}분 남음`;
-}
 async function loadQuiz(){
   const qEl = document.getElementById('quizQuestion');
   const cEl = document.getElementById('quizChoices');
-  const hEl = document.getElementById('quizHint');
   const rEl = document.getElementById('quizRaw');
   const drawBtn = document.getElementById('openDrawBtn');
-  rEl.textContent = ''; hEl.style.display = 'none'; drawBtn.style.display = 'none';
+  rEl.textContent = ''; drawBtn.style.display = 'none';
   try{
     let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
@@ -379,18 +367,6 @@ async function loadQuiz(){
     if(question){
       qEl.textContent = question;
       cEl.innerHTML = Array.isArray(choices) && choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
-      if(!choices.length && data.meta?.type === 'short'){
-        hEl.textContent = '✏️ 단답형 문제예요';
-        hEl.style.display = 'inline-block';
-      }
-      const closeAt = data.meta?.closeAt;
-      if(closeAt){
-        const remain = formatRemaining(closeAt);
-        if(remain){
-          hEl.textContent = (hEl.style.display==='inline-block' ? hEl.textContent + ' · ' : '⏰ ') + '마감까지 ' + remain;
-          hEl.style.display = 'inline-block';
-        }
-      }
       drawBtn.style.display = 'inline-block';
     } else {
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
@@ -462,7 +438,7 @@ async function openDrawOverlay(){
   grid.innerHTML = roster.length ? roster.map(s=>{
     const done = !!answered[s.id];
     return done
-      ? `<button class="name-pill done" disabled>${escapeHtml(s.name)} ✅</button>`
+      ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
       : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`;
   }).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
   grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
