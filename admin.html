@@ -543,7 +543,7 @@ async function loadAttendanceTab(){
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   const att = attSnap.val() || {};
   let present=0, out=0, absentCount=0;
-  roster.forEach(s=>{ const st = att[s.id]?.status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
+  roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
   const unchecked = roster.length - present - out - absentCount;
   document.getElementById('attSummary').innerHTML = `<span>전체 <b>${roster.length}</b></span><span>출석 <b>${present}</b></span><span>조퇴 <b>${out}</b></span><span>결석 <b>${absentCount}</b></span><span>미체크 <b>${unchecked}</b></span>`;
   const box = document.getElementById('attList');
@@ -552,9 +552,9 @@ async function loadAttendanceTab(){
     const rec = att[s.id];
     return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <span class="name">${escapeHtml(s.name)}</span>
-      <button class="pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
-      <button class="pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
-      <button class="pill ${rec?.status==='absent'?'on-absent':''}" data-status="absent">결석</button>
+      <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
+      <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
+      <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
       <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
@@ -716,8 +716,8 @@ document.getElementById('quizAnswerDate').addEventListener('change', (e)=> loadQ
 async function loadSettingsForm(){
   const snap = await db.ref('config/dday').once('value');
   const cfg = snap.val();
-  document.getElementById('ddayLabelInput').value = cfg?.label || '';
-  document.getElementById('ddayDateInput').value = cfg?.date || '';
+  document.getElementById('ddayLabelInput').value = (cfg && cfg.label) || '';
+  document.getElementById('ddayDateInput').value = (cfg && cfg.date) || '';
 }
 document.getElementById('savePasswordBtn').addEventListener('click', async ()=>{
   const newPw = document.getElementById('newPasswordInput').value.trim();

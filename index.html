@@ -325,8 +325,8 @@ async function renderAttendancePanel(){
         ${rec ? `<span class="att-time">${rec.time}</span>` : ''}
       </div>
       <div class="att-btns">
-        <button class="att-pill ${rec?.status==='present'?'on-present':''}" data-status="present">출석</button>
-        <button class="att-pill ${rec?.status==='out'?'on-out':''}" data-status="out">조퇴</button>
+        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
+        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       </div>
     </div>`;
   }).join('') + '</div>';
@@ -377,7 +377,7 @@ async function loadQuiz(){
     if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
     if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; return; }
     const data = snap.val();
-    const question = data.meta?.questionText || data.question || data.title || data.text || data.q || null;
+    const question = (data.meta && data.meta.questionText) || data.question || data.title || data.text || data.q || null;
     const choices = data.choices || data.options || data.answers || [];
     if(question){
       qEl.textContent = question;
