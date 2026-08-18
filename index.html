@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학급 대시보드</title>
 <link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f78fb3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="학급대시보드">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -57,7 +64,9 @@
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
   .notice-item{ display:flex; align-items:flex-start; gap:12px; background:var(--line); padding:14px 16px; border-radius:16px; }
-  .notice-checkbox{ width:20px; height:20px; min-width:20px; margin-top:3px; cursor:default; }
+  .notice-item.checked{ opacity:.6; }
+  .notice-item.checked .notice-item-text{ text-decoration:line-through; }
+  .notice-checkbox{ width:20px; height:20px; min-width:20px; margin-top:3px; cursor:pointer; }
   .notice-checkbox.morning{ accent-color: var(--yellow-deep); }
   .notice-checkbox.closing{ accent-color: var(--pink-deep); }
   .notice-item-text{ font-size:17px; font-weight:600; line-height:1.55; }
@@ -74,9 +83,9 @@
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:0 0 clamp(420px, 40vw, 540px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0.4; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #quizCard{ flex:0.8; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+  #clockCard{ flex:0 0 clamp(480px, 46vw, 620px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #quizCard{ flex:1; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
@@ -136,6 +145,11 @@
 <div id="configErrorBanner"></div>
 <div id="app"><div id="board">
   <div id="mainRow">
+    <div class="card" id="timetableCard">
+      <div class="label headfont">📚 시간표</div>
+      <ul id="todayPeriodList"></ul>
+    </div>
+
     <div class="card" id="sidePanel">
       <div id="sidePanelInner">
         <div class="panel-header">
@@ -156,11 +170,6 @@
         <div class="quick-btn" id="morningTile">📣 조회</div>
         <div class="quick-btn" id="closingTile">🌇 종례</div>
       </div>
-    </div>
-
-    <div class="card" id="timetableCard">
-      <div class="label headfont">📚 시간표</div>
-      <ul id="todayPeriodList"></ul>
     </div>
 
     <div class="card" id="quizCard">
@@ -274,16 +283,22 @@ document.getElementById('closingTile').addEventListener('click', ()=> openPanel(
 function renderNoticeList(text, which){
   const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
   if(!lines.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
-  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item"><input type="checkbox" class="notice-checkbox ${which}" checked disabled><span class="notice-item-text">${escapeHtml(l)}</span></div>`).join('') + `</div>`;
+  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item"><input type="checkbox" class="notice-checkbox ${which}"><span class="notice-item-text">${escapeHtml(l)}</span></div>`).join('') + `</div>`;
 }
 async function renderNoticePanel(which){
   const snap = await db.ref('notices/'+todayStr()).once('value');
   const d = snap.val();
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
-  document.getElementById('panelBody').innerHTML = (published && text)
+  const body = document.getElementById('panelBody');
+  body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
     : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
+  body.querySelectorAll('.notice-checkbox').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      cb.closest('.notice-item').classList.toggle('checked', cb.checked);
+    });
+  });
 }
 
 async function getRosterList(){
@@ -481,6 +496,9 @@ async function loadAll(){
 if(initFirebase()){
   loadAll();
   setInterval(loadAll, 5*60*1000);
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
 </body>

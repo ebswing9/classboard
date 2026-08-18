@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학급 대시보드 · 관리자</title>
 <link rel="icon" href="data:,">
+<link rel="manifest" href="admin-manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#ffcdea">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="대시보드 관리자">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -740,6 +747,9 @@ document.getElementById('clearDdayBtn').addEventListener('click', async ()=>{
 
 /* 로그인이 이미 되어있던 브라우저면 자동으로 관리자 화면 표시 (모든 선언이 끝난 뒤 실행) */
 if(db && localStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
