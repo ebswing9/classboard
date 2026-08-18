@@ -62,6 +62,10 @@
   .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:6px; }
   .field input, .field textarea, .field select{ width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; outline:none; background:#fff; }
   .field input:focus, .field textarea:focus{ border-color:var(--primary-dark); }
+  .field input[type="date"]{ background:var(--primary-soft); border:2px solid var(--primary); color:var(--primary-text); font-weight:700; cursor:pointer; }
+  .field input[type="date"]:focus{ border-color:var(--primary-dark); background:#fff; }
+  .field input[type="date"]::-webkit-calendar-picker-indicator{ filter: invert(48%) sepia(60%) saturate(900%) hue-rotate(280deg) brightness(105%); cursor:pointer; padding:4px; border-radius:6px; }
+  .field input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(255,255,255,0.5); }
   .field textarea{ min-height:88px; resize:vertical; line-height:1.5; }
   .btn{ background:var(--primary); color:var(--primary-text); border:none; padding:11px 18px; border-radius:11px; font-weight:800; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; }
   .btn:hover{ background:var(--primary-dark); }
