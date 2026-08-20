@@ -233,11 +233,11 @@
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
         <div class="divider"></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="btn secondary" id="resetClapBtn" style="margin:0;">👏 박수 소리 초기화</button>
-          <span class="msg" id="clapMsg"></span>
+        <div class="publish-row">
+          <span>👏 박수 소리 허용</span>
+          <button class="publish-btn off" id="clapToggleBtn">비활성</button>
         </div>
-        <p class="hint">대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 누르면 박수 소리가 나요. 하루에 한 번만 울리며, 다시 울리게 하려면 여기서 초기화해주세요. (선택한 날짜 기준)</p>
+        <p class="hint">켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 박수 소리를 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
       </div>
     </div>
 
@@ -717,11 +717,20 @@ document.getElementById('rosterCsvInput').addEventListener('change', async (e)=>
 
 /* ---- 출결 ---- */
 function currentAttDate(){ return document.getElementById('attDate').value || todayStr(); }
+let clapAllowed = false;
+function setClapBtn(on){
+  clapAllowed = on;
+  const btn = document.getElementById('clapToggleBtn');
+  btn.textContent = on ? '허용중' : '비활성';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
 async function loadAttendanceTab(){
   const date = currentAttDate();
   const roster = await getRosterList();
   const attSnap = await db.ref('attendance/'+date).once('value');
   const att = attSnap.val() || {};
+  const clapSnap = await db.ref('clapAllowed/'+date).once('value');
+  setClapBtn(!!clapSnap.val());
   let present=0, out=0, absentCount=0;
   roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
   const unchecked = roster.length - present - out - absentCount;
@@ -745,7 +754,12 @@ async function loadAttendanceTab(){
     const id = row.dataset.id, name = row.dataset.name;
     row.querySelectorAll('.pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        const isSameStatus = btn.classList.contains('on-'+btn.dataset.status);
+        if(isSameStatus){
+          await db.ref(`attendance/${currentAttDate()}/${id}`).remove();
+        } else {
+          await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        }
         await loadAttendanceTab();
       });
     });
@@ -775,12 +789,10 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   await db.ref().update(updates);
   await loadAttendanceTab();
 });
-document.getElementById('resetClapBtn').addEventListener('click', async ()=>{
+document.getElementById('clapToggleBtn').addEventListener('click', async ()=>{
   const date = currentAttDate();
-  const msgEl = document.getElementById('clapMsg');
-  await db.ref('clapPlayed/'+date).remove();
-  msgEl.textContent = '초기화됐어요 ✓ 대시보드에서 다시 누르면 울려요.';
-  setTimeout(()=>msgEl.textContent='', 3000);
+  setClapBtn(!clapAllowed);
+  await db.ref('clapAllowed/'+date).set(clapAllowed);
 });
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */

@@ -74,8 +74,8 @@
   .cute-checkbox input:checked ~ .box .check-icon{ opacity:1; transform:scale(1); }
   .cute-checkbox.morning .box{ border-color:var(--yellow-deep); }
   .cute-checkbox.morning input:checked ~ .box{ background:var(--yellow-deep); }
-  .cute-checkbox.closing .box{ border-color:var(--pink-deep); }
-  .cute-checkbox.closing input:checked ~ .box{ background:var(--pink-deep); }
+  .cute-checkbox.closing .box{ border-color:var(--lav-deep); }
+  .cute-checkbox.closing input:checked ~ .box{ background:var(--lav-deep); }
   .notice-item-text{ font-size:17px; font-weight:600; line-height:1.55; }
   .notice-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:50px 10px; color:var(--muted); font-weight:600; text-align:center; }
   .notice-empty .e-icon{ font-size:40px; }
@@ -102,7 +102,7 @@
   .meal-nav button{ border:none; background:rgba(255,255,255,0.7); color:var(--sky-deep); width:24px; height:24px; border-radius:8px; font-size:13px; font-weight:800; cursor:pointer; }
   .meal-nav button#mealTodayBtn{ width:auto; padding:0 8px; font-size:11px; }
   #mealDateLabel{ font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; flex-shrink:0; }
-  #mealBody{ flex:1; overflow:hidden; min-height:0; }
+  #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
   #quizCard{ flex:1; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
@@ -122,24 +122,22 @@
   .att-rate-bar-track{ width:100%; height:16px; background:var(--line); border-radius:20px; box-shadow:inset 0 1px 4px rgba(160,140,190,0.2); position:relative; }
   .att-rate-bar-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg, var(--mint-deep), var(--sky-deep)); transition:width .6s cubic-bezier(.4,0,.2,1); position:relative; min-width:16px; }
   .att-rate-bar-fill::after{ content:"🐣"; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:15px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
-  #attendanceWidget.full .att-rate-bar-track{ cursor:pointer; }
-  #attendanceWidget.full .att-rate-bar-fill{ background:linear-gradient(90deg, var(--yellow-deep), var(--pink-deep)); animation:attPulse 1.6s ease-in-out infinite; }
+  #attendanceWidget.clap-ready .att-rate-bar-track{ cursor:pointer; }
+  #attendanceWidget.full .att-rate-bar-fill{ background:linear-gradient(90deg, var(--yellow-deep), var(--pink-deep)); }
+  #attendanceWidget.clap-ready .att-rate-bar-fill{ animation:attPulse 1.6s ease-in-out infinite; }
   #attendanceWidget.full .att-rate-bar-fill::after{ content:"🎉"; }
   @keyframes attPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.15); } }
   .att-rate-unchecked{ margin-top:7px; font-size:12px; font-weight:600; color:var(--muted); text-align:right; min-height:15px; }
-  .att-clap-toast{ margin-top:2px; font-size:12.5px; font-weight:700; color:var(--pink-deep); text-align:right; opacity:0; transition:opacity .3s ease; min-height:16px; }
-  .att-clap-toast.show{ opacity:1; }
 
   /* 오늘의 할 일 */
   #todoSection{ width:100%; max-width:360px; margin-top:32px; display:none; flex-direction:column; }
   #todoSection.show{ display:flex; }
-  .todo-title{ font-size:16px; color:var(--lav-deep); margin-bottom:12px; text-align:left; }
+  .todo-title{ font-size:16px; color:var(--pink-deep); margin-bottom:12px; text-align:left; }
   .todo-list{ display:flex; flex-direction:column; gap:10px; }
   .todo-row{ display:flex; align-items:center; gap:11px; }
-  .todo-text{ flex:1; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; transition:color .15s, opacity .15s; }
-  .todo-row.checked .todo-text{ color:var(--muted); text-decoration:line-through; opacity:.75; }
-  .cute-checkbox.todo .box{ border-color:var(--lav-deep); }
-  .cute-checkbox.todo input:checked ~ .box{ background:var(--lav-deep); }
+  .todo-text{ flex:1; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; }
+  .cute-checkbox.todo .box{ border-color:var(--pink-deep); }
+  .cute-checkbox.todo input:checked ~ .box{ background:var(--pink-deep); }
   .quick-btn{
     cursor:pointer; border:none; color:var(--text); padding:12px 16px; border-radius:20px;
     font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:6px;
@@ -207,7 +205,7 @@
     #sidePanel.open{ max-height:1000px; padding:20px; }
     #sidePanelInner{ width:100%; height:auto; }
     #clockCard{ flex:none; width:100%; min-height:280px; }
-    #timetableCard{ flex:none; width:100%; min-height:320px; }
+    #timetableCard{ flex:none; width:100%; height:min(64vh, 460px); min-height:340px; }
     #quizCard{ flex:none; width:100%; min-height:260px; }
     #quizCard.squished .quiz-inner{ display:flex !important; }
     #quizCard.squished .quiz-minimal-label{ display:none !important; }
@@ -261,7 +259,6 @@
           <div class="att-rate-bar-fill" id="attRateBarFill" style="width:0%;"></div>
         </div>
         <div class="att-rate-unchecked" id="attRateUnchecked"></div>
-        <div class="att-clap-toast" id="attClapToast"></div>
       </div>
       <div id="quickBtnRow">
         <div class="quick-btn" id="attendTile">🙋 출결</div>
@@ -547,11 +544,6 @@ async function loadTodos(){
       </label>
       <span class="todo-text">${escapeHtml(l)}</span>
     </div>`).join('') + '</div>';
-  box.querySelectorAll('.todo-check').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      cb.closest('.todo-row').classList.toggle('checked', cb.checked);
-    });
-  });
 }
 
 /* ---------- 출석률 위젯 & 박수 소리 ---------- */
@@ -559,63 +551,109 @@ function playClapSound(){
   try{
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioCtx();
-    [0, 0.11, 0.22, 0.36].forEach((t,i)=>{
-      const dur = 0.09;
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+
+    // 개별 박수 소리(짧은 노이즈 버스트) 하나를 예약
+    function scheduleClap(time, amp, freq){
+      const dur = 0.045 + Math.random()*0.035;
       const bufferSize = Math.floor(ctx.sampleRate * dur);
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for(let n=0;n<bufferSize;n++){
-        data[n] = (Math.random()*2-1) * Math.pow(1 - n/bufferSize, 1.6);
+        data[n] = (Math.random()*2-1) * Math.pow(1 - n/bufferSize, 1.3);
       }
       const src = ctx.createBufferSource();
       src.buffer = buffer;
       const bp = ctx.createBiquadFilter();
       bp.type = 'bandpass';
-      bp.frequency.value = 1200 + Math.random()*600;
-      bp.Q.value = 0.7;
-      const gain = ctx.createGain();
-      gain.gain.value = 0.85 - i*0.05;
-      src.connect(bp).connect(gain).connect(ctx.destination);
-      src.start(ctx.currentTime + t);
+      bp.frequency.value = freq;
+      bp.Q.value = 0.9;
+      const g = ctx.createGain();
+      g.gain.value = amp;
+      src.connect(bp).connect(g).connect(master);
+      src.start(time);
+    }
+
+    // 시작(크레센도) → 절정(지속되는 박수갈채) → 마무리(디크레센도) 3단계로 수많은 박수를 겹쳐서 재생
+    const phases = [
+      { from:0,    to:0.35, count:24,  amp:[0.22,0.5]  },
+      { from:0.3,  to:1.8,  count:150, amp:[0.38,0.85] },
+      { from:1.65, to:2.7,  count:30,  amp:[0.14,0.4]  },
+    ];
+    phases.forEach(ph=>{
+      for(let i=0;i<ph.count;i++){
+        const t = now + ph.from + Math.random()*(ph.to-ph.from);
+        const amp = ph.amp[0] + Math.random()*(ph.amp[1]-ph.amp[0]);
+        const freq = 900 + Math.random()*2600;
+        scheduleClap(t, amp, freq);
+      }
     });
+
+    // 저역대의 함성/웅성거림 레이어를 더해 "우레와 같은" 두께감을 보강
+    const roarDur = 2.7;
+    const roarBufferSize = Math.floor(ctx.sampleRate * roarDur);
+    const roarBuffer = ctx.createBuffer(1, roarBufferSize, ctx.sampleRate);
+    const roarData = roarBuffer.getChannelData(0);
+    for(let n=0;n<roarBufferSize;n++){ roarData[n] = Math.random()*2-1; }
+    const roarSrc = ctx.createBufferSource();
+    roarSrc.buffer = roarBuffer;
+    const roarFilter = ctx.createBiquadFilter();
+    roarFilter.type = 'bandpass';
+    roarFilter.frequency.value = 1800;
+    roarFilter.Q.value = 0.5;
+    const roarGain = ctx.createGain();
+    roarGain.gain.setValueAtTime(0, now);
+    roarGain.gain.linearRampToValueAtTime(0.2, now + 0.3);
+    roarGain.gain.linearRampToValueAtTime(0.17, now + 1.6);
+    roarGain.gain.linearRampToValueAtTime(0, now + 2.7);
+    roarSrc.connect(roarFilter).connect(roarGain).connect(master);
+    roarSrc.start(now);
+    roarSrc.stop(now + roarDur);
   }catch(e){ console.error('clap sound error', e); }
 }
 
 let attFullNow = false;
+let attClapAllowed = false;
 async function loadAttendanceWidget(){
   const widget = document.getElementById('attendanceWidget');
   const roster = await getRosterList();
   if(!roster.length){ widget.style.display = 'none'; attFullNow = false; return; }
-  const attSnap = await db.ref('attendance/'+todayStr()).once('value');
+  const [attSnap, clapSnap] = await Promise.all([
+    db.ref('attendance/'+todayStr()).once('value'),
+    db.ref('clapAllowed/'+todayStr()).once('value')
+  ]);
   const att = attSnap.val() || {};
+  attClapAllowed = !!clapSnap.val();
   let present = 0, checkedTotal = 0;
+  const uncheckedNames = [];
   roster.forEach(s=>{
     const rec = att[s.id];
     if(rec){ checkedTotal++; if(rec.status === 'present') present++; }
+    else uncheckedNames.push(s.name);
   });
-  const unchecked = roster.length - checkedTotal;
+  const unchecked = uncheckedNames.length;
   const rate = Math.round((present / roster.length) * 100);
   widget.style.display = 'block';
   document.getElementById('attRatePercent').textContent = rate + '%';
   document.getElementById('attRateBarFill').style.width = rate + '%';
-  document.getElementById('attRateUnchecked').textContent = unchecked > 0 ? `아직 출석하지 않은 학생: ${unchecked}명` : '';
+  const uncheckedEl = document.getElementById('attRateUnchecked');
+  if(unchecked > 0){
+    uncheckedEl.textContent = unchecked <= 5
+      ? `아직 출석하지 않은 학생: ${unchecked}명 (${uncheckedNames.join(', ')})`
+      : `아직 출석하지 않은 학생: ${unchecked}명`;
+  } else {
+    uncheckedEl.textContent = '';
+  }
   attFullNow = (rate === 100);
   widget.classList.toggle('full', attFullNow);
+  widget.classList.toggle('clap-ready', attFullNow && attClapAllowed);
 }
-document.getElementById('attRateBarTrack').addEventListener('click', async ()=>{
-  if(!attFullNow) return;
-  const toast = document.getElementById('attClapToast');
-  const flagSnap = await db.ref('clapPlayed/'+todayStr()).once('value');
-  if(flagSnap.exists()){
-    toast.textContent = '오늘은 이미 박수 쳤어요 👏';
-  } else {
-    await db.ref('clapPlayed/'+todayStr()).set(true);
-    playClapSound();
-    toast.textContent = '짝짝짝! 전체 출석 완료 🎉';
-  }
-  toast.classList.add('show');
-  clearTimeout(window.__attToastTimer);
-  window.__attToastTimer = setTimeout(()=> toast.classList.remove('show'), 2600);
+document.getElementById('attRateBarTrack').addEventListener('click', ()=>{
+  if(!attFullNow || !attClapAllowed) return;
+  playClapSound();
 });
 
 /* ---------- 급식 (NEIS) ---------- */
@@ -752,9 +790,32 @@ async function loadAll(){
   if(openPanelType === 'attendance') await renderAttendancePanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
 }
+
+/* ---------- 관리자 페이지 변경 사항을 실시간으로 반영 ---------- */
+function attachRealtimeListeners(){
+  const dowKey = DAY_KEYS[new Date().getDay()];
+  db.ref('config/dday').on('value', ()=> loadDday());
+  db.ref('todos/'+todayStr()).on('value', ()=> loadTodos());
+  db.ref('roster').on('value', async ()=>{
+    await loadAttendanceWidget();
+    if(openPanelType === 'attendance') await renderAttendancePanel();
+  });
+  db.ref('attendance/'+todayStr()).on('value', async ()=>{
+    await loadAttendanceWidget();
+    if(openPanelType === 'attendance') await renderAttendancePanel();
+  });
+  db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
+  db.ref('notices/'+todayStr()).on('value', async ()=>{
+    if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
+  });
+  db.ref('timetableWeekly/'+dowKey).on('value', ()=> loadTimetable());
+  db.ref('timetableOverride/'+todayStr()).on('value', ()=> loadTimetable());
+}
+
 if(initFirebase()){
   loadAll();
-  setInterval(loadAll, 5*60*1000);
+  attachRealtimeListeners();
+  setInterval(()=>{ loadMeal(); loadQuiz(); }, 5*60*1000);
 }
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
