@@ -232,6 +232,12 @@
         </div>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
+        <div class="divider"></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn secondary" id="resetClapBtn" style="margin:0;">👏 박수 소리 초기화</button>
+          <span class="msg" id="clapMsg"></span>
+        </div>
+        <p class="hint">대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 누르면 박수 소리가 나요. 하루에 한 번만 울리며, 다시 울리게 하려면 여기서 초기화해주세요. (선택한 날짜 기준)</p>
       </div>
     </div>
 
@@ -730,7 +736,7 @@ async function loadAttendanceTab(){
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <span class="att-status">${rec ? STATUS_LABEL[rec.status] : '미체크'}</span>
+      <span class="att-status">${rec ? (rec.status==='out' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -768,6 +774,13 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time });
   await db.ref().update(updates);
   await loadAttendanceTab();
+});
+document.getElementById('resetClapBtn').addEventListener('click', async ()=>{
+  const date = currentAttDate();
+  const msgEl = document.getElementById('clapMsg');
+  await db.ref('clapPlayed/'+date).remove();
+  msgEl.textContent = '초기화됐어요 ✓ 대시보드에서 다시 누르면 울려요.';
+  setTimeout(()=>msgEl.textContent='', 3000);
 });
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */

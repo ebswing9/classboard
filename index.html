@@ -113,11 +113,33 @@
   #ddayWidget{ font-family:'Jua',sans-serif; font-size:15px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
-  #todoSection{ width:100%; max-width:360px; margin-top:22px; display:flex; flex-direction:column; gap:10px; }
-  .todo-row{ display:flex; align-items:center; gap:10px; }
-  .todo-check{ width:18px; height:18px; min-width:18px; border-radius:6px; border:2px solid var(--lav-deep); background:#fff; cursor:pointer; }
-  .todo-check:checked{ background:var(--lav-deep); }
-  .todo-text{ flex:1; border-bottom:2px solid rgba(90,110,130,0.2); padding-bottom:4px; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; }
+
+  /* 출석률 위젯 */
+  #attendanceWidget{ width:100%; max-width:360px; margin-top:20px; }
+  .att-rate-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+  .att-rate-label{ font-size:14px; color:var(--mint-deep); display:flex; align-items:center; gap:5px; }
+  .att-rate-percent{ font-family:'Jua',sans-serif; font-weight:400; font-size:17px; color:var(--mint-deep); }
+  .att-rate-bar-track{ width:100%; height:16px; background:var(--line); border-radius:20px; box-shadow:inset 0 1px 4px rgba(160,140,190,0.2); position:relative; }
+  .att-rate-bar-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg, var(--mint-deep), var(--sky-deep)); transition:width .6s cubic-bezier(.4,0,.2,1); position:relative; min-width:16px; }
+  .att-rate-bar-fill::after{ content:"🐣"; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:15px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
+  #attendanceWidget.full .att-rate-bar-track{ cursor:pointer; }
+  #attendanceWidget.full .att-rate-bar-fill{ background:linear-gradient(90deg, var(--yellow-deep), var(--pink-deep)); animation:attPulse 1.6s ease-in-out infinite; }
+  #attendanceWidget.full .att-rate-bar-fill::after{ content:"🎉"; }
+  @keyframes attPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.15); } }
+  .att-rate-unchecked{ margin-top:7px; font-size:12px; font-weight:600; color:var(--muted); text-align:right; min-height:15px; }
+  .att-clap-toast{ margin-top:2px; font-size:12.5px; font-weight:700; color:var(--pink-deep); text-align:right; opacity:0; transition:opacity .3s ease; min-height:16px; }
+  .att-clap-toast.show{ opacity:1; }
+
+  /* 오늘의 할 일 */
+  #todoSection{ width:100%; max-width:360px; margin-top:32px; display:none; flex-direction:column; }
+  #todoSection.show{ display:flex; }
+  .todo-title{ font-size:16px; color:var(--lav-deep); margin-bottom:12px; text-align:left; }
+  .todo-list{ display:flex; flex-direction:column; gap:10px; }
+  .todo-row{ display:flex; align-items:center; gap:11px; }
+  .todo-text{ flex:1; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; transition:color .15s, opacity .15s; }
+  .todo-row.checked .todo-text{ color:var(--muted); text-decoration:line-through; opacity:.75; }
+  .cute-checkbox.todo .box{ border-color:var(--lav-deep); }
+  .cute-checkbox.todo input:checked ~ .box{ background:var(--lav-deep); }
   .quick-btn{
     cursor:pointer; border:none; color:var(--text); padding:12px 16px; border-radius:20px;
     font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:6px;
@@ -230,6 +252,17 @@
       <div id="clockDate">-</div>
       <div id="clockDday"></div>
       <div id="ddayWidget"></div>
+      <div id="attendanceWidget" style="display:none;">
+        <div class="att-rate-row">
+          <span class="att-rate-label headfont">🎒 출석률</span>
+          <span class="att-rate-percent" id="attRatePercent">0%</span>
+        </div>
+        <div class="att-rate-bar-track" id="attRateBarTrack">
+          <div class="att-rate-bar-fill" id="attRateBarFill" style="width:0%;"></div>
+        </div>
+        <div class="att-rate-unchecked" id="attRateUnchecked"></div>
+        <div class="att-clap-toast" id="attClapToast"></div>
+      </div>
       <div id="quickBtnRow">
         <div class="quick-btn" id="attendTile">🙋 출결</div>
         <div class="quick-btn" id="morningTile">📣 조회</div>
@@ -425,6 +458,7 @@ async function renderAttendancePanel(){
           await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
         }
         await renderAttendancePanel();
+        await loadAttendanceWidget();
       });
     });
   });
@@ -499,9 +533,90 @@ async function loadTodos(){
   const text = snap.val() || '';
   const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
   const box = document.getElementById('todoSection');
-  const rows = lines.length ? lines : [''];
-  box.innerHTML = rows.map(l=>`<div class="todo-row"><input type="checkbox" class="todo-check"><span class="todo-text">${escapeHtml(l)}</span></div>`).join('');
+  if(!lines.length){
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.add('show');
+  box.innerHTML = '<div class="todo-title headfont">📝 오늘의 할 일</div><div class="todo-list">' +
+    lines.map(l=>`<div class="todo-row">
+      <label class="cute-checkbox todo">
+        <input type="checkbox" class="todo-check">
+        <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+      </label>
+      <span class="todo-text">${escapeHtml(l)}</span>
+    </div>`).join('') + '</div>';
+  box.querySelectorAll('.todo-check').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      cb.closest('.todo-row').classList.toggle('checked', cb.checked);
+    });
+  });
 }
+
+/* ---------- 출석률 위젯 & 박수 소리 ---------- */
+function playClapSound(){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    [0, 0.11, 0.22, 0.36].forEach((t,i)=>{
+      const dur = 0.09;
+      const bufferSize = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let n=0;n<bufferSize;n++){
+        data[n] = (Math.random()*2-1) * Math.pow(1 - n/bufferSize, 1.6);
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1200 + Math.random()*600;
+      bp.Q.value = 0.7;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.85 - i*0.05;
+      src.connect(bp).connect(gain).connect(ctx.destination);
+      src.start(ctx.currentTime + t);
+    });
+  }catch(e){ console.error('clap sound error', e); }
+}
+
+let attFullNow = false;
+async function loadAttendanceWidget(){
+  const widget = document.getElementById('attendanceWidget');
+  const roster = await getRosterList();
+  if(!roster.length){ widget.style.display = 'none'; attFullNow = false; return; }
+  const attSnap = await db.ref('attendance/'+todayStr()).once('value');
+  const att = attSnap.val() || {};
+  let present = 0, checkedTotal = 0;
+  roster.forEach(s=>{
+    const rec = att[s.id];
+    if(rec){ checkedTotal++; if(rec.status === 'present') present++; }
+  });
+  const unchecked = roster.length - checkedTotal;
+  const rate = Math.round((present / roster.length) * 100);
+  widget.style.display = 'block';
+  document.getElementById('attRatePercent').textContent = rate + '%';
+  document.getElementById('attRateBarFill').style.width = rate + '%';
+  document.getElementById('attRateUnchecked').textContent = unchecked > 0 ? `아직 출석하지 않은 학생: ${unchecked}명` : '';
+  attFullNow = (rate === 100);
+  widget.classList.toggle('full', attFullNow);
+}
+document.getElementById('attRateBarTrack').addEventListener('click', async ()=>{
+  if(!attFullNow) return;
+  const toast = document.getElementById('attClapToast');
+  const flagSnap = await db.ref('clapPlayed/'+todayStr()).once('value');
+  if(flagSnap.exists()){
+    toast.textContent = '오늘은 이미 박수 쳤어요 👏';
+  } else {
+    await db.ref('clapPlayed/'+todayStr()).set(true);
+    playClapSound();
+    toast.textContent = '짝짝짝! 전체 출석 완료 🎉';
+  }
+  toast.classList.add('show');
+  clearTimeout(window.__attToastTimer);
+  window.__attToastTimer = setTimeout(()=> toast.classList.remove('show'), 2600);
+});
 
 /* ---------- 급식 (NEIS) ---------- */
 let mealDate = new Date();
@@ -633,7 +748,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
 });
 
 async function loadAll(){
-  await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos()]);
+  await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos(), loadAttendanceWidget()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
 }
