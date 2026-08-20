@@ -66,8 +66,6 @@
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
   .notice-item{ display:flex; align-items:flex-start; gap:12px; background:var(--line); padding:14px 16px; border-radius:16px; }
-  .notice-item.checked{ opacity:.6; }
-  .notice-item.checked .notice-item-text{ text-decoration:line-through; }
   .cute-checkbox{ position:relative; display:inline-flex; flex-shrink:0; margin-top:1px; cursor:pointer; width:24px; height:24px; }
   .cute-checkbox input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
   .cute-checkbox .box{ width:24px; height:24px; border-radius:9px; background:#fff; border:2.5px solid var(--line); display:flex; align-items:center; justify-content:center; transition:background .15s, border-color .15s, transform .1s; box-shadow:0 2px 4px rgba(160,140,190,0.15); }
@@ -94,6 +92,18 @@
 
   #clockCard{ flex:0 0 clamp(480px, 46vw, 620px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.15; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:12px 0; flex-shrink:0; }
+  .meal-section{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .meal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-shrink:0; }
+  .meal-label{ font-size:16px; color:var(--text); }
+  .meal-nav{ display:flex; gap:4px; }
+  .meal-nav button{ border:none; background:rgba(255,255,255,0.7); color:var(--sky-deep); width:24px; height:24px; border-radius:8px; font-size:13px; font-weight:800; cursor:pointer; }
+  .meal-nav button#mealTodayBtn{ width:auto; padding:0 8px; font-size:11px; }
+  #mealDateLabel{ font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; flex-shrink:0; }
+  #mealBody{ flex:1; overflow-y:auto; min-height:0; }
+  .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
+  .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
   #quizCard{ flex:1; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
@@ -115,13 +125,21 @@
   #closingTile{ background:var(--pink); }
 
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
-  .period-chip{ border-radius:14px; padding:10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:14px; min-width:0; }
-  .p-badge{ width:22px; height:22px; min-width:22px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
+  .period-chip{ border-radius:16px; padding:22px 14px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:700; font-size:19px; min-width:0; }
+  .p-badge{ width:28px; height:28px; min-width:28px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .tt-empty{ color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
 
   #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(155,127,234,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
+  .quiz-minimal-label{ display:none; }
+  #quizCard.squished .quiz-inner{ display:none; }
+  #quizCard.squished::before{ display:none; }
+  #quizCard.squished .quiz-minimal-label{
+    display:flex; align-items:center; justify-content:center; height:100%;
+    writing-mode: vertical-rl; text-orientation: mixed;
+    font-family:'Jua',sans-serif; font-size:18px; letter-spacing:2px; color:var(--lav-deep);
+  }
   .quiz-icon{ font-size:30px; }
   .quiz-question{ font-size:clamp(18px, 2vw, 26px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
@@ -155,8 +173,21 @@
 <div id="app"><div id="board">
   <div id="mainRow">
     <div class="card" id="timetableCard">
-      <div class="label headfont"><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> 시간표</div>
+      <div class="label headfont">📚 시간표</div>
       <ul id="todayPeriodList"></ul>
+      <div class="tt-divider"></div>
+      <div class="meal-section">
+        <div class="meal-header">
+          <span class="meal-label headfont">🍱 급식</span>
+          <div class="meal-nav">
+            <button id="mealPrevBtn">‹</button>
+            <button id="mealTodayBtn">오늘</button>
+            <button id="mealNextBtn">›</button>
+          </div>
+        </div>
+        <div id="mealDateLabel"></div>
+        <div id="mealBody">불러오는 중...</div>
+      </div>
     </div>
 
     <div class="card" id="sidePanel">
@@ -175,20 +206,21 @@
       <div id="clockDday"></div>
       <div id="ddayWidget"></div>
       <div id="quickBtnRow">
-        <div class="quick-btn" id="attendTile"><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v2H9z"/><path d="M9 13l2 2 4-4"/></svg></span> 출결</div>
-        <div class="quick-btn" id="morningTile"><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11v2a2 2 0 0 0 2 2h1l4 4V5L5 9H4a2 2 0 0 0-2 2z"/><path d="M14.5 8.5a4 4 0 0 1 0 7"/><path d="M18 5.5a8 8 0 0 1 0 13"/></svg></span> 조회</div>
-        <div class="quick-btn" id="closingTile"><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="1" y1="18" x2="23" y2="18"/><polyline points="8 6 12 2 16 6"/></svg></span> 종례</div>
+        <div class="quick-btn" id="attendTile">🙋 출결</div>
+        <div class="quick-btn" id="morningTile">📣 조회</div>
+        <div class="quick-btn" id="closingTile">🌇 종례</div>
       </div>
     </div>
 
     <div class="card" id="quizCard">
       <div class="quiz-inner">
-        <div class="quiz-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3a2 2 0 1 1 4 0h3a1 1 0 0 1 1 1v3a2 2 0 1 0 0 4v3a1 1 0 0 1-1 1h-3a2 2 0 1 0-4 0H4a1 1 0 0 1-1-1v-3a2 2 0 1 1 0-4V8a1 1 0 0 1 1-1z"/></svg></div>
+        <div class="quiz-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M12 2.5c.5 3.2 1.3 5.3 2.5 6.5s3.3 2 6.5 2.5c-3.2.5-5.3 1.3-6.5 2.5s-2 3.3-2.5 6.5c-.5-3.2-1.3-5.3-2.5-6.5S6.2 12 3 11.5c3.2-.5 5.3-1.3 6.5-2.5S11.5 5.7 12 2.5z"/></svg></div>
         <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
         <div class="quiz-choices" id="quizChoices"></div>
-        <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;"><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span> 그려서 답안 제출</button>
+        <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;">✏️ 그려서 답안 제출</button>
         <div class="quiz-raw" id="quizRaw"></div>
       </div>
+      <div class="quiz-minimal-label">오늘의 퀴즈</div>
     </div>
   </div>
 </div></div>
@@ -198,7 +230,7 @@
     <button class="close-x" id="closeDrawOverlay">✕</button>
 
     <div id="drawStepName">
-      <h2><span class="icon-svg"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span> 누가 그릴까요?</h2>
+      <h2>✏️ 누가 그릴까요?</h2>
       <div class="name-grid" id="drawNameGrid"></div>
     </div>
 
@@ -230,17 +262,6 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 
 let db, quizDb;
 
-const ICONS = {
-  book: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-  clipboard: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v2H9z"/><path d="M9 13l2 2 4-4"/></svg>',
-  megaphone: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11v2a2 2 0 0 0 2 2h1l4 4V5L5 9H4a2 2 0 0 0-2 2z"/><path d="M14.5 8.5a4 4 0 0 1 0 7"/><path d="M18 5.5a8 8 0 0 1 0 13"/></svg>',
-  sunset: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="1" y1="18" x2="23" y2="18"/><polyline points="8 6 12 2 16 6"/><line x1="1" y1="22" x2="23" y2="22"/></svg>',
-  puzzle: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3a2 2 0 1 1 4 0h3a1 1 0 0 1 1 1v3a2 2 0 1 0 0 4v3a1 1 0 0 1-1 1h-3a2 2 0 1 0-4 0H4a1 1 0 0 1-1-1v-3a2 2 0 1 1 0-4V8a1 1 0 0 1 1-1z"/></svg>',
-  pencil: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  balloon: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a6 6 0 0 1 6 6c0 3-2 5-3 6.5-.5.8-.5 1.5 0 2.5H9c.5-1 .5-1.7 0-2.5C8 13 6 11 6 8a6 6 0 0 1 6-6z"/><path d="M11 17l-1 5"/></svg>',
-  cloud: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a6 6 0 1 1 1.3-11.86A5 5 0 0 1 20 8.5c1.8.3 3 1.8 3 3.5a4 4 0 0 1-4 4h-1.5"/></svg>'
-};
-function icon(name){ return '<span class="icon-svg">'+ICONS[name]+'</span>'; }
 function initFirebase(){
   const banner = document.getElementById('configErrorBanner');
   if(typeof DASHBOARD_FIREBASE_CONFIG === 'undefined' || !DASHBOARD_FIREBASE_CONFIG.apiKey){
@@ -270,10 +291,12 @@ setInterval(tickClock,1000); tickClock();
 
 /* ---------- 사이드 패널 ---------- */
 const sidePanel = document.getElementById('sidePanel');
+const quizCardEl = document.getElementById('quizCard');
 let openPanelType = null;
 
 function closePanel(){
   sidePanel.classList.remove('open');
+  quizCardEl.classList.remove('squished');
   openPanelType = null;
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
 }
@@ -285,15 +308,16 @@ async function openPanel(type){
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : 'closingTile')).classList.add('active');
   sidePanel.classList.add('open');
+  quizCardEl.classList.add('squished');
 
   if(type==='attendance'){
-    document.getElementById('panelTitle').innerHTML = icon('clipboard') + ' 출결 체크';
+    document.getElementById('panelTitle').textContent = '🙋 출결 체크';
     await renderAttendancePanel();
   } else if(type==='morning'){
-    document.getElementById('panelTitle').innerHTML = icon('megaphone') + ' 조회사항';
+    document.getElementById('panelTitle').textContent = '📣 조회사항';
     await renderNoticePanel('morning');
   } else {
-    document.getElementById('panelTitle').innerHTML = icon('sunset') + ' 종례사항';
+    document.getElementById('panelTitle').textContent = '🌇 종례사항';
     await renderNoticePanel('closing');
   }
 }
@@ -303,7 +327,7 @@ document.getElementById('closingTile').addEventListener('click', ()=> openPanel(
 
 function renderNoticeList(text, which){
   const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(!lines.length) return `<div class="notice-empty"><div class="e-icon">${ICONS.cloud}</div><div>아직 공개된 내용이 없어요</div></div>`;
+  if(!lines.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
   return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item">
     <label class="cute-checkbox ${which}">
       <input type="checkbox" class="notice-checkbox">
@@ -320,12 +344,7 @@ async function renderNoticePanel(which){
   const body = document.getElementById('panelBody');
   body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
-    : `<div class="notice-empty"><div class="e-icon">${ICONS.cloud}</div><div>아직 공개된 내용이 없어요</div></div>`;
-  body.querySelectorAll('.notice-checkbox').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      cb.closest('.notice-item').classList.toggle('checked', cb.checked);
-    });
-  });
+    : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
 async function getRosterList(){
@@ -419,8 +438,37 @@ async function loadQuiz(){
       qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
       rEl.textContent = JSON.stringify(data, null, 2);
     }
-  }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다.'; }
+  }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다. (' + (e && e.message ? e.message : e) + ')'; }
 }
+
+/* ---------- 급식 (NEIS) ---------- */
+let mealDate = new Date();
+async function loadMeal(){
+  const bodyEl = document.getElementById('mealBody');
+  document.getElementById('mealDateLabel').textContent = `${mealDate.getMonth()+1}월 ${mealDate.getDate()}일`;
+  const cfgSnap = await db.ref('config/neis').once('value');
+  const cfg = cfgSnap.val();
+  if(!cfg || !cfg.apiKey || !cfg.officeCode || !cfg.schoolCode){
+    bodyEl.innerHTML = '<div class="meal-empty">🌤️ 관리자 페이지에서<br>학교를 등록해주세요.</div>';
+    return;
+  }
+  bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
+  try{
+    const dateCompact = todayStrCompact(mealDate);
+    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${encodeURIComponent(cfg.apiKey)}&Type=json&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
+    if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
+    const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
+    bodyEl.innerHTML = '<ul class="meal-list">' + items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+  }catch(e){
+    bodyEl.innerHTML = '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
+  }
+}
+document.getElementById('mealPrevBtn').addEventListener('click', ()=>{ mealDate = new Date(mealDate.getFullYear(), mealDate.getMonth(), mealDate.getDate()-1); loadMeal(); });
+document.getElementById('mealNextBtn').addEventListener('click', ()=>{ mealDate = new Date(mealDate.getFullYear(), mealDate.getMonth(), mealDate.getDate()+1); loadMeal(); });
+document.getElementById('mealTodayBtn').addEventListener('click', ()=>{ mealDate = new Date(); loadMeal(); });
 
 /* ---------- D-Day ---------- */
 async function loadDday(){
@@ -435,7 +483,7 @@ async function loadDday(){
   if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
   else if(diffDays === 0) text = `${cfg.label} D-DAY`;
   else text = `${cfg.label} D+${Math.abs(diffDays)}`;
-  el.innerHTML = icon('balloon') + ' ' + escapeHtml(text);
+  el.textContent = '🎈 ' + text;
   el.style.display = 'inline-block';
 }
 
@@ -491,7 +539,7 @@ async function openDrawOverlay(){
   grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       selectedStudent = { id: btn.dataset.id, name: btn.dataset.name };
-      document.getElementById('drawingForLabel').innerHTML = icon('pencil') + ' ' + escapeHtml(selectedStudent.name) + '님';
+      document.getElementById('drawingForLabel').textContent = `✏️ ${selectedStudent.name}님`;
       document.getElementById('drawStepName').style.display = 'none';
       document.getElementById('drawStepCanvas').style.display = 'block';
       resetCanvas();
@@ -521,7 +569,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
 });
 
 async function loadAll(){
-  await Promise.all([loadTimetable(), loadQuiz(), loadDday()]);
+  await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
 }

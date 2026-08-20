@@ -66,6 +66,27 @@
   .field input[type="date"]:focus{ border-color:var(--primary-dark); background:#fff; }
   .field input[type="date"]::-webkit-calendar-picker-indicator{ filter: invert(48%) sepia(60%) saturate(900%) hue-rotate(280deg) brightness(105%); cursor:pointer; padding:4px; border-radius:6px; }
   .field input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(255,255,255,0.5); }
+
+  /* 커스텀 달력 피커 */
+  .cal-wrap{ position:relative; display:inline-block; width:100%; }
+  .cal-trigger{ width:100%; text-align:left; padding:11px 16px; border-radius:20px; border:none; background:var(--primary); color:var(--primary-text); font-size:14px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .cal-trigger:hover{ background:var(--primary-dark); }
+  .cal-trigger-icon{ font-size:15px; }
+  .cal-pop{ display:none; position:absolute; top:calc(100% + 8px); left:0; z-index:50; width:280px; background:#fff; border-radius:20px; padding:16px 18px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .cal-pop.open{ display:block; }
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-title{ font-size:14.5px; font-weight:800; color:var(--text); }
+  .cal-nav{ border:none; background:var(--primary-soft); color:var(--primary-text); width:28px; height:28px; border-radius:9px; font-size:14px; font-weight:800; cursor:pointer; }
+  .cal-nav:hover{ background:var(--primary); }
+  .cal-week{ display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px; }
+  .cal-week span{ text-align:center; font-size:11px; font-weight:700; color:var(--muted); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-day{ position:relative; aspect-ratio:1; border:none; background:none; border-radius:10px; font-size:13px; font-weight:600; color:var(--text); cursor:pointer; }
+  .cal-day:hover{ background:var(--primary-soft); }
+  .cal-day.today{ font-weight:900; color:var(--primary-text); }
+  .cal-day.sel{ background:var(--primary); color:var(--primary-text); font-weight:900; }
+  .cal-day .cal-dot{ position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--accent-text); }
+  .cal-blank{ aspect-ratio:1; }
   .field textarea{ min-height:88px; resize:vertical; line-height:1.5; }
   .btn{ background:var(--primary); color:var(--primary-text); border:none; padding:11px 18px; border-radius:11px; font-weight:800; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; }
   .btn:hover{ background:var(--primary-dark); }
@@ -154,6 +175,7 @@
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="quizanswers">퀴즈 답안</button>
+      <button class="tab-btn" data-tab="meal">급식 설정</button>
       <button class="tab-btn" data-tab="settings">설정</button>
     </div>
 
@@ -270,6 +292,24 @@
       </div>
     </div>
 
+    <div class="tab-panel" id="tab-meal">
+      <div class="section">
+        <h3>🍱 나이스(NEIS) 급식 연동</h3>
+        <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
+        <div class="field"><label>학교명으로 검색</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="schoolSearchInput" placeholder="예: 대전도안중학교">
+            <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
+          </div>
+        </div>
+        <div id="schoolSearchResults"></div>
+        <div class="divider"></div>
+        <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
+        <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
+        <span class="msg" id="neisMsg"></span>
+      </div>
+    </div>
+
     <div class="tab-panel" id="tab-settings">
       <div class="section">
         <h3>🔑 관리자 비밀번호 변경</h3>
@@ -302,6 +342,106 @@ function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
+
+/* ---- 커스텀 달력 피커 ---- */
+const datePickers = {};
+function attachCalendarPicker(inputId, opts){
+  opts = opts || {};
+  const input = document.getElementById(inputId);
+  input.type = 'hidden';
+  const wrap = document.createElement('div');
+  wrap.className = 'cal-wrap';
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'cal-trigger';
+  const pop = document.createElement('div');
+  pop.className = 'cal-pop';
+  wrap.appendChild(trigger);
+  wrap.appendChild(pop);
+  input.parentNode.insertBefore(wrap, input.nextSibling);
+
+  let selected = input.value || todayStr();
+  let view = new Date(selected+'T00:00:00');
+
+  function label(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+  }
+
+  async function render(){
+    trigger.innerHTML = '<span class="cal-trigger-icon">📅</span> ' + label(selected);
+    const y = view.getFullYear(), m = view.getMonth();
+    const startDow = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+    let marked = {};
+    if(opts.markedDatesFn){
+      try{ marked = await opts.markedDatesFn(y, m); }catch(e){ marked = {}; }
+    }
+    let html = '<div class="cal-head">';
+    html += '<button type="button" class="cal-nav" data-dir="-1">‹</button>';
+    html += '<div class="cal-title">'+y+'년 '+(m+1)+'월</div>';
+    html += '<button type="button" class="cal-nav" data-dir="1">›</button>';
+    html += '</div>';
+    html += '<div class="cal-week">' + ['일','월','화','수','목','금','토'].map(function(w){ return '<span>'+w+'</span>'; }).join('') + '</div>';
+    html += '<div class="cal-grid">';
+    for(let i=0;i<startDow;i++) html += '<span class="cal-blank"></span>';
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const cls = ['cal-day'];
+      if(ds===selected) cls.push('sel');
+      if(ds===todayStr()) cls.push('today');
+      html += '<button type="button" class="'+cls.join(' ')+'" data-date="'+ds+'">'+d+(marked[ds] ? '<i class="cal-dot"></i>' : '')+'</button>';
+    }
+    html += '</div>';
+    pop.innerHTML = html;
+    pop.querySelectorAll('.cal-nav').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        view = new Date(y, m + Number(b.dataset.dir), 1);
+        render();
+      });
+    });
+    pop.querySelectorAll('.cal-day').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        selected = b.dataset.date;
+        input.value = selected;
+        pop.classList.remove('open');
+        render();
+        input.dispatchEvent(new Event('change'));
+      });
+    });
+  }
+
+  trigger.addEventListener('click', function(e){
+    e.stopPropagation();
+    document.querySelectorAll('.cal-pop.open').forEach(function(p){ if(p!==pop) p.classList.remove('open'); });
+    pop.classList.toggle('open');
+    if(pop.classList.contains('open')) render();
+  });
+  document.addEventListener('click', function(e){ if(!wrap.contains(e.target)) pop.classList.remove('open'); });
+
+  input.value = selected;
+  render();
+
+  const controller = {
+    setValue: function(v){ selected = v; view = new Date(v+'T00:00:00'); input.value = v; render(); }
+  };
+  datePickers[inputId] = controller;
+  return controller;
+}
+async function getNoticeMarkedDates(year, month){
+  const prefix = year+'-'+String(month+1).padStart(2,'0');
+  const snap = await db.ref('notices').orderByKey().startAt(prefix).endAt(prefix+'\uf8ff').once('value');
+  const val = snap.val() || {};
+  const marked = {};
+  Object.keys(val).forEach(function(d){ marked[d] = true; });
+  return marked;
+}
+attachCalendarPicker('noticeDate', { markedDatesFn: getNoticeMarkedDates });
+attachCalendarPicker('overrideDate');
+attachCalendarPicker('quizAnswerDate');
+attachCalendarPicker('ddayDateInput');
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -363,6 +503,7 @@ async function initAdmin(){
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
   await loadQuizAnswers(todayStr());
+  await loadNeisForm();
   await loadSettingsForm();
 }
 
@@ -467,7 +608,8 @@ async function loadHistoryList(){
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
       const date = el.dataset.edit;
-      document.getElementById('noticeDate').value = date;
+      if(datePickers['noticeDate']) datePickers['noticeDate'].setValue(date);
+      else document.getElementById('noticeDate').value = date;
       loadNoticeForDate(date);
       switchTab('notice');
     });
@@ -664,6 +806,51 @@ async function renderOverrideListView(){
   document.getElementById('overrideListView').textContent = dates.length ? ('임시 변경된 날짜: ' + dates.join(', ')) : '등록된 임시 변경이 없습니다.';
 }
 
+/* ---- 급식(NEIS) 설정 ---- */
+let selectedSchool = null;
+async function loadNeisForm(){
+  const snap = await db.ref('config/neis').once('value');
+  const cfg = snap.val() || {};
+  document.getElementById('neisKey').value = cfg.apiKey || '';
+  document.getElementById('currentSchoolLabel').textContent = cfg.schoolName || '없음';
+  if(cfg.schoolName && cfg.officeCode && cfg.schoolCode){
+    selectedSchool = { schoolName: cfg.schoolName, officeCode: cfg.officeCode, schoolCode: cfg.schoolCode };
+  }
+}
+document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
+  const key = document.getElementById('neisKey').value.trim();
+  const name = document.getElementById('schoolSearchInput').value.trim();
+  const box = document.getElementById('schoolSearchResults');
+  if(!key || !name){ box.innerHTML = '<p class="hint">인증키와 학교명을 먼저 입력하세요.</p>'; return; }
+  box.innerHTML = '<p class="hint">검색 중...</p>';
+  try{
+    const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${encodeURIComponent(key)}&Type=json&SCHUL_NM=${encodeURIComponent(name)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const rows = (json && json.schoolInfo && json.schoolInfo[1] && json.schoolInfo[1].row) || [];
+    if(!rows.length){ box.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>'; return; }
+    box.innerHTML = rows.map((r,i)=>`<div class="school-item" data-i="${i}">${r.SCHUL_NM} <span style="color:var(--muted); font-weight:500;">(${r.LCTN_SC_NM})</span></div>`).join('');
+    box.querySelectorAll('.school-item').forEach((el,i)=>{
+      el.addEventListener('click', ()=>{
+        box.querySelectorAll('.school-item').forEach(x=>x.classList.remove('selected'));
+        el.classList.add('selected');
+        const r = rows[i];
+        selectedSchool = { schoolName: r.SCHUL_NM, officeCode: r.ATPT_OFCDC_SC_CODE, schoolCode: r.SD_SCHUL_CODE };
+      });
+    });
+  }catch(e){ box.innerHTML = '<p class="hint">검색 중 오류가 발생했습니다.</p>'; }
+});
+document.getElementById('saveNeisBtn').addEventListener('click', async ()=>{
+  const key = document.getElementById('neisKey').value.trim();
+  const msgEl = document.getElementById('neisMsg');
+  if(!key){ msgEl.textContent = 'API 인증키를 입력해주세요.'; return; }
+  if(!selectedSchool){ msgEl.textContent = '검색 후 학교를 선택해주세요.'; return; }
+  await db.ref('config/neis').set({ apiKey: key, ...selectedSchool });
+  document.getElementById('currentSchoolLabel').textContent = selectedSchool.schoolName;
+  msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=>msgEl.textContent='', 2000);
+});
+
 /* ---- 퀴즈 답안 확인 ---- */
 let quizAnswerFilter = 'all';
 document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(btn=>{
@@ -744,7 +931,8 @@ document.getElementById('saveDdayBtn').addEventListener('click', async ()=>{
 document.getElementById('clearDdayBtn').addEventListener('click', async ()=>{
   await db.ref('config/dday').remove();
   document.getElementById('ddayLabelInput').value = '';
-  document.getElementById('ddayDateInput').value = '';
+  if(datePickers['ddayDateInput']) datePickers['ddayDateInput'].setValue(todayStr());
+  else document.getElementById('ddayDateInput').value = '';
   document.getElementById('ddayMsg').textContent = '지웠어요 ✓';
   setTimeout(()=>document.getElementById('ddayMsg').textContent='', 2000);
 });
