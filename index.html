@@ -62,6 +62,8 @@
   .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
   #panelBody{ flex:1; overflow-y:auto; min-height:0; }
+  @keyframes panelFadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .panel-fade{ animation: panelFadeIn .28s ease; }
 
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
@@ -93,9 +95,9 @@
 
   #clockCard{ flex:0 0 clamp(540px, 52vw, 680px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.15; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.7; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
   .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
-  .meal-section{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .meal-section{ flex:0.6; display:flex; flex-direction:column; min-height:0; }
   .meal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-shrink:0; }
   .meal-label{ font-size:16px; color:var(--text); }
   .meal-nav{ display:flex; gap:4px; }
@@ -133,10 +135,13 @@
 
   #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(155,127,234,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
+  .quiz-icon{ transition: font-size .32s ease; }
+  .quiz-question, .quiz-choices, .quiz-raw{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
+  .quiz-submit-btn{ transition: font-size .3s ease, padding .3s ease, transform .12s ease, filter .15s ease; }
   #quizCard.squished{ cursor:pointer; }
   #quizCard.squished .quiz-question,
   #quizCard.squished .quiz-choices,
-  #quizCard.squished .quiz-raw{ display:none; }
+  #quizCard.squished .quiz-raw{ opacity:0; max-height:0; margin:0; }
   #quizCard.squished::before{ display:none; }
   #quizCard.squished .quiz-icon{ font-size:22px; }
   #quizCard.squished .quiz-submit-btn{ font-size:12px; padding:8px 12px; white-space:normal; }
@@ -151,8 +156,8 @@
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
 
   /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
-  #drawOverlay{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:200; display:none; }
-  #drawOverlay.open{ display:block; }
+  #drawOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
+  #drawOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
   .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); }
   .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--lav-deep); margin:0 0 8px; text-align:center; }
   .close-x{ position:absolute; top:6px; right:6px; background:var(--line); border:none; width:20px; height:20px; border-radius:50%; color:var(--text); font-size:10px; cursor:pointer; }
@@ -341,6 +346,10 @@ async function openPanel(type){
     document.getElementById('panelTitle').textContent = '🌇 종례사항';
     await renderNoticePanel('closing');
   }
+  const panelBodyEl = document.getElementById('panelBody');
+  panelBodyEl.classList.remove('panel-fade');
+  void panelBodyEl.offsetWidth;
+  panelBodyEl.classList.add('panel-fade');
 }
 document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
