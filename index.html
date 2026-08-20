@@ -62,8 +62,6 @@
   .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
   #panelBody{ flex:1; overflow-y:auto; min-height:0; }
-  @keyframes panelFadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
-  .panel-fade{ animation: panelFadeIn .28s ease; }
 
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
@@ -104,7 +102,7 @@
   .meal-nav button{ border:none; background:rgba(255,255,255,0.7); color:var(--sky-deep); width:24px; height:24px; border-radius:8px; font-size:13px; font-weight:800; cursor:pointer; }
   .meal-nav button#mealTodayBtn{ width:auto; padding:0 8px; font-size:11px; }
   #mealDateLabel{ font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; flex-shrink:0; }
-  #mealBody{ flex:1; overflow-y:auto; min-height:0; }
+  #mealBody{ flex:1; overflow:hidden; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
   #quizCard{ flex:1; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
@@ -115,6 +113,11 @@
   #ddayWidget{ font-family:'Jua',sans-serif; font-size:15px; color:#7a5ea8; margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
+  #todoSection{ width:100%; max-width:360px; margin-top:22px; display:flex; flex-direction:column; gap:10px; }
+  .todo-row{ display:flex; align-items:center; gap:10px; }
+  .todo-check{ width:18px; height:18px; min-width:18px; border-radius:6px; border:2px solid var(--lav-deep); background:#fff; cursor:pointer; }
+  .todo-check:checked{ background:var(--lav-deep); }
+  .todo-text{ flex:1; border-bottom:2px solid rgba(90,110,130,0.2); padding-bottom:4px; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; }
   .quick-btn{
     cursor:pointer; border:none; color:var(--text); padding:12px 16px; border-radius:20px;
     font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:6px;
@@ -232,6 +235,7 @@
         <div class="quick-btn" id="morningTile">📣 조회</div>
         <div class="quick-btn" id="closingTile">🌇 종례</div>
       </div>
+      <div id="todoSection"></div>
     </div>
 
     <div class="card" id="quizCard">
@@ -346,10 +350,6 @@ async function openPanel(type){
     document.getElementById('panelTitle').textContent = '🌇 종례사항';
     await renderNoticePanel('closing');
   }
-  const panelBodyEl = document.getElementById('panelBody');
-  panelBodyEl.classList.remove('panel-fade');
-  void panelBodyEl.offsetWidth;
-  panelBodyEl.classList.add('panel-fade');
 }
 document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
@@ -479,6 +479,30 @@ async function loadQuiz(){
   }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다. (' + (e && e.message ? e.message : e) + ')'; }
 }
 
+function shrinkToFit(el, opts){
+  opts = opts || {};
+  const max = opts.max || 13.5;
+  const min = opts.min || 9;
+  let size = max;
+  el.style.fontSize = size + 'px';
+  let guard = 0;
+  while(el.scrollHeight > el.clientHeight && size > min && guard < 20){
+    size -= 0.5;
+    el.style.fontSize = size + 'px';
+    guard++;
+  }
+}
+
+/* ---------- 오늘의 할 일 ---------- */
+async function loadTodos(){
+  const snap = await db.ref('todos/'+todayStr()).once('value');
+  const text = snap.val() || '';
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const box = document.getElementById('todoSection');
+  const rows = lines.length ? lines : [''];
+  box.innerHTML = rows.map(l=>`<div class="todo-row"><input type="checkbox" class="todo-check"><span class="todo-text">${escapeHtml(l)}</span></div>`).join('');
+}
+
 /* ---------- 급식 (NEIS) ---------- */
 let mealDate = new Date();
 async function loadMeal(){
@@ -501,6 +525,7 @@ async function loadMeal(){
     if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
     const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
     bodyEl.innerHTML = '<ul class="meal-list">' + items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+    shrinkToFit(bodyEl, {max:13.5, min:9});
   }catch(e){
     bodyEl.innerHTML = '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
   }
@@ -608,7 +633,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
 });
 
 async function loadAll(){
-  await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal()]);
+  await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
 }

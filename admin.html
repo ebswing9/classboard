@@ -198,6 +198,13 @@
         <span class="msg" id="noticeMsg"></span>
       </div>
       <div class="section">
+        <h3>✅ 오늘의 할 일 <span class="sub" id="todoDateSub"></span></h3>
+        <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요.</p>
+        <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;수학 익힘책 풀기"></textarea></div>
+        <button class="btn" id="saveTodosBtn">할 일 저장</button>
+        <span class="msg" id="todosMsg"></span>
+      </div>
+      <div class="section">
         <h3>최근 내용 불러오기</h3>
         <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요 (날짜는 안 바뀌어요). 어제랑 같은 공지 다시 쓸 때 편해요.</p>
         <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
@@ -214,7 +221,8 @@
 
     <div class="tab-panel" id="tab-attendance">
       <div class="section">
-        <h3>🙋 오늘 출결 체크 <span class="sub" id="attDateLabel"></span></h3>
+        <h3>🙋 출결 체크</h3>
+        <div class="field"><label>날짜</label><input type="date" id="attDate"></div>
         <p class="hint">출석/조퇴/결석 버튼으로 체크하세요. 아무것도 안 누르면 미체크 상태예요.</p>
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
           <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;">
@@ -449,6 +457,7 @@ attachCalendarPicker('noticeDate', { markedDatesFn: getNoticeMarkedDates });
 attachCalendarPicker('overrideDate');
 attachCalendarPicker('quizAnswerDate');
 attachCalendarPicker('ddayDateInput');
+attachCalendarPicker('attDate');
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -499,7 +508,6 @@ let initedOnce = false;
 async function initAdmin(){
   if(initedOnce) return; initedOnce = true;
   document.getElementById('noticeDate').value = todayStr();
-  document.getElementById('attDateLabel').textContent = '('+todayStr()+')';
   document.getElementById('overrideDate').value = todayStr();
   await loadNoticeForDate(todayStr());
   await loadRecentChips();
@@ -543,7 +551,18 @@ async function loadNoticeForDate(date){
   document.getElementById('noticeDateSub').textContent = date;
   setPublishBtn('morning', !!data.morningPublished);
   setPublishBtn('closing', !!data.closingPublished);
+
+  const todoSnap = await db.ref('todos/'+date).once('value');
+  document.getElementById('inputTodos').value = todoSnap.val() || '';
+  document.getElementById('todoDateSub').textContent = date;
 }
+document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  const text = document.getElementById('inputTodos').value;
+  await db.ref('todos/'+date).set(text);
+  document.getElementById('todosMsg').textContent = '저장됐어요 ✓';
+  setTimeout(()=>document.getElementById('todosMsg').textContent='', 2000);
+});
 document.getElementById('noticeDate').addEventListener('change', (e)=> loadNoticeForDate(e.target.value || todayStr()));
 document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
@@ -691,9 +710,11 @@ document.getElementById('rosterCsvInput').addEventListener('change', async (e)=>
 });
 
 /* ---- 출결 ---- */
+function currentAttDate(){ return document.getElementById('attDate').value || todayStr(); }
 async function loadAttendanceTab(){
+  const date = currentAttDate();
   const roster = await getRosterList();
-  const attSnap = await db.ref('attendance/'+todayStr()).once('value');
+  const attSnap = await db.ref('attendance/'+date).once('value');
   const att = attSnap.val() || {};
   let present=0, out=0, absentCount=0;
   roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
@@ -718,19 +739,20 @@ async function loadAttendanceTab(){
     const id = row.dataset.id, name = row.dataset.name;
     row.querySelectorAll('.pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+        await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
         await loadAttendanceTab();
       });
     });
     const resetBtn = row.querySelector('[data-reset]');
     if(resetBtn){
       resetBtn.addEventListener('click', async ()=>{
-        await db.ref(`attendance/${todayStr()}/${id}`).remove();
+        await db.ref(`attendance/${currentAttDate()}/${id}`).remove();
         await loadAttendanceTab();
       });
     }
   });
 }
+document.getElementById('attDate').addEventListener('change', loadAttendanceTab);
 document.getElementById('attSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
 });
@@ -741,8 +763,9 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   const nameById = {};
   roster.forEach(s=> nameById[s.id] = s.name);
   const time = nowHHMM();
+  const date = currentAttDate();
   const updates = {};
-  checkedIds.forEach(id => updates[`attendance/${todayStr()}/${id}`] = { name: nameById[id], status: 'present', time });
+  checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time });
   await db.ref().update(updates);
   await loadAttendanceTab();
 });
