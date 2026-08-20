@@ -216,7 +216,12 @@
       <div class="section">
         <h3>🙋 오늘 출결 체크 <span class="sub" id="attDateLabel"></span></h3>
         <p class="hint">출석/조퇴/결석 버튼으로 체크하세요. 아무것도 안 누르면 미체크 상태예요.</p>
-        <button class="btn secondary" id="markAllPresentBtn" style="margin-bottom:10px;">전체 출석 체크</button>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;">
+            <input type="checkbox" id="attSelectAll"> 전체 선택
+          </label>
+          <button class="btn secondary" id="markSelectedPresentBtn" style="margin:0;">선택 학생 출석 체크</button>
+        </div>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
       </div>
@@ -699,14 +704,16 @@ async function loadAttendanceTab(){
   box.innerHTML = roster.map(s=>{
     const rec = att[s.id];
     return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
+      <input type="checkbox" class="att-check" data-id="${s.id}">
       <span class="name">${escapeHtml(s.name)}</span>
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <span class="att-status">${rec ? STATUS_LABEL[rec.status]+' '+rec.time : '미체크'}</span>
+      <span class="att-status">${rec ? STATUS_LABEL[rec.status] : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
+  document.getElementById('attSelectAll').checked = false;
   box.querySelectorAll('.att-row').forEach(row=>{
     const id = row.dataset.id, name = row.dataset.name;
     row.querySelectorAll('.pill').forEach(btn=>{
@@ -724,13 +731,18 @@ async function loadAttendanceTab(){
     }
   });
 }
-document.getElementById('markAllPresentBtn').addEventListener('click', async ()=>{
+document.getElementById('attSelectAll').addEventListener('change', (e)=>{
+  document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
+});
+document.getElementById('markSelectedPresentBtn').addEventListener('click', async ()=>{
   const roster = await getRosterList();
-  if(!roster.length) return;
-  if(!confirm(`전체 ${roster.length}명을 출석으로 체크할까요?`)) return;
+  const checkedIds = [...document.querySelectorAll('.att-check:checked')].map(cb=>cb.dataset.id);
+  if(!checkedIds.length){ alert('선택된 학생이 없습니다.'); return; }
+  const nameById = {};
+  roster.forEach(s=> nameById[s.id] = s.name);
   const time = nowHHMM();
   const updates = {};
-  roster.forEach(s => updates[`attendance/${todayStr()}/${s.id}`] = { name: s.name, status: 'present', time });
+  checkedIds.forEach(id => updates[`attendance/${todayStr()}/${id}`] = { name: nameById[id], status: 'present', time });
   await db.ref().update(updates);
   await loadAttendanceTab();
 });
@@ -824,10 +836,11 @@ document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('schoolSearchInput').value.trim();
   const region = document.getElementById('schoolRegionInput').value.trim();
   const box = document.getElementById('schoolSearchResults');
-  if(!key || !name){ box.innerHTML = '<p class="hint">인증키와 학교명을 먼저 입력하세요.</p>'; return; }
+  if(!name){ box.innerHTML = '<p class="hint">학교명을 먼저 입력하세요.</p>'; return; }
   box.innerHTML = '<p class="hint">검색 중...</p>';
   try{
-    const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${encodeURIComponent(key)}&Type=json&SCHUL_NM=${encodeURIComponent(name)}`;
+    const keyParam = key ? `&KEY=${encodeURIComponent(key)}` : '';
+    const url = `https://open.neis.go.kr/hub/schoolInfo?Type=json${keyParam}&SCHUL_NM=${encodeURIComponent(name)}`;
     const res = await fetch(url);
     const json = await res.json();
     let rows = (json && json.schoolInfo && json.schoolInfo[1] && json.schoolInfo[1].row) || [];
@@ -855,7 +868,6 @@ document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
 document.getElementById('saveNeisBtn').addEventListener('click', async ()=>{
   const key = document.getElementById('neisKey').value.trim();
   const msgEl = document.getElementById('neisMsg');
-  if(!key){ msgEl.textContent = 'API 인증키를 입력해주세요.'; return; }
   if(!selectedSchool){ msgEl.textContent = '검색 후 학교를 선택해주세요.'; return; }
   await db.ref('config/neis').set({ apiKey: key, ...selectedSchool });
   document.getElementById('currentSchoolLabel').textContent = selectedSchool.schoolName;

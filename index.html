@@ -86,14 +86,15 @@
   .att-cell .att-name{ font-size:15px; font-weight:800; }
   .att-cell .att-time{ font-size:11.5px; font-weight:700; color:var(--mint-deep); }
   .att-cell .att-btns{ display:flex; gap:6px; }
+  .att-absent-label{ color:#e0556f; font-weight:800; font-size:14px; text-align:center; padding:4px 0; }
   .att-pill{ flex:1; border:none; background:#fff; color:var(--text); padding:8px 6px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:0 0 clamp(480px, 46vw, 620px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #clockCard{ flex:0 0 clamp(540px, 52vw, 680px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
-  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.15; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
-  .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:12px 0; flex-shrink:0; }
+  #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.15; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
+  .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
   .meal-section{ flex:1; display:flex; flex-direction:column; min-height:0; }
   .meal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-shrink:0; }
   .meal-label{ font-size:16px; color:var(--text); }
@@ -125,23 +126,22 @@
   #closingTile{ background:var(--pink); }
 
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
-  .period-chip{ border-radius:16px; padding:22px 14px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:700; font-size:19px; min-width:0; }
-  .p-badge{ width:28px; height:28px; min-width:28px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
+  .period-chip{ flex:1; min-height:0; border-radius:14px; padding:4px 12px; display:flex; align-items:center; justify-content:center; gap:9px; font-weight:700; font-size:16px; min-width:0; overflow:hidden; }
+  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .tt-empty{ color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
 
   #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(155,127,234,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
-  .quiz-minimal-label{ display:none; }
-  #quizCard.squished .quiz-inner{ display:none; }
+  #quizCard.squished{ cursor:pointer; }
+  #quizCard.squished .quiz-question,
+  #quizCard.squished .quiz-choices,
+  #quizCard.squished .quiz-raw{ display:none; }
   #quizCard.squished::before{ display:none; }
-  #quizCard.squished .quiz-minimal-label{
-    display:flex; align-items:center; justify-content:center; height:100%;
-    writing-mode: vertical-rl; text-orientation: mixed;
-    font-family:'Jua',sans-serif; font-size:18px; letter-spacing:2px; color:var(--lav-deep);
-  }
+  #quizCard.squished .quiz-icon{ font-size:22px; }
+  #quizCard.squished .quiz-submit-btn{ font-size:12px; padding:8px 12px; white-space:normal; }
   .quiz-icon{ font-size:30px; }
-  .quiz-question{ font-size:clamp(18px, 2vw, 26px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
+  .quiz-question{ font-size:clamp(22px, 2.8vw, 34px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:9px 16px; font-size:15px; font-weight:700; }
   .quiz-raw{ font-size:11px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:100px; overflow-y:auto; }
@@ -237,7 +237,6 @@
         <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;">✏️ 그려서 답안 제출</button>
         <div class="quiz-raw" id="quizRaw"></div>
       </div>
-      <div class="quiz-minimal-label">오늘의 퀴즈</div>
     </div>
   </div>
 </div></div>
@@ -318,6 +317,11 @@ function closePanel(){
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
 }
 document.getElementById('panelCloseBtn').addEventListener('click', closePanel);
+quizCardEl.addEventListener('click', (e)=>{
+  if(!quizCardEl.classList.contains('squished')) return;
+  if(e.target.closest('#openDrawBtn')) return;
+  closePanel();
+});
 
 async function openPanel(type){
   if(openPanelType === type){ closePanel(); return; }
@@ -382,6 +386,14 @@ async function renderAttendancePanel(){
 
   box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
+    if(rec && rec.status === 'absent'){
+      return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
+        <div class="att-name-row">
+          <span class="att-name">${escapeHtml(s.name)}</span>
+        </div>
+        <div class="att-absent-label">결석</div>
+      </div>`;
+    }
     return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <div class="att-name-row">
         <span class="att-name">${escapeHtml(s.name)}</span>
@@ -465,14 +477,15 @@ async function loadMeal(){
   document.getElementById('mealDateLabel').textContent = `${mealDate.getMonth()+1}월 ${mealDate.getDate()}일`;
   const cfgSnap = await db.ref('config/neis').once('value');
   const cfg = cfgSnap.val();
-  if(!cfg || !cfg.apiKey || !cfg.officeCode || !cfg.schoolCode){
+  if(!cfg || !cfg.officeCode || !cfg.schoolCode){
     bodyEl.innerHTML = '<div class="meal-empty">🌤️ 관리자 페이지에서<br>학교를 등록해주세요.</div>';
     return;
   }
   bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
   try{
     const dateCompact = todayStrCompact(mealDate);
-    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${encodeURIComponent(cfg.apiKey)}&Type=json&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
+    const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
+    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
     const res = await fetch(url);
     const json = await res.json();
     const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
