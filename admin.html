@@ -298,9 +298,11 @@
         <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
         <div class="field"><label>학교명으로 검색</label>
           <div style="display:flex; gap:8px;">
-            <input type="text" id="schoolSearchInput" placeholder="예: 대전도안중학교">
+            <input type="text" id="schoolRegionInput" placeholder="지역 (예: 대전광역시)" style="flex:0.8;">
+            <input type="text" id="schoolSearchInput" placeholder="예: 대전도안중학교" style="flex:1.2;">
             <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
           </div>
+          <p class="hint">지역을 같이 입력하면 같은 이름의 다른 학교와 헷갈릴 일이 줄어요.</p>
         </div>
         <div id="schoolSearchResults"></div>
         <div class="divider"></div>
@@ -820,6 +822,7 @@ async function loadNeisForm(){
 document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
   const key = document.getElementById('neisKey').value.trim();
   const name = document.getElementById('schoolSearchInput').value.trim();
+  const region = document.getElementById('schoolRegionInput').value.trim();
   const box = document.getElementById('schoolSearchResults');
   if(!key || !name){ box.innerHTML = '<p class="hint">인증키와 학교명을 먼저 입력하세요.</p>'; return; }
   box.innerHTML = '<p class="hint">검색 중...</p>';
@@ -827,7 +830,11 @@ document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
     const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${encodeURIComponent(key)}&Type=json&SCHUL_NM=${encodeURIComponent(name)}`;
     const res = await fetch(url);
     const json = await res.json();
-    const rows = (json && json.schoolInfo && json.schoolInfo[1] && json.schoolInfo[1].row) || [];
+    let rows = (json && json.schoolInfo && json.schoolInfo[1] && json.schoolInfo[1].row) || [];
+    if(region){
+      const filtered = rows.filter(r => r.LCTN_SC_NM && r.LCTN_SC_NM.indexOf(region) !== -1);
+      if(filtered.length) rows = filtered;
+    }
     if(!rows.length){ box.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>'; return; }
     box.innerHTML = rows.map((r,i)=>`<div class="school-item" data-i="${i}">${r.SCHUL_NM} <span style="color:var(--muted); font-weight:500;">(${r.LCTN_SC_NM})</span></div>`).join('');
     box.querySelectorAll('.school-item').forEach((el,i)=>{
@@ -838,6 +845,11 @@ document.getElementById('schoolSearchBtn').addEventListener('click', async ()=>{
         selectedSchool = { schoolName: r.SCHUL_NM, officeCode: r.ATPT_OFCDC_SC_CODE, schoolCode: r.SD_SCHUL_CODE };
       });
     });
+    if(rows.length === 1){
+      box.querySelector('.school-item').classList.add('selected');
+      selectedSchool = { schoolName: rows[0].SCHUL_NM, officeCode: rows[0].ATPT_OFCDC_SC_CODE, schoolCode: rows[0].SD_SCHUL_CODE };
+      box.innerHTML += '<p class="hint">✓ 결과가 하나라 자동으로 선택했어요. 확인 후 저장하세요.</p>';
+    }
   }catch(e){ box.innerHTML = '<p class="hint">검색 중 오류가 발생했습니다.</p>'; }
 });
 document.getElementById('saveNeisBtn').addEventListener('click', async ()=>{
