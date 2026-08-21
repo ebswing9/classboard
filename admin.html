@@ -48,6 +48,7 @@
   #loginError{ color:var(--danger); font-size:13px; margin-top:10px; min-height:16px; font-weight:600; }
 
   .tabs{ display:flex; gap:4px; background:#e7e8ec; padding:4px; border-radius:14px; margin-bottom:20px; overflow-x:auto; }
+  .tabs.subtabs{ background:var(--primary-soft); margin-bottom:16px; }
   .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
   .tab-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
   .filter-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
@@ -170,55 +171,117 @@
   <main>
     <div class="tabs">
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
-      <button class="tab-btn" data-tab="history">지난 기록</button>
+      <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
-      <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
-      <button class="tab-btn" data-tab="quizanswers">🧩 퀴즈</button>
-      <button class="tab-btn" data-tab="meal">급식 설정</button>
+      <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="settings">설정</button>
     </div>
 
+    <!-- ===== 조회·종례 (하위 탭: 작성 / 지난 기록) ===== -->
     <div class="tab-panel active" id="tab-notice">
-      <div class="section">
-        <h3>📣 조회 · 종례 작성 <span class="sub" id="noticeDateSub"></span></h3>
-        <div class="field"><label>날짜</label><input type="date" id="noticeDate"></div>
-        <div class="publish-row">
-          <span>조회사항 공개</span>
-          <button class="publish-btn off" id="publishToggleMorning">비공개</button>
-        </div>
-        <div class="field"><label>조회사항</label><textarea id="inputMorning"></textarea></div>
-        <div class="publish-row">
-          <span>종례사항 공개</span>
-          <button class="publish-btn off" id="publishToggleClosing">비공개</button>
-        </div>
-        <div class="field"><label>종례사항</label><textarea id="inputClosing"></textarea></div>
-        <button class="btn" id="saveNoticeBtn">저장</button>
-        <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
-        <span class="msg" id="noticeMsg"></span>
+      <div class="tabs subtabs">
+        <button class="tab-btn active" data-subtab="write">작성</button>
+        <button class="tab-btn" data-subtab="history">지난 기록</button>
       </div>
-      <div class="section">
-        <h3>✅ 오늘의 할 일 <span class="sub" id="todoDateSub"></span></h3>
-        <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요.</p>
-        <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;수학 익힘책 풀기"></textarea></div>
-        <button class="btn" id="saveTodosBtn">할 일 저장</button>
-        <span class="msg" id="todosMsg"></span>
+
+      <div class="tab-panel active" id="subtab-write">
+        <div class="section">
+          <h3>📣 조회 · 종례 작성 <span class="sub" id="noticeDateSub"></span></h3>
+          <div class="field"><label>날짜</label><input type="date" id="noticeDate"></div>
+          <div class="publish-row">
+            <span>조회사항 공개</span>
+            <button class="publish-btn off" id="publishToggleMorning">비공개</button>
+          </div>
+          <div class="field">
+            <label>조회사항</label>
+            <textarea id="inputMorning"></textarea>
+            <p class="hint">✅ 체크박스 하나 = 빈 줄로 구분된 문단 하나예요. 한 항목 안에서 줄만 바꾸고 싶으면 그냥 Enter, 새 항목(체크박스)을 만들고 싶으면 Enter를 두 번(빈 줄) 눌러주세요.</p>
+          </div>
+          <div class="publish-row">
+            <span>종례사항 공개</span>
+            <button class="publish-btn off" id="publishToggleClosing">비공개</button>
+          </div>
+          <div class="field">
+            <label>종례사항</label>
+            <textarea id="inputClosing"></textarea>
+            <p class="hint">✅ 조회사항과 같은 방식이에요. 빈 줄로 항목을 구분해주세요.</p>
+          </div>
+          <button class="btn" id="saveNoticeBtn">저장</button>
+          <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
+          <span class="msg" id="noticeMsg"></span>
+        </div>
+        <div class="section">
+          <h3>✅ 오늘의 할 일 <span class="sub" id="todoDateSub"></span></h3>
+          <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요.</p>
+          <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;수학 익힘책 풀기"></textarea></div>
+          <button class="btn" id="saveTodosBtn">할 일 저장</button>
+          <span class="msg" id="todosMsg"></span>
+        </div>
+        <div class="section">
+          <h3>최근 내용 불러오기</h3>
+          <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요 (날짜는 안 바뀌어요). 어제랑 같은 공지 다시 쓸 때 편해요.</p>
+          <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
+        </div>
       </div>
-      <div class="section">
-        <h3>최근 내용 불러오기</h3>
-        <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요 (날짜는 안 바뀌어요). 어제랑 같은 공지 다시 쓸 때 편해요.</p>
-        <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
+
+      <div class="tab-panel" id="subtab-history">
+        <div class="section">
+          <h3>지난 조회·종례 기록</h3>
+          <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
+          <div id="historyList">불러오는 중...</div>
+        </div>
       </div>
     </div>
 
-    <div class="tab-panel" id="tab-history">
+    <!-- ===== 퀴즈 ===== -->
+    <div class="tab-panel" id="tab-quiz">
       <div class="section">
-        <h3>지난 조회·종례 기록</h3>
-        <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
-        <div id="historyList">불러오는 중...</div>
+        <div class="collapse-header" id="quizEditorCollapseHeader">
+          <h3 style="margin:0;">🧩 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
+          <span class="chev">▾</span>
+        </div>
+        <div class="collapse-body" id="quizEditorCollapseBody">
+          <div class="field"><label>날짜</label><input type="date" id="quizAnswerDate"></div>
+          <div class="publish-row">
+            <span>퀴즈 공개</span>
+            <button class="publish-btn off" id="quizPublishToggle">비공개</button>
+          </div>
+          <div class="field"><label>문제</label><textarea id="quizQuestionInput" placeholder="오늘의 퀴즈 문제를 입력하세요"></textarea></div>
+          <div class="field">
+            <label>보기 (선택, 한 줄에 하나씩)</label>
+            <textarea id="quizChoicesInput" placeholder="보기 내용을 한 줄에 하나씩 입력하세요"></textarea>
+            <p class="hint">번호(①②③...)는 대시보드에서 자동으로 붙어요. 그냥 보기 내용만 한 줄씩 적어주세요.</p>
+          </div>
+          <div class="field">
+            <label>이미지 첨부 (선택)</label>
+            <input type="file" id="quizImageFileInput" accept="image/*">
+            <div id="quizImagePreviewWrap" style="display:none; margin-top:10px;">
+              <img id="quizImagePreview" style="max-width:180px; max-height:180px; border-radius:14px; display:block; box-shadow:var(--shadow); object-fit:contain;">
+              <button class="del-link" id="quizImageRemoveBtn" type="button" style="margin-top:6px;">이미지 삭제</button>
+            </div>
+          </div>
+          <button class="btn" id="saveQuizBtn">퀴즈 저장</button>
+          <span class="msg" id="quizMsg"></span>
+        </div>
+      </div>
+      <div class="section">
+        <h3>✏️ 퀴즈 답안 확인</h3>
+        <div class="tabs" id="verdictFilterTabs" style="margin-bottom:10px;">
+          <button class="filter-btn active" data-filter="unclassified">미분류</button>
+          <button class="filter-btn" data-filter="correct">정답만</button>
+          <button class="filter-btn" data-filter="incorrect">오답만</button>
+          <button class="filter-btn" data-filter="all">전체</button>
+        </div>
+        <div class="tabs" id="quizSortTabs" style="margin-bottom:14px;">
+          <button class="filter-btn active" data-sort="submit">제출 순서대로</button>
+          <button class="filter-btn" data-sort="name">이름 순서대로</button>
+        </div>
+        <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
     </div>
 
+    <!-- ===== 출결 ===== -->
     <div class="tab-panel" id="tab-attendance">
       <div class="section">
         <h3>🙋 출결 체크</h3>
@@ -229,6 +292,11 @@
             <input type="checkbox" id="attSelectAll"> 전체 선택
           </label>
           <button class="btn secondary" id="markSelectedPresentBtn" style="margin:0;">선택 학생 출석 체크</button>
+          <button class="btn danger" id="clearSelectedAttBtn" style="margin:0;">선택 학생 체크 해제</button>
+        </div>
+        <div class="tabs" id="attSortTabs" style="max-width:260px; margin-bottom:10px;">
+          <button class="filter-btn active" data-sort="name">이름순</button>
+          <button class="filter-btn" data-sort="time">출석한 순서</button>
         </div>
         <div class="publish-row" style="margin-bottom:14px;">
           <span>👏 축하 효과음 허용</span>
@@ -240,6 +308,33 @@
       </div>
     </div>
 
+    <!-- ===== 시간표 ===== -->
+    <div class="tab-panel" id="tab-timetable">
+      <div class="section">
+        <h3>📚 주간 기본 시간표</h3>
+        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 저장 버튼 한 번이면 전체 반영돼요.</p>
+        <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
+        <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
+        <span class="msg" id="weeklyMsg"></span>
+      </div>
+      <div class="section">
+        <div class="collapse-header" id="overrideCollapseHeader">
+          <h3 style="margin:0;">특정 날짜만 임시 변경</h3>
+          <span class="chev">▾</span>
+        </div>
+        <div class="collapse-body" id="overrideCollapseBody">
+          <p class="hint" style="margin-top:12px;">날짜를 고르면 그 요일 기본 시간표가 자동으로 채워져요. 바뀌는 과목만 수정하고 저장하세요.</p>
+          <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
+          <div id="overrideEditor"></div>
+          <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
+          <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
+          <span class="msg" id="overrideMsg"></span>
+          <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 학생 명단 ===== -->
     <div class="tab-panel" id="tab-roster">
       <div class="section">
         <h3>👤 학생 추가</h3>
@@ -272,98 +367,50 @@
       </div>
     </div>
 
-    <div class="tab-panel" id="tab-timetable">
-      <div class="section">
-        <h3>📚 주간 기본 시간표</h3>
-        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 저장 버튼 한 번이면 전체 반영돼요.</p>
-        <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
-        <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
-        <span class="msg" id="weeklyMsg"></span>
-      </div>
-      <div class="section">
-        <div class="collapse-header" id="overrideCollapseHeader">
-          <h3 style="margin:0;">특정 날짜만 임시 변경</h3>
-          <span class="chev">▾</span>
-        </div>
-        <div class="collapse-body" id="overrideCollapseBody">
-          <p class="hint" style="margin-top:12px;">날짜를 고르면 그 요일 기본 시간표가 자동으로 채워져요. 바뀌는 과목만 수정하고 저장하세요.</p>
-          <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
-          <div id="overrideEditor"></div>
-          <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
-          <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
-          <span class="msg" id="overrideMsg"></span>
-          <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-panel" id="tab-quizanswers">
-      <div class="section">
-        <h3>🧩 오늘의 퀴즈 문제</h3>
-        <div class="field"><label>날짜</label><input type="date" id="quizAnswerDate"></div>
-        <div class="publish-row">
-          <span>퀴즈 공개</span>
-          <button class="publish-btn off" id="quizPublishToggle">비공개</button>
-        </div>
-        <div class="field"><label>문제</label><textarea id="quizQuestionInput" placeholder="오늘의 퀴즈 문제를 입력하세요"></textarea></div>
-        <div class="field"><label>보기 (선택, 한 줄에 하나씩)</label><textarea id="quizChoicesInput" placeholder="① 보기1&#10;② 보기2&#10;③ 보기3"></textarea></div>
-        <div class="field">
-          <label>이미지 첨부 (선택)</label>
-          <input type="file" id="quizImageFileInput" accept="image/*">
-          <div id="quizImagePreviewWrap" style="display:none; margin-top:10px;">
-            <img id="quizImagePreview" style="max-width:180px; max-height:180px; border-radius:14px; display:block; box-shadow:var(--shadow); object-fit:contain;">
-            <button class="del-link" id="quizImageRemoveBtn" type="button" style="margin-top:6px;">이미지 삭제</button>
-          </div>
-        </div>
-        <button class="btn" id="saveQuizBtn">퀴즈 저장</button>
-        <span class="msg" id="quizMsg"></span>
-      </div>
-      <div class="section">
-        <h3>✏️ 퀴즈 답안 확인</h3>
-        <div class="tabs" id="verdictFilterTabs" style="margin-bottom:14px;">
-          <button class="filter-btn active" data-filter="all">전체</button>
-          <button class="filter-btn" data-filter="correct">정답만</button>
-          <button class="filter-btn" data-filter="incorrect">오답만</button>
-        </div>
-        <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
-      </div>
-    </div>
-
-    <div class="tab-panel" id="tab-meal">
-      <div class="section">
-        <h3>🍱 나이스(NEIS) 급식 연동</h3>
-        <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
-        <div class="field"><label>학교명으로 검색</label>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="schoolRegionInput" placeholder="지역 (예: 대전광역시)" style="flex:0.8;">
-            <input type="text" id="schoolSearchInput" placeholder="예: 대전도안중학교" style="flex:1.2;">
-            <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
-          </div>
-          <p class="hint">지역을 같이 입력하면 같은 이름의 다른 학교와 헷갈릴 일이 줄어요.</p>
-        </div>
-        <div id="schoolSearchResults"></div>
-        <div class="divider"></div>
-        <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
-        <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
-        <span class="msg" id="neisMsg"></span>
-      </div>
-    </div>
-
+    <!-- ===== 설정 (하위 탭: 일반 / 급식) ===== -->
     <div class="tab-panel" id="tab-settings">
-      <div class="section">
-        <h3>🔑 관리자 비밀번호 변경</h3>
-        <div class="field"><label>새 비밀번호</label><input type="password" id="newPasswordInput" placeholder="새 비밀번호 입력"></div>
-        <button class="btn" id="savePasswordBtn">비밀번호 변경</button>
-        <span class="msg" id="passwordMsg"></span>
+      <div class="tabs subtabs">
+        <button class="tab-btn active" data-subtab="general">일반</button>
+        <button class="tab-btn" data-subtab="meal">급식</button>
       </div>
-      <div class="section">
-        <h3>🎈 D-Day 문구</h3>
-        <p class="hint">대시보드 시계 아래에 "여름방학까지 D-12" 같은 문구가 표시돼요. 비워두면 안 보여요.</p>
-        <div class="field"><label>문구 (예: 여름방학까지)</label><input type="text" id="ddayLabelInput" placeholder="여름방학까지"></div>
-        <div class="field"><label>기준 날짜</label><input type="date" id="ddayDateInput"></div>
-        <button class="btn" id="saveDdayBtn">저장</button>
-        <button class="btn danger" id="clearDdayBtn">문구 지우기</button>
-        <span class="msg" id="ddayMsg"></span>
+
+      <div class="tab-panel active" id="subtab-general">
+        <div class="section">
+          <h3>🔑 관리자 비밀번호 변경</h3>
+          <div class="field"><label>새 비밀번호</label><input type="password" id="newPasswordInput" placeholder="새 비밀번호 입력"></div>
+          <button class="btn" id="savePasswordBtn">비밀번호 변경</button>
+          <span class="msg" id="passwordMsg"></span>
+        </div>
+        <div class="section">
+          <h3>🎈 D-Day 문구</h3>
+          <p class="hint">대시보드 시계 아래에 "여름방학까지 D-12" 같은 문구가 표시돼요. 비워두면 안 보여요.</p>
+          <div class="field"><label>문구 (예: 여름방학까지)</label><input type="text" id="ddayLabelInput" placeholder="여름방학까지"></div>
+          <div class="field"><label>기준 날짜</label><input type="date" id="ddayDateInput"></div>
+          <button class="btn" id="saveDdayBtn">저장</button>
+          <button class="btn danger" id="clearDdayBtn">문구 지우기</button>
+          <span class="msg" id="ddayMsg"></span>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-meal">
+        <div class="section">
+          <h3>🍱 나이스(NEIS) 급식 연동</h3>
+          <div class="field"><label>NEIS Open API 인증키</label><input type="text" id="neisKey" placeholder="open.neis.go.kr 에서 무료 발급"></div>
+          <div class="field"><label>학교명으로 검색</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="schoolRegionInput" placeholder="지역 (예: 대전광역시)" style="flex:0.8;">
+              <input type="text" id="schoolSearchInput" placeholder="예: 대전도안중학교" style="flex:1.2;">
+              <button class="btn secondary" id="schoolSearchBtn" style="margin:0; white-space:nowrap;">검색</button>
+            </div>
+            <p class="hint">지역을 같이 입력하면 같은 이름의 다른 학교와 헷갈릴 일이 줄어요.</p>
+          </div>
+          <div id="schoolSearchResults"></div>
+          <div class="divider"></div>
+          <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
+          <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
+          <span class="msg" id="neisMsg"></span>
+          <p class="hint" style="margin-top:14px;">⚠️ 특정 기기(전자칠판 등)에서만 급식이 안 보인다면, 코드보다는 그 기기의 인터넷/방화벽이 open.neis.go.kr 접속을 막고 있을 가능성이 높아요. 기기에서 직접 <b>open.neis.go.kr</b> 접속이 되는지 확인해보세요.</p>
+        </div>
       </div>
     </div>
   </main>
@@ -513,19 +560,42 @@ document.getElementById('loginBtn').addEventListener('click', async ()=>{
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
 document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('dashboardAdminOk'); location.reload(); });
 
-/* ---- 탭 ---- */
-document.querySelectorAll('.tab-btn').forEach(btn=>{
+/* ---- 최상위 탭 ---- */
+document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
 });
 function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+  document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('main > .tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+}
+
+/* ---- 하위 탭 (조회·종례: 작성/지난기록, 설정: 일반/급식) ---- */
+document.querySelectorAll('.tabs.subtabs > .tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const container = btn.closest('.tab-panel');
+    switchSubTab(container.id, btn.dataset.subtab);
+  });
+});
+function switchSubTab(panelId, subtab){
+  const container = document.getElementById(panelId);
+  if(!container) return;
+  const group = container.querySelector('.tabs.subtabs');
+  if(group){
+    group.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab===subtab));
+  }
+  Array.from(container.children).forEach(el=>{
+    if(el.classList && el.classList.contains('tab-panel')) el.classList.toggle('active', el.id === 'subtab-'+subtab);
+  });
 }
 
 /* ---- 접기/펼치기 ---- */
 document.getElementById('overrideCollapseHeader').addEventListener('click', ()=>{
   document.getElementById('overrideCollapseHeader').classList.toggle('open');
   document.getElementById('overrideCollapseBody').classList.toggle('open');
+});
+document.getElementById('quizEditorCollapseHeader').addEventListener('click', ()=>{
+  document.getElementById('quizEditorCollapseHeader').classList.toggle('open');
+  document.getElementById('quizEditorCollapseBody').classList.toggle('open');
 });
 
 let initedOnce = false;
@@ -663,6 +733,7 @@ async function loadHistoryList(){
       else document.getElementById('noticeDate').value = date;
       loadNoticeForDate(date);
       switchTab('notice');
+      switchSubTab('tab-notice', 'write');
     });
   });
 }
@@ -737,12 +808,21 @@ document.getElementById('rosterCsvInput').addEventListener('change', async (e)=>
 /* ---- 출결 ---- */
 function currentAttDate(){ return document.getElementById('attDate').value || todayStr(); }
 let clapAllowed = false;
+let attSortMode = 'name'; // 'name' | 'time'
 function setClapBtn(on){
   clapAllowed = on;
   const btn = document.getElementById('clapToggleBtn');
   btn.textContent = on ? '허용중' : '비활성';
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
+document.querySelectorAll('#attSortTabs .filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#attSortTabs .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    attSortMode = btn.dataset.sort;
+    loadAttendanceTab();
+  });
+});
 async function loadAttendanceTab(){
   const date = currentAttDate();
   const roster = await getRosterList();
@@ -756,7 +836,16 @@ async function loadAttendanceTab(){
   document.getElementById('attSummary').innerHTML = `<span>전체 <b>${roster.length}</b></span><span>출석 <b>${present}</b></span><span>조퇴 <b>${out}</b></span><span>결석 <b>${absentCount}</b></span><span>미체크 <b>${unchecked}</b></span>`;
   const box = document.getElementById('attList');
   if(!roster.length){ box.innerHTML = '<p class="hint">학생 명단 탭에서 먼저 등록해주세요.</p>'; return; }
-  box.innerHTML = roster.map(s=>{
+
+  let ordered = roster;
+  if(attSortMode === 'time'){
+    const withTime = roster.filter(s=> att[s.id] && att[s.id].time);
+    const withoutTime = roster.filter(s=> !(att[s.id] && att[s.id].time));
+    withTime.sort((a,b)=> att[a.id].time.localeCompare(att[b.id].time));
+    ordered = [...withTime, ...withoutTime];
+  }
+
+  box.innerHTML = ordered.map(s=>{
     const rec = att[s.id];
     return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <input type="checkbox" class="att-check" data-id="${s.id}">
@@ -764,7 +853,7 @@ async function loadAttendanceTab(){
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <span class="att-status">${rec ? (rec.status==='out' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
+      <span class="att-status">${rec ? (rec.status==='out' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : (rec.status==='present' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status])) : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -805,6 +894,15 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   const date = currentAttDate();
   const updates = {};
   checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time });
+  await db.ref().update(updates);
+  await loadAttendanceTab();
+});
+document.getElementById('clearSelectedAttBtn').addEventListener('click', async ()=>{
+  const checkedIds = [...document.querySelectorAll('.att-check:checked')].map(cb=>cb.dataset.id);
+  if(!checkedIds.length){ alert('선택된 학생이 없습니다.'); return; }
+  const date = currentAttDate();
+  const updates = {};
+  checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = null);
   await db.ref().update(updates);
   await loadAttendanceTab();
 });
@@ -1010,6 +1108,7 @@ async function loadQuizEditor(date){
   const data = snap.val() || {};
   document.getElementById('quizQuestionInput').value = data.question || '';
   document.getElementById('quizChoicesInput').value = Array.isArray(data.choices) ? data.choices.join('\n') : '';
+  document.getElementById('quizEditorDateSub').textContent = date;
   setQuizImagePreview(data.imageDataUrl || null);
   setQuizPublishBtn(!!data.published);
 }
@@ -1034,7 +1133,8 @@ document.getElementById('saveQuizBtn').addEventListener('click', async ()=>{
 });
 
 /* ---- 퀴즈 답안 확인 ---- */
-let quizAnswerFilter = 'all';
+let quizAnswerFilter = 'unclassified';
+let quizAnswerSort = 'submit';
 document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(b=>b.classList.remove('active'));
@@ -1043,13 +1143,27 @@ document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(btn=>{
     loadQuizAnswers(document.getElementById('quizAnswerDate').value || todayStr());
   });
 });
+document.querySelectorAll('#quizSortTabs .filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#quizSortTabs .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    quizAnswerSort = btn.dataset.sort;
+    loadQuizAnswers(document.getElementById('quizAnswerDate').value || todayStr());
+  });
+});
 async function loadQuizAnswers(date){
   const box = document.getElementById('quizAnswerGrid');
   box.innerHTML = '불러오는 중...';
   const snap = await db.ref('quizAnswers/'+date).once('value');
   const val = snap.val() || {};
-  let entries = Object.keys(val).map(id=>({id, ...val[id]})).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
-  if(quizAnswerFilter !== 'all'){ entries = entries.filter(e => e.verdict === quizAnswerFilter); }
+  let entries = Object.keys(val).map(id=>({id, ...val[id]}));
+
+  if(quizAnswerFilter === 'unclassified') entries = entries.filter(e => !e.verdict);
+  else if(quizAnswerFilter !== 'all') entries = entries.filter(e => e.verdict === quizAnswerFilter);
+
+  if(quizAnswerSort === 'name') entries.sort((a,b)=> (a.name||'').localeCompare(b.name||'','ko'));
+  else entries.sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
+
   if(!entries.length){ box.innerHTML = '<p class="hint">해당하는 답안이 없습니다.</p>'; return; }
   box.innerHTML = entries.map(e=>{
     const time = e.submittedAt ? new Date(e.submittedAt).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';

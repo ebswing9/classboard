@@ -29,9 +29,10 @@
     --sky:#d3ecfb; --sky-deep:#5aa9dd;
     --text:#4a4458; --muted:#a79fc0; --line:#f2ebf7;
     --shadow: 0 10px 28px rgba(160,140,190,0.16);
+    --vh: 1vh;
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; }
+  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; overscroll-behavior:none; }
   body{
     background: radial-gradient(circle at 8% 12%, var(--pink) 0%, transparent 32%),
                 radial-gradient(circle at 92% 15%, var(--sky) 0%, transparent 34%),
@@ -40,7 +41,12 @@
                 linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
     background-attachment: fixed;
   }
-  #app{ height:100vh; padding:22px; display:flex; }
+  /* 전자칠판 등 100vh 계산이 어긋나는 기기를 위한 안전장치:
+     콘텐츠가 화면보다 넘치면 자동으로 스크롤을 허용해서 하단이 잘려서 클릭 안 되는 일이 없도록 함 */
+  body.force-scroll{ overflow-y:auto; overflow-x:hidden; }
+  body.force-scroll #app{ height:auto; min-height:calc(var(--vh, 1vh) * 100); }
+
+  #app{ height:calc(var(--vh, 1vh) * 100); padding:22px; display:flex; }
   #board{ flex:1; display:flex; flex-direction:column; gap:18px; min-height:0; }
 
   .headfont{ font-family:'Jua',sans-serif; font-weight:400; }
@@ -61,7 +67,7 @@
   .panel-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-shrink:0; }
   .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
-  #panelBody{ flex:1; overflow-y:auto; min-height:0; }
+  #panelBody{ flex:1; overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch; }
 
   /* 조회/종례 - 체크박스형 항목 */
   .notice-list{ display:flex; flex-direction:column; gap:10px; }
@@ -105,7 +111,7 @@
   #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
-  #quizCard{ flex:1; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
+  #quizCard{ flex:1; max-width:640px; min-width:0; background:linear-gradient(160deg, #fff, var(--lav) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
@@ -171,8 +177,9 @@
   .quiz-icon{ font-size:30px; }
   .quiz-question{ font-size:clamp(22px, 2.8vw, 34px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
   .quiz-image{ max-width:min(100%, 320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
-  .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-  .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:9px 16px; font-size:15px; font-weight:700; }
+  .quiz-choices{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; margin:0 auto; }
+  .quiz-choice{ background:rgba(255,255,255,0.85); border-radius:14px; padding:12px 18px; font-size:16px; font-weight:700; text-align:left; display:flex; align-items:center; gap:10px; box-shadow:0 2px 6px rgba(74,68,88,0.06); }
+  .quiz-choice .qc-num{ width:26px; height:26px; min-width:26px; border-radius:50%; background:var(--lav-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; font-family:'Jua',sans-serif; }
   .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
@@ -207,7 +214,7 @@
     #sidePanelInner{ width:100%; height:auto; }
     #clockCard{ flex:none; width:100%; min-height:280px; }
     #timetableCard{ flex:none; width:100%; height:min(64vh, 460px); min-height:340px; }
-    #quizCard{ flex:none; width:100%; min-height:260px; }
+    #quizCard{ flex:none; width:100%; max-width:none; min-height:260px; }
     #quizCard.squished .quiz-inner{ display:flex !important; }
     #quizCard.squished .quiz-minimal-label{ display:none !important; }
     #clockTime{ font-size:clamp(48px, 14vw, 80px); }
@@ -332,6 +339,24 @@ function initFirebase(){
   return true;
 }
 
+/* ---------- 전자칠판 등 100vh 오차 보정 + 넘침 안전장치 ---------- */
+function setVH(){
+  document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+}
+setVH();
+window.addEventListener('resize', setVH);
+window.addEventListener('orientationchange', ()=> setTimeout(setVH, 250));
+
+function checkOverflowFallback(){
+  requestAnimationFrame(()=>{
+    const overflowing = document.documentElement.scrollHeight > window.innerHeight + 4;
+    document.body.classList.toggle('force-scroll', overflowing);
+  });
+}
+window.addEventListener('resize', checkOverflowFallback);
+window.addEventListener('load', ()=> setTimeout(checkOverflowFallback, 600));
+setInterval(checkOverflowFallback, 4000);
+
 function tickClock(){
   const now = new Date();
   document.getElementById('clockTime').textContent = [now.getHours(),now.getMinutes(),now.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
@@ -377,21 +402,26 @@ async function openPanel(type){
     document.getElementById('panelTitle').textContent = '🌇 종례사항';
     await renderNoticePanel('closing');
   }
+  checkOverflowFallback();
 }
 document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
 document.getElementById('closingTile').addEventListener('click', ()=> openPanel('closing'));
 
+/* 조회/종례: 빈 줄로 항목을 구분, 항목 안에서의 줄바꿈은 그대로 <br>로 유지 (체크박스 1개 = 빈 줄로 구분된 1개 문단) */
 function renderNoticeList(text, which){
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(!lines.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
-  return `<div class="notice-list">` + lines.map(l=>`<div class="notice-item">
+  const items = text.split(/\n[ \t]*\n+/).map(s=>s.trim()).filter(Boolean);
+  if(!items.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
+  return `<div class="notice-list">` + items.map(item=>{
+    const htmlText = escapeHtml(item).replaceAll('\n','<br>');
+    return `<div class="notice-item">
     <label class="cute-checkbox ${which}">
       <input type="checkbox" class="notice-checkbox">
       <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
     </label>
-    <span class="notice-item-text">${escapeHtml(l)}</span>
-  </div>`).join('') + `</div>`;
+    <span class="notice-item-text">${htmlText}</span>
+  </div>`;
+  }).join('') + `</div>`;
 }
 async function renderNoticePanel(which){
   const snap = await db.ref('notices/'+todayStr()).once('value');
@@ -453,9 +483,11 @@ async function renderAttendancePanel(){
         }
         await renderAttendancePanel();
         await loadAttendanceWidget();
+        checkOverflowFallback();
       });
     });
   });
+  checkOverflowFallback();
 }
 
 /* ---------- 시간표 ---------- */
@@ -496,7 +528,7 @@ async function loadQuiz(){
     }
     qEl.textContent = data.question;
     const choices = Array.isArray(data.choices) ? data.choices.filter(c=>c && String(c).trim()) : [];
-    cEl.innerHTML = choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
+    cEl.innerHTML = choices.length ? choices.map((c,i)=>`<div class="quiz-choice"><span class="qc-num">${i+1}</span><span>${escapeHtml(String(c))}</span></div>`).join('') : '';
     if(data.imageDataUrl){
       imgEl.src = data.imageDataUrl;
       imgEl.style.display = 'block';
@@ -551,30 +583,53 @@ function playCelebrationSound(){
     const ctx = new AudioCtx();
     const now = ctx.currentTime;
     const master = ctx.createGain();
-    master.gain.value = 0.9;
+    master.gain.value = 0.85;
     master.connect(ctx.destination);
 
-    // 벨(bell) 톤 하나를 예약: 빠른 어택 + 부드러운 감쇠
-    function playNote(freq, start, dur, peak, type){
-      const osc = ctx.createOscillator();
-      osc.type = type || 'triangle';
-      osc.frequency.value = freq;
+    // 색종이 흩날리는 느낌의 반짝이는 노이즈 스파클
+    function playSparkle(start, dur, freq){
+      const bufSize = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufSize, 2);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = freq;
+      bp.Q.value = 1.1;
       const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, now + start);
-      g.gain.exponentialRampToValueAtTime(peak, now + start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
-      osc.connect(g).connect(master);
-      osc.start(now + start);
-      osc.stop(now + start + dur + 0.05);
+      g.gain.setValueAtTime(0.0001, now+start);
+      g.gain.exponentialRampToValueAtTime(0.22, now+start+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+start+dur);
+      src.connect(bp).connect(g).connect(master);
+      src.start(now+start); src.stop(now+start+dur+0.05);
     }
 
-    // 상승하는 아르페지오 (도-미-솔-높은도) : "짜잔!" 느낌
-    const arpeggio = [523.25, 659.25, 783.99, 1046.50];
-    arpeggio.forEach((freq, i) => playNote(freq, i * 0.09, 0.35, 0.4, 'triangle'));
+    // 브라스 느낌의 화음 노트 (톱니 + 삼각 블렌드)
+    function playChordNote(freq, start, dur, peak){
+      [ {type:'sawtooth', mix:0.5, detune:0}, {type:'triangle', mix:0.5, detune:6} ].forEach(v=>{
+        const osc = ctx.createOscillator();
+        osc.type = v.type;
+        osc.frequency.value = freq;
+        osc.detune.value = v.detune;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, now+start);
+        g.gain.exponentialRampToValueAtTime(peak*v.mix, now+start+0.025);
+        g.gain.exponentialRampToValueAtTime(0.0001, now+start+dur);
+        osc.connect(g).connect(master);
+        osc.start(now+start); osc.stop(now+start+dur+0.05);
+      });
+    }
 
-    // 화음으로 마무리하며 반짝이는 배음을 얹어 화려하게
-    [1046.50, 1318.51, 1567.98].forEach(freq => playNote(freq, 0.42, 1.0, 0.28, 'triangle'));
-    [1567.98, 2093.00, 2637.02].forEach((freq, i) => playNote(freq, 0.46 + i * 0.05, 0.6, 0.14, 'sine'));
+    // "짜~ 잔!" : 상승 2음 + 화음 마무리 + 스파클
+    playChordNote(523.25, 0, 0.22, 0.5);
+    playChordNote(783.99, 0.16, 0.9, 0.55);
+    playChordNote(1046.50, 0.16, 0.9, 0.45);
+    playChordNote(1318.51, 0.16, 0.9, 0.35);
+    playSparkle(0.05, 0.5, 3200);
+    playSparkle(0.22, 0.7, 4200);
+    playSparkle(0.4, 0.9, 2600);
   }catch(e){ console.error('celebration sound error', e); }
 }
 
@@ -635,7 +690,10 @@ async function loadMeal(){
     const dateCompact = todayStrCompact(mealDate);
     const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
     const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=> controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     const json = await res.json();
     const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
     if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
@@ -643,7 +701,10 @@ async function loadMeal(){
     bodyEl.innerHTML = '<ul class="meal-list">' + items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
     shrinkToFit(bodyEl, {max:13.5, min:9});
   }catch(e){
-    bodyEl.innerHTML = '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
+    const timedOut = e && e.name === 'AbortError';
+    bodyEl.innerHTML = timedOut
+      ? '<div class="meal-empty">⚠️ 응답이 없어요.<br>이 기기의 인터넷/방화벽을<br>확인해주세요.</div>'
+      : '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
   }
 }
 document.getElementById('mealPrevBtn').addEventListener('click', ()=>{ mealDate = new Date(mealDate.getFullYear(), mealDate.getMonth(), mealDate.getDate()-1); loadMeal(); });
@@ -755,6 +816,7 @@ async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos(), loadAttendanceWidget()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
+  checkOverflowFallback();
 }
 
 /* ---------- 관리자 페이지 변경 사항을 실시간으로 반영 ---------- */
