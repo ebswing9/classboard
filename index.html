@@ -159,20 +159,20 @@
   #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(155,127,234,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
   .quiz-icon{ transition: font-size .32s ease; }
-  .quiz-question, .quiz-choices, .quiz-raw{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
+  .quiz-question, .quiz-image, .quiz-choices{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
   .quiz-submit-btn{ transition: font-size .3s ease, padding .3s ease, transform .12s ease, filter .15s ease; }
   #quizCard.squished{ cursor:pointer; }
   #quizCard.squished .quiz-question,
-  #quizCard.squished .quiz-choices,
-  #quizCard.squished .quiz-raw{ opacity:0; max-height:0; margin:0; }
+  #quizCard.squished .quiz-image,
+  #quizCard.squished .quiz-choices{ opacity:0; max-height:0; margin:0; }
   #quizCard.squished::before{ display:none; }
   #quizCard.squished .quiz-icon{ font-size:22px; }
   #quizCard.squished .quiz-submit-btn{ font-size:12px; padding:8px 12px; white-space:normal; }
   .quiz-icon{ font-size:30px; }
   .quiz-question{ font-size:clamp(22px, 2.8vw, 34px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; }
+  .quiz-image{ max-width:min(100%, 320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
   .quiz-choices{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   .quiz-choice{ background:rgba(255,255,255,0.8); border-radius:14px; padding:9px 16px; font-size:15px; font-weight:700; }
-  .quiz-raw{ font-size:11px; font-family:monospace; white-space:pre-wrap; opacity:.6; max-height:100px; overflow-y:auto; }
   .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--lav-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(155,127,234,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
@@ -181,10 +181,11 @@
   /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
   #drawOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
   #drawOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
-  .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); }
+  .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); transition:width .2s ease; }
+  .draw-box.wide{ width:min(92vw, 480px); }
   .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--lav-deep); margin:0 0 8px; text-align:center; }
   .close-x{ position:absolute; top:6px; right:6px; background:var(--line); border:none; width:20px; height:20px; border-radius:50%; color:var(--text); font-size:10px; cursor:pointer; }
-  .name-grid{ display:flex; flex-wrap:wrap; gap:5px; justify-content:center; max-height:150px; overflow-y:auto; }
+  .name-grid{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:60vh; overflow-y:auto; }
   .name-pill{ border:none; background:var(--lav); color:var(--text); padding:6px 10px; border-radius:12px; font-size:11.5px; font-weight:700; cursor:pointer; }
   .name-pill:hover{ background:var(--lav-deep); color:#fff; }
   .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; opacity:.55; }
@@ -272,9 +273,9 @@
       <div class="quiz-inner">
         <div class="quiz-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M12 2.5c.5 3.2 1.3 5.3 2.5 6.5s3.3 2 6.5 2.5c-3.2.5-5.3 1.3-6.5 2.5s-2 3.3-2.5 6.5c-.5-3.2-1.3-5.3-2.5-6.5S6.2 12 3 11.5c3.2-.5 5.3-1.3 6.5-2.5S11.5 5.7 12 2.5z"/></svg></div>
         <div class="quiz-question" id="quizQuestion">불러오는 중...</div>
+        <img class="quiz-image" id="quizImage" style="display:none;" alt="퀴즈 이미지">
         <div class="quiz-choices" id="quizChoices"></div>
         <button class="quiz-submit-btn" id="openDrawBtn" style="display:none;">✏️ 그려서 답안 제출</button>
-        <div class="quiz-raw" id="quizRaw"></div>
       </div>
     </div>
   </div>
@@ -315,7 +316,7 @@ function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-let db, quizDb;
+let db;
 
 function initFirebase(){
   const banner = document.getElementById('configErrorBanner');
@@ -327,10 +328,6 @@ function initFirebase(){
   if(!db){
     const dashboardApp = firebase.initializeApp(DASHBOARD_FIREBASE_CONFIG, 'dashboard');
     db = dashboardApp.database();
-    if(QUIZ_FIREBASE_CONFIG.apiKey){
-      const quizApp = firebase.initializeApp(QUIZ_FIREBASE_CONFIG, 'quiz');
-      quizDb = quizApp.database();
-    }
   }
   return true;
 }
@@ -436,7 +433,7 @@ async function renderAttendancePanel(){
     return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <div class="att-name-row">
         <span class="att-name">${escapeHtml(s.name)}</span>
-        ${rec ? `<span class="att-time">${rec.time}</span>` : ''}
+        ${(rec && rec.status==='out') ? `<span class="att-time">${rec.time}</span>` : ''}
       </div>
       <div class="att-btns">
         <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
@@ -480,34 +477,35 @@ async function loadTimetable(){
   list.innerHTML = filled.length ? filled.map((p,i)=>`<li class="period-chip" style="background:var(--${CHIP_COLORS[i%CHIP_COLORS.length]});"><span class="p-badge">${p.idx}</span><span class="p-subject">${escapeHtml(p.val)}</span></li>`).join('') : '<li class="tt-empty">등록된 시간표가 없습니다.</li>';
 }
 
-/* ---------- 퀴즈 ---------- */
+/* ---------- 퀴즈 (관리자 페이지에서 직접 설정) ---------- */
 async function loadQuiz(){
   const qEl = document.getElementById('quizQuestion');
   const cEl = document.getElementById('quizChoices');
-  const rEl = document.getElementById('quizRaw');
+  const imgEl = document.getElementById('quizImage');
   const drawBtn = document.getElementById('openDrawBtn');
-  rEl.textContent = ''; drawBtn.style.display = 'none';
-  if(!quizDb){
-    qEl.textContent = 'index.html 상단의 QUIZ_FIREBASE_CONFIG 값을 채워주세요.';
-    cEl.innerHTML = '';
-    return;
-  }
   try{
-    let snap = await quizDb.ref('quizzes/'+todayStr()).once('value');
-    if(!snap.exists()) snap = await quizDb.ref('quizzes/'+todayStrCompact()).once('value');
-    if(!snap.exists()){ qEl.textContent = '오늘의 퀴즈가 아직 등록되지 않았습니다.'; cEl.innerHTML=''; return; }
+    const snap = await db.ref('quiz/'+todayStr()).once('value');
     const data = snap.val();
-    const question = (data.meta && data.meta.questionText) || data.question || data.title || data.text || data.q || null;
-    const choices = data.choices || data.options || data.answers || [];
-    if(question){
-      qEl.textContent = question;
-      cEl.innerHTML = Array.isArray(choices) && choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
-      drawBtn.style.display = 'inline-block';
-    } else {
-      qEl.textContent = '(문제 필드명을 확인해주세요 - 아래 원본 데이터 참고)';
-      rEl.textContent = JSON.stringify(data, null, 2);
+    if(!data || !data.published || !data.question){
+      qEl.textContent = '오늘의 퀴즈가 아직 준비되지 않았어요.';
+      cEl.innerHTML = '';
+      imgEl.style.display = 'none';
+      imgEl.removeAttribute('src');
+      drawBtn.style.display = 'none';
+      return;
     }
-  }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다. (' + (e && e.message ? e.message : e) + ')'; }
+    qEl.textContent = data.question;
+    const choices = Array.isArray(data.choices) ? data.choices.filter(c=>c && String(c).trim()) : [];
+    cEl.innerHTML = choices.length ? choices.map(c=>`<div class="quiz-choice">${escapeHtml(String(c))}</div>`).join('') : '';
+    if(data.imageDataUrl){
+      imgEl.src = data.imageDataUrl;
+      imgEl.style.display = 'block';
+    } else {
+      imgEl.style.display = 'none';
+      imgEl.removeAttribute('src');
+    }
+    drawBtn.style.display = 'inline-block';
+  }catch(e){ console.error(e); qEl.textContent = '퀴즈를 불러오지 못했습니다.'; }
 }
 
 function shrinkToFit(el, opts){
@@ -546,73 +544,38 @@ async function loadTodos(){
     </div>`).join('') + '</div>';
 }
 
-/* ---------- 출석률 위젯 & 박수 소리 ---------- */
-function playClapSound(){
+/* ---------- 출석률 위젯 & 축하 효과음 ---------- */
+function playCelebrationSound(){
   try{
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioCtx();
     const now = ctx.currentTime;
     const master = ctx.createGain();
-    master.gain.value = 1;
+    master.gain.value = 0.9;
     master.connect(ctx.destination);
 
-    // 개별 박수 소리(짧은 노이즈 버스트) 하나를 예약
-    function scheduleClap(time, amp, freq){
-      const dur = 0.045 + Math.random()*0.035;
-      const bufferSize = Math.floor(ctx.sampleRate * dur);
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let n=0;n<bufferSize;n++){
-        data[n] = (Math.random()*2-1) * Math.pow(1 - n/bufferSize, 1.3);
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = freq;
-      bp.Q.value = 0.9;
+    // 벨(bell) 톤 하나를 예약: 빠른 어택 + 부드러운 감쇠
+    function playNote(freq, start, dur, peak, type){
+      const osc = ctx.createOscillator();
+      osc.type = type || 'triangle';
+      osc.frequency.value = freq;
       const g = ctx.createGain();
-      g.gain.value = amp;
-      src.connect(bp).connect(g).connect(master);
-      src.start(time);
+      g.gain.setValueAtTime(0.0001, now + start);
+      g.gain.exponentialRampToValueAtTime(peak, now + start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+      osc.connect(g).connect(master);
+      osc.start(now + start);
+      osc.stop(now + start + dur + 0.05);
     }
 
-    // 시작(크레센도) → 절정(지속되는 박수갈채) → 마무리(디크레센도) 3단계로 수많은 박수를 겹쳐서 재생
-    const phases = [
-      { from:0,    to:0.35, count:24,  amp:[0.22,0.5]  },
-      { from:0.3,  to:1.8,  count:150, amp:[0.38,0.85] },
-      { from:1.65, to:2.7,  count:30,  amp:[0.14,0.4]  },
-    ];
-    phases.forEach(ph=>{
-      for(let i=0;i<ph.count;i++){
-        const t = now + ph.from + Math.random()*(ph.to-ph.from);
-        const amp = ph.amp[0] + Math.random()*(ph.amp[1]-ph.amp[0]);
-        const freq = 900 + Math.random()*2600;
-        scheduleClap(t, amp, freq);
-      }
-    });
+    // 상승하는 아르페지오 (도-미-솔-높은도) : "짜잔!" 느낌
+    const arpeggio = [523.25, 659.25, 783.99, 1046.50];
+    arpeggio.forEach((freq, i) => playNote(freq, i * 0.09, 0.35, 0.4, 'triangle'));
 
-    // 저역대의 함성/웅성거림 레이어를 더해 "우레와 같은" 두께감을 보강
-    const roarDur = 2.7;
-    const roarBufferSize = Math.floor(ctx.sampleRate * roarDur);
-    const roarBuffer = ctx.createBuffer(1, roarBufferSize, ctx.sampleRate);
-    const roarData = roarBuffer.getChannelData(0);
-    for(let n=0;n<roarBufferSize;n++){ roarData[n] = Math.random()*2-1; }
-    const roarSrc = ctx.createBufferSource();
-    roarSrc.buffer = roarBuffer;
-    const roarFilter = ctx.createBiquadFilter();
-    roarFilter.type = 'bandpass';
-    roarFilter.frequency.value = 1800;
-    roarFilter.Q.value = 0.5;
-    const roarGain = ctx.createGain();
-    roarGain.gain.setValueAtTime(0, now);
-    roarGain.gain.linearRampToValueAtTime(0.2, now + 0.3);
-    roarGain.gain.linearRampToValueAtTime(0.17, now + 1.6);
-    roarGain.gain.linearRampToValueAtTime(0, now + 2.7);
-    roarSrc.connect(roarFilter).connect(roarGain).connect(master);
-    roarSrc.start(now);
-    roarSrc.stop(now + roarDur);
-  }catch(e){ console.error('clap sound error', e); }
+    // 화음으로 마무리하며 반짝이는 배음을 얹어 화려하게
+    [1046.50, 1318.51, 1567.98].forEach(freq => playNote(freq, 0.42, 1.0, 0.28, 'triangle'));
+    [1567.98, 2093.00, 2637.02].forEach((freq, i) => playNote(freq, 0.46 + i * 0.05, 0.6, 0.14, 'sine'));
+  }catch(e){ console.error('celebration sound error', e); }
 }
 
 let attFullNow = false;
@@ -653,7 +616,7 @@ async function loadAttendanceWidget(){
 }
 document.getElementById('attRateBarTrack').addEventListener('click', ()=>{
   if(!attFullNow || !attClapAllowed) return;
-  playClapSound();
+  playCelebrationSound();
 });
 
 /* ---------- 급식 (NEIS) ---------- */
@@ -759,12 +722,14 @@ async function openDrawOverlay(){
       document.getElementById('drawingForLabel').textContent = `✏️ ${selectedStudent.name}님`;
       document.getElementById('drawStepName').style.display = 'none';
       document.getElementById('drawStepCanvas').style.display = 'block';
+      document.querySelector('.draw-box').classList.remove('wide');
       resetCanvas();
     });
   });
   document.getElementById('drawStepName').style.display = 'block';
   document.getElementById('drawStepCanvas').style.display = 'none';
   document.getElementById('drawStepDone').style.display = 'none';
+  document.querySelector('.draw-box').classList.add('wide');
   drawOverlay.classList.add('open');
 }
 document.getElementById('openDrawBtn').addEventListener('click', openDrawOverlay);
@@ -772,6 +737,7 @@ document.getElementById('closeDrawOverlay').addEventListener('click', ()=> drawO
 document.getElementById('backToNameBtn').addEventListener('click', ()=>{
   document.getElementById('drawStepCanvas').style.display = 'none';
   document.getElementById('drawStepName').style.display = 'block';
+  document.querySelector('.draw-box').classList.add('wide');
 });
 document.getElementById('clearCanvasBtn').addEventListener('click', resetCanvas);
 document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>{
@@ -805,6 +771,7 @@ function attachRealtimeListeners(){
     if(openPanelType === 'attendance') await renderAttendancePanel();
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
+  db.ref('quiz/'+todayStr()).on('value', ()=> loadQuiz());
   db.ref('notices/'+todayStr()).on('value', async ()=>{
     if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
   });
