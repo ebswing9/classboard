@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학급 대시보드 · 관리자</title>
+<title>학급 대시보드 관리자</title>
 <link rel="icon" href="data:,">
 <link rel="manifest" href="admin-manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -160,7 +160,7 @@
   <input type="password" id="loginPassword" placeholder="비밀번호 입력">
   <button id="loginBtn">입장하기</button>
   <div id="loginError"></div>
-  <p class="hint" style="margin-top:14px;">처음 접속이신가요? 기본 비밀번호는 <b>admin1234</b> 예요. 로그인 후 설정 탭에서 꼭 바꿔주세요.</p>
+  <p class="hint" style="margin-top:14px;">비밀번호는 로그인 후 설정 탭에서 꼭 바꿔주세요.</p>
 </div>
 
 <div id="adminApp" style="display:none;">
@@ -196,7 +196,7 @@
           <div class="field">
             <label>조회사항</label>
             <textarea id="inputMorning"></textarea>
-            <p class="hint">✅ 체크박스 하나 = 빈 줄로 구분된 문단 하나예요. 한 항목 안에서 줄만 바꾸고 싶으면 그냥 Enter, 새 항목(체크박스)을 만들고 싶으면 Enter를 두 번(빈 줄) 눌러주세요.</p>
+            <p class="hint">✅ 한 항목 안에서 줄만 바꾸고 싶으면 그냥 Enter, 새 항목(체크박스)을 만들고 싶으면 Enter를 두 번(빈 줄) 눌러주세요.</p>
           </div>
           <div class="publish-row">
             <span>종례사항 공개</span>
@@ -205,22 +205,29 @@
           <div class="field">
             <label>종례사항</label>
             <textarea id="inputClosing"></textarea>
-            <p class="hint">✅ 조회사항과 같은 방식이에요. 빈 줄로 항목을 구분해주세요.</p>
+            <p class="hint">✅ 한 항목 안에서 줄만 바꾸고 싶으면 그냥 Enter, 새 항목(체크박스)을 만들고 싶으면 Enter를 두 번(빈 줄) 눌러주세요.</p>
           </div>
           <button class="btn" id="saveNoticeBtn">저장</button>
           <button class="btn danger" id="deleteNoticeBtn">이 날짜 기록 삭제</button>
           <span class="msg" id="noticeMsg"></span>
         </div>
         <div class="section">
+          <h3>🍱 급식 미리 저장 <span class="sub" id="mealCacheDateSub"></span></h3>
+          <p class="hint">전자칠판에서 급식이 "불러오는 중"에 멈추는 경우가 있어서, NEIS에서 미리 받아와 저장해두는 기능이에요. 위 <b>조회·종례 날짜</b> 기준으로 저장돼요. 조회·종례 쓰실 때 같이 한 번 눌러주세요.</p>
+          <button class="btn" id="fetchMealBtn">NEIS에서 급식 불러와 저장</button>
+          <span class="msg" id="mealCacheMsg"></span>
+          <div id="mealCachePreview" style="margin-top:10px;"></div>
+        </div>
+        <div class="section">
           <h3>✅ 오늘의 할 일 <span class="sub" id="todoDateSub"></span></h3>
           <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요.</p>
-          <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;수학 익힘책 풀기"></textarea></div>
+          <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;동의서 제출하기"></textarea></div>
           <button class="btn" id="saveTodosBtn">할 일 저장</button>
           <span class="msg" id="todosMsg"></span>
         </div>
         <div class="section">
           <h3>최근 내용 불러오기</h3>
-          <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요 (날짜는 안 바뀌어요). 어제랑 같은 공지 다시 쓸 때 편해요.</p>
+          <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요.</p>
           <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
         </div>
       </div>
@@ -409,7 +416,7 @@
           <p class="hint">현재 등록된 학교: <b id="currentSchoolLabel">없음</b></p>
           <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
           <span class="msg" id="neisMsg"></span>
-          <p class="hint" style="margin-top:14px;">⚠️ 특정 기기(전자칠판 등)에서만 급식이 안 보인다면, 코드보다는 그 기기의 인터넷/방화벽이 open.neis.go.kr 접속을 막고 있을 가능성이 높아요. 기기에서 직접 <b>open.neis.go.kr</b> 접속이 되는지 확인해보세요.</p>
+          <p class="hint" style="margin-top:14px;">⚠️ 특정 기기(전자칠판 등)에서만 급식이 안 보인다면, 그 기기의 인터넷/방화벽이 open.neis.go.kr 접속을 막고 있을 가능성이 높아요. "조회·종례" 탭의 <b>급식 미리 저장</b> 버튼을 매일 눌러주시면, 그 기기는 NEIS에 직접 접속하지 않고 저장된 내용만 읽어오기 때문에 이 문제를 피할 수 있어요.</p>
         </div>
       </div>
     </div>
@@ -424,6 +431,7 @@ const DEFAULT_PERIODS = 7;
 const STATUS_LABEL = {present:'출석', out:'조퇴', absent:'결석'};
 
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function dateStrToCompact(s){ return String(s).replaceAll('-',''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -650,6 +658,8 @@ async function loadNoticeForDate(date){
   const todoSnap = await db.ref('todos/'+date).once('value');
   document.getElementById('inputTodos').value = todoSnap.val() || '';
   document.getElementById('todoDateSub').textContent = date;
+  document.getElementById('mealCacheDateSub').textContent = date;
+  await refreshMealCachePreview(date);
 }
 document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
@@ -659,6 +669,53 @@ document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
   setTimeout(()=>document.getElementById('todosMsg').textContent='', 2000);
 });
 document.getElementById('noticeDate').addEventListener('change', (e)=> loadNoticeForDate(e.target.value || todayStr()));
+
+/* ---- 급식 미리 저장 (전자칠판 방화벽 문제 대응) ---- */
+async function refreshMealCachePreview(date){
+  const wrap = document.getElementById('mealCachePreview');
+  const dateCompact = dateStrToCompact(date);
+  const snap = await db.ref('mealCache/'+dateCompact).once('value');
+  const cached = snap.val();
+  if(!cached){
+    wrap.innerHTML = '<p class="hint">아직 저장된 급식이 없어요.</p>';
+  }else if(cached.empty){
+    wrap.innerHTML = '<p class="hint">이 날짜는 "급식 정보 없음"으로 저장돼 있어요. (주말/방학 등)</p>';
+  }else{
+    wrap.innerHTML = '<p class="hint">저장된 급식: ' + cached.items.map(escapeHtml).join(', ') + '</p>';
+  }
+}
+document.getElementById('fetchMealBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  const dateCompact = dateStrToCompact(date);
+  const msgEl = document.getElementById('mealCacheMsg');
+  msgEl.textContent = '불러오는 중...';
+
+  const cfgSnap = await db.ref('config/neis').once('value');
+  const cfg = cfgSnap.val();
+  if(!cfg || !cfg.officeCode || !cfg.schoolCode){
+    msgEl.textContent = '⚠️ 먼저 "설정 > 급식" 탭에서 학교를 등록해주세요.';
+    return;
+  }
+  try{
+    const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
+    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
+    if(!rows || !rows.length){
+      await db.ref('mealCache/'+dateCompact).set({ items: [], empty: true, updatedAt: Date.now() });
+      msgEl.textContent = '이 날짜는 급식 정보가 없어서 "없음"으로 저장했어요.';
+    }else{
+      const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
+      await db.ref('mealCache/'+dateCompact).set({ items, empty: false, updatedAt: Date.now() });
+      msgEl.textContent = '저장됐어요 ✓';
+    }
+  }catch(e){
+    msgEl.textContent = '⚠️ NEIS에서 가져오지 못했어요. 이 기기의 인터넷 상태를 확인해주세요.';
+  }
+  await refreshMealCachePreview(date);
+  setTimeout(()=>{ msgEl.textContent=''; }, 4000);
+});
 document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   const morning = document.getElementById('inputMorning').value;

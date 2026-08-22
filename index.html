@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2학년 5반 대시보드</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>학급대시보드</title>
 <link rel="icon" href="data:,">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -339,6 +339,32 @@ function initFirebase(){
   return true;
 }
 
+/* ---------- 전자칠판에서 여러 명이 동시에 터치할 때 확대(핀치줌/더블탭줌) 방지 ----------
+   viewport의 user-scalable=no 만으로는 일부 브라우저(특히 일부 안드로이드 전자칠판)에서
+   막히지 않는 경우가 있어 JS로 한 번 더 막아준다. */
+(function preventPinchAndDoubleTapZoom(){
+  // 손가락 두 개 이상이 동시에 닿으면(핀치줌 제스처) 기본 동작을 막음
+  document.addEventListener('touchmove', function(e){
+    if(e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive:false });
+
+  // Safari 계열의 제스처 확대 이벤트 자체를 막음
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+  // 더블탭으로 확대되는 것을 막음 (마지막 탭과의 간격이 300ms 미만이면 두 번째 탭 무시)
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e){
+    const now = Date.now();
+    if(now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive:false });
+
+  // 마우스가 연결된 전자칠판에서 Ctrl+휠 확대도 막음
+  document.addEventListener('wheel', function(e){
+    if(e.ctrlKey) e.preventDefault();
+  }, { passive:false });
+})();
+
 /* ---------- 전자칠판 등 100vh 오차 보정 + 넘침 안전장치 ---------- */
 function setVH(){
   document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
@@ -411,7 +437,7 @@ document.getElementById('closingTile').addEventListener('click', ()=> openPanel(
 /* 조회/종례: 빈 줄로 항목을 구분, 항목 안에서의 줄바꿈은 그대로 <br>로 유지 (체크박스 1개 = 빈 줄로 구분된 1개 문단) */
 function renderNoticeList(text, which){
   const items = text.split(/\n[ \t]*\n+/).map(s=>s.trim()).filter(Boolean);
-  if(!items.length) return `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
+  if(!items.length) return `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
   return `<div class="notice-list">` + items.map(item=>{
     const htmlText = escapeHtml(item).replaceAll('\n','<br>');
     return `<div class="notice-item">
@@ -431,7 +457,7 @@ async function renderNoticePanel(which){
   const body = document.getElementById('panelBody');
   body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
-    : `<div class="notice-empty"><div class="e-icon">🌤️</div><div>아직 공개된 내용이 없어요</div></div>`;
+    : `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
 async function getRosterList(){
@@ -583,7 +609,7 @@ function playCelebrationSound(){
     const ctx = new AudioCtx();
     const now = ctx.currentTime;
     const master = ctx.createGain();
-    master.gain.value = 0.85;
+    master.gain.value = 0.9;
     master.connect(ctx.destination);
 
     // 색종이 흩날리는 느낌의 반짝이는 노이즈 스파클
@@ -606,30 +632,71 @@ function playCelebrationSound(){
       src.start(now+start); src.stop(now+start+dur+0.05);
     }
 
-    // 브라스 느낌의 화음 노트 (톱니 + 삼각 블렌드)
+    // 브라스 느낌의 화음 노트 (톱니 + 삼각 블렌드, 어택을 더 짧고 세게 줘서 "빰!" 느낌 강조)
     function playChordNote(freq, start, dur, peak){
-      [ {type:'sawtooth', mix:0.5, detune:0}, {type:'triangle', mix:0.5, detune:6} ].forEach(v=>{
+      [ {type:'sawtooth', mix:0.55, detune:0}, {type:'square', mix:0.25, detune:-6}, {type:'triangle', mix:0.4, detune:6} ].forEach(v=>{
         const osc = ctx.createOscillator();
         osc.type = v.type;
         osc.frequency.value = freq;
         osc.detune.value = v.detune;
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, now+start);
-        g.gain.exponentialRampToValueAtTime(peak*v.mix, now+start+0.025);
+        g.gain.exponentialRampToValueAtTime(peak*v.mix, now+start+0.012);
         g.gain.exponentialRampToValueAtTime(0.0001, now+start+dur);
         osc.connect(g).connect(master);
         osc.start(now+start); osc.stop(now+start+dur+0.05);
       });
     }
 
-    // "짜~ 잔!" : 상승 2음 + 화음 마무리 + 스파클
-    playChordNote(523.25, 0, 0.22, 0.5);
-    playChordNote(783.99, 0.16, 0.9, 0.55);
-    playChordNote(1046.50, 0.16, 0.9, 0.45);
-    playChordNote(1318.51, 0.16, 0.9, 0.35);
-    playSparkle(0.05, 0.5, 3200);
-    playSparkle(0.22, 0.7, 4200);
-    playSparkle(0.4, 0.9, 2600);
+    // 박수 소리 한 번(짝!) : 짧게 필터링된 노이즈 클릭. 이걸 여러 번, 타이밍을 흩뿌려서 재생하면
+    // 여러 사람이 동시에 박수치는 "박수갈채" 느낌이 남 (실제 녹음 파일 없이도 합성으로 충분히 표현 가능)
+    function playClap(start, peak){
+      const dur = 0.05 + Math.random()*0.03;
+      const bufSize = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufSize, 1.6);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 1200 + Math.random()*1500;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'peaking';
+      bp.frequency.value = 2500 + Math.random()*2000;
+      bp.gain.value = 6;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now+start);
+      g.gain.exponentialRampToValueAtTime(peak, now+start+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+start+dur);
+      src.connect(hp).connect(bp).connect(g).connect(master);
+      src.start(now+start); src.stop(now+start+dur+0.02);
+    }
+
+    // 박수갈채: 짧은 박수 수십 번을 크레센도 → 유지 → 잦아드는 흐름으로 흩뿌려 재생
+    function playApplause(start, dur){
+      const clapCount = Math.round(dur * 45);
+      for(let i=0;i<clapCount;i++){
+        const t = start + Math.random()*dur;
+        const progress = (t - start) / dur; // 0~1
+        // 시작은 조금 약하게, 중반에 가장 크게, 끝에 다시 잦아들게
+        const envelope = Math.sin(Math.min(progress,1) * Math.PI);
+        const peak = 0.05 + envelope * 0.16;
+        playClap(t, peak);
+      }
+    }
+
+    // "빰빠밤 짜잔!" 팡파레(더 스타카토하게) + 박수갈채 + 반짝이 스파클
+    playChordNote(392.00, 0,    0.10, 0.5);   // 빰
+    playChordNote(523.25, 0.13, 0.10, 0.5);   // 빠
+    playChordNote(659.25, 0.26, 0.16, 0.55);  // 밤
+    playChordNote(783.99, 0.46, 0.85, 0.6);   // 짜
+    playChordNote(1046.50, 0.46, 0.85, 0.5);
+    playChordNote(1318.51, 0.46, 0.85, 0.4);
+    playSparkle(0.5, 0.5, 3200);
+    playSparkle(0.66, 0.7, 4200);
+    playSparkle(0.82, 0.9, 2600);
+    playApplause(0.42, 1.6);
   }catch(e){ console.error('celebration sound error', e); }
 }
 
@@ -674,20 +741,44 @@ document.getElementById('attRateBarTrack').addEventListener('click', ()=>{
   playCelebrationSound();
 });
 
-/* ---------- 급식 (NEIS) ---------- */
+/* ---------- 급식 (NEIS) ----------
+   전자칠판 등 일부 기기는 open.neis.go.kr 도메인을 방화벽이 막아서
+   직접 호출하면 계속 "불러오는 중"에 멈추는 문제가 있었음.
+   그래서 관리자(admin.html의 "조회·종례" 탭 > 급식 미리 저장)가 미리
+   NEIS에서 받아와 Firebase의 mealCache/{YYYYMMDD}에 저장해두고,
+   여기서는 그 캐시만 읽는다. (전자칠판 자체는 NEIS에 접속할 필요가 없어짐)
+   캐시에 값이 없는 날짜(관리자가 아직 저장하지 않은 날짜)만 예외적으로
+   기기에서 직접 NEIS를 호출해보는 폴백을 둔다. */
 let mealDate = new Date();
 async function loadMeal(){
   const bodyEl = document.getElementById('mealBody');
   document.getElementById('mealDateLabel').textContent = `${mealDate.getMonth()+1}월 ${mealDate.getDate()}일`;
+  const dateCompact = todayStrCompact(mealDate);
+  bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
+
+  try{
+    const cacheSnap = await db.ref('mealCache/'+dateCompact).once('value');
+    const cached = cacheSnap.val();
+    if(cached && cached.items && cached.items.length){
+      renderMealItems(bodyEl, cached.items);
+      return;
+    }
+    if(cached && cached.empty){
+      bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>';
+      return;
+    }
+  }catch(e){
+    console.error('mealCache read error', e);
+  }
+
+  // 캐시에 아직 없는 날짜 → 폴백으로 NEIS 직접 호출 시도 (방화벽 기기에서는 실패할 수 있음)
   const cfgSnap = await db.ref('config/neis').once('value');
   const cfg = cfgSnap.val();
   if(!cfg || !cfg.officeCode || !cfg.schoolCode){
-    bodyEl.innerHTML = '<div class="meal-empty">🌤️ 관리자 페이지에서<br>학교를 등록해주세요.</div>';
+    bodyEl.innerHTML = '<div class="meal-empty">🫧 관리자 페이지에서<br>학교를 등록해주세요.</div>';
     return;
   }
-  bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
   try{
-    const dateCompact = todayStrCompact(mealDate);
     const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
     const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
     const controller = new AbortController();
@@ -698,14 +789,17 @@ async function loadMeal(){
     const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
     if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
     const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
-    bodyEl.innerHTML = '<ul class="meal-list">' + items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
-    shrinkToFit(bodyEl, {max:13.5, min:9});
+    renderMealItems(bodyEl, items);
   }catch(e){
     const timedOut = e && e.name === 'AbortError';
     bodyEl.innerHTML = timedOut
       ? '<div class="meal-empty">⚠️ 응답이 없어요.<br>이 기기의 인터넷/방화벽을<br>확인해주세요.</div>'
       : '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
   }
+}
+function renderMealItems(bodyEl, items){
+  bodyEl.innerHTML = '<ul class="meal-list">' + items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+  shrinkToFit(bodyEl, {max:13.5, min:9});
 }
 document.getElementById('mealPrevBtn').addEventListener('click', ()=>{ mealDate = new Date(mealDate.getFullYear(), mealDate.getMonth(), mealDate.getDate()-1); loadMeal(); });
 document.getElementById('mealNextBtn').addEventListener('click', ()=>{ mealDate = new Date(mealDate.getFullYear(), mealDate.getMonth(), mealDate.getDate()+1); loadMeal(); });
@@ -724,7 +818,7 @@ async function loadDday(){
   if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
   else if(diffDays === 0) text = `${cfg.label} D-DAY`;
   else text = `${cfg.label} D+${Math.abs(diffDays)}`;
-  el.textContent = '🎈 ' + text;
+  el.textContent = '🤍 ' + text;
   el.style.display = 'inline-block';
 }
 
