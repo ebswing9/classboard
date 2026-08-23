@@ -193,15 +193,28 @@
   .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--sky-deep); margin:0 0 8px; text-align:center; }
   .close-x{ position:absolute; top:6px; right:6px; background:var(--line); border:none; width:20px; height:20px; border-radius:50%; color:var(--text); font-size:10px; cursor:pointer; }
   .name-grid{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:60vh; overflow-y:auto; }
-  .name-pill{ border:none; background:var(--sky); color:var(--text); padding:6px 10px; border-radius:12px; font-size:11.5px; font-weight:700; cursor:pointer; }
+  .name-pill{ border:none; background:var(--sky); color:var(--text); padding:6px 10px; border-radius:12px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; }
   .name-pill:hover{ background:var(--sky-deep); color:#fff; }
   .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; opacity:.55; }
   .name-pill.done:hover{ background:var(--line); color:var(--muted); }
+  .name-pill .pill-hearts{ font-size:9.5px; letter-spacing:-1px; }
   #drawCanvas{ width:100%; height:70px; border-radius:10px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
   .draw-actions{ display:flex; align-items:center; gap:5px; margin-top:8px; }
   .draw-btn{ border:none; background:var(--line); color:var(--text); padding:7px 10px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; }
   .draw-btn.primary{ background:var(--sky-deep); color:#fff; flex:1; padding:8px 10px; font-size:12px; }
   .draw-done{ text-align:center; font-size:14px; font-weight:800; padding:10px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
+
+  /* 포인트 축하 토스트 */
+  #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
+  #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* 오늘의 행운번호 뽑기 */
+  .lucky-draw-box{ background:linear-gradient(135deg, var(--yellow), var(--pink) 130%); border-radius:16px; padding:14px 16px; margin-bottom:14px; text-align:center; }
+  .lucky-draw-btn{ border:none; background:var(--pink-deep); color:#fff; padding:10px 18px; border-radius:16px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:'Jua',sans-serif; }
+  .lucky-draw-btn:disabled{ background:var(--muted); cursor:default; opacity:.6; }
+  .lucky-draw-result{ font-family:'Jua',sans-serif; font-size:15px; color:var(--text); }
+  .lucky-draw-result b{ color:var(--pink-deep); font-size:18px; }
+  .lucky-draw-hint{ font-size:11px; color:var(--muted); font-weight:600; margin-top:6px; }
 
   /* 모바일/좁은 화면: 가로 배치 대신 세로 스크롤 */
   @media (max-width: 820px){
@@ -288,6 +301,8 @@
   </div>
 </div></div>
 
+<div id="pointToast"></div>
+
 <div id="drawOverlay">
   <div class="draw-box">
     <button class="close-x" id="closeDrawOverlay">✕</button>
@@ -322,6 +337,35 @@ function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1
 function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- 포인트 시스템 ---------- */
+function awardPoints(studentId, delta){
+  return db.ref(`points/${studentId}`).transaction(cur => (cur||0) + delta);
+}
+function showPointToast(html){
+  const el = document.getElementById('pointToast');
+  el.innerHTML = html;
+  el.classList.add('show');
+  clearTimeout(showPointToast._t);
+  showPointToast._t = setTimeout(()=> el.classList.remove('show'), 2600);
+}
+// 상점(10점 보상) 지급 완료 후, 학생이 다음 번 답안 제출/출석 체크를 할 때 최초 1번만 축하 토스트를 띄움
+async function checkAndCelebrateReward(studentId, studentName){
+  try{
+    const snap = await db.ref(`pointMeta/${studentId}/pendingCelebrate`).once('value');
+    if(snap.val()){
+      await db.ref(`pointMeta/${studentId}/pendingCelebrate`).set(false);
+      showPointToast(`🎉 ${escapeHtml(studentName)}님, 10점 모아 상점 받았어요! 🎉`);
+    }
+  }catch(e){ console.error('reward celebration check error', e); }
+}
+// 포인트 → 하트 뱃지 문자열 (10점당 하트 1개, 100점 이상이면 특별 아이콘 1개로 표시)
+function pointsToHearts(points){
+  const p = points || 0;
+  if(p >= 100) return '🌟';
+  const n = Math.min(9, Math.floor(p/10));
+  return n > 0 ? '❤️'.repeat(n) : '';
+}
 
 let db;
 
@@ -476,7 +520,12 @@ async function renderAttendancePanel(){
   const unchecked = roster.filter(s=>!att[s.id]);
   const ordered = [...checked, ...unchecked];
 
-  box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
+  const luckyBoxHtml = `<div class="lucky-draw-box" id="luckyDrawBox">
+      <button class="lucky-draw-btn" id="luckyDrawBtn">🍀 오늘의 행운번호 뽑기</button>
+      <div class="lucky-draw-result" id="luckyDrawResult" style="display:none;"></div>
+    </div>`;
+
+  box.innerHTML = luckyBoxHtml + '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
     if(rec && rec.status === 'absent'){
       return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
@@ -502,10 +551,18 @@ async function renderAttendancePanel(){
     cell.querySelectorAll('.att-pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         const isActive = btn.classList.contains('on-present') || btn.classList.contains('on-out');
+        const prevRec = att[id];
+        const prevAwarded = !!(prevRec && prevRec.pointAwarded);
         if(isActive){
           await db.ref(`attendance/${todayStr()}/${id}`).remove();
+          if(prevAwarded) await awardPoints(id, -1);
         } else {
-          await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM(), source: 'dashboard' });
+          const status = btn.dataset.status;
+          const nowAwarded = status === 'present';
+          await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status, time: nowHHMM(), source: 'dashboard', pointAwarded: nowAwarded });
+          if(nowAwarded && !prevAwarded) await awardPoints(id, +1);
+          else if(!nowAwarded && prevAwarded) await awardPoints(id, -1);
+          await checkAndCelebrateReward(id, name);
         }
         await renderAttendancePanel();
         await loadAttendanceWidget();
@@ -513,7 +570,43 @@ async function renderAttendancePanel(){
       });
     });
   });
+  await renderLuckyDraw(roster, att);
   checkOverflowFallback();
+}
+
+/* ---------- 오늘의 행운번호 뽑기 ----------
+   그날 대시보드에서 직접 출석 체크한 학생들을 시간순으로 줄 세워 번호를 매기고,
+   그 중 하나를 무작위로 뽑음. 하루 한 번만 뽑히고, 같은 날 다시 눌러도 같은 결과가 나옴.
+   관리자 페이지에서 초기화하면 다시 뽑을 수 있음. */
+async function renderLuckyDraw(roster, att){
+  const btn = document.getElementById('luckyDrawBtn');
+  const resultEl = document.getElementById('luckyDrawResult');
+  if(!btn) return;
+  const snap = await db.ref('luckyDraw/'+todayStr()).once('value');
+  const existing = snap.val();
+  if(existing){
+    btn.style.display = 'none';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `🍀 오늘 <b>${existing.number}번</b>으로 출석한 <b>${escapeHtml(existing.studentName)}</b>님!`;
+    return;
+  }
+  btn.style.display = 'inline-block';
+  resultEl.style.display = 'none';
+  btn.onclick = async ()=>{
+    const pool = roster
+      .filter(s=> att[s.id] && att[s.id].status==='present' && att[s.id].source==='dashboard')
+      .sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+    if(!pool.length){
+      btn.textContent = '아직 출석한 학생이 없어요';
+      setTimeout(()=>{ btn.textContent = '🍀 오늘의 행운번호 뽑기'; }, 1600);
+      return;
+    }
+    const number = 1 + Math.floor(Math.random() * pool.length);
+    const winner = pool[number-1];
+    const payload = { number, studentId: winner.id, studentName: winner.name, drawnAt: Date.now() };
+    await db.ref('luckyDraw/'+todayStr()).set(payload);
+    await renderLuckyDraw(roster, att);
+  };
 }
 
 /* ---------- 시간표 ---------- */
@@ -784,12 +877,16 @@ async function openDrawOverlay(){
   const roster = await getRosterList();
   const answeredSnap = await db.ref('quizAnswers/'+todayStr()).once('value');
   const answered = answeredSnap.val() || {};
+  const pointsSnap = await db.ref('points').once('value');
+  const pointsVal = pointsSnap.val() || {};
   const grid = document.getElementById('drawNameGrid');
   grid.innerHTML = roster.length ? roster.map(s=>{
     const done = !!answered[s.id];
+    const hearts = pointsToHearts(pointsVal[s.id]);
+    const heartsHtml = hearts ? `<span class="pill-hearts">${hearts}</span>` : '';
     return done
-      ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
-      : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`;
+      ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}${heartsHtml}</button>`
+      : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}${heartsHtml}</button>`;
   }).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
   grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -821,6 +918,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
   await db.ref(`quizAnswers/${todayStr()}/${selectedStudent.id}`).set({
     name: selectedStudent.name, dataUrl, submittedAt: Date.now()
   });
+  await checkAndCelebrateReward(selectedStudent.id, selectedStudent.name);
   document.getElementById('drawStepCanvas').style.display = 'none';
   document.getElementById('drawStepDone').style.display = 'block';
   setTimeout(()=>{ drawOverlay.classList.remove('open'); }, 1300);

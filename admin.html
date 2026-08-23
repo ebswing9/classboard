@@ -184,6 +184,7 @@
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
+      <button class="tab-btn" data-tab="points">포인트</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="settings">설정</button>
@@ -324,9 +325,41 @@
           <span>👏 축하 효과음 허용</span>
           <button class="publish-btn off" id="clapToggleBtn">비활성</button>
         </div>
+        <div class="publish-row" style="margin-bottom:14px;">
+          <span>🍀 오늘의 행운번호</span>
+          <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
+        </div>
+        <span class="msg" id="luckyResetMsg"></span>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
         <p class="hint">축하 효과음을 켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 축하 효과음을 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
+      </div>
+    </div>
+
+    <!-- ===== 포인트 ===== -->
+    <div class="tab-panel" id="tab-points">
+      <div class="section">
+        <h3>🎁 상점 대상자</h3>
+        <p class="hint">10점을 모을 때마다 자동으로 이 목록에 뜹니다. 상점을 주고 "지급 완료"를 누르면 목록에서 빠지고, 다음 10점 단위에 도달하면 다시 떠요.</p>
+        <div id="rewardCandidateList">불러오는 중...</div>
+      </div>
+      <div class="section">
+        <h3>➕ 포인트 직접 부여 / 회수</h3>
+        <div class="field"><label>학생</label>
+          <select id="pointManualStudent"></select>
+        </div>
+        <div class="field"><label>점수 (음수 입력 시 회수)</label>
+          <input type="number" id="pointManualAmount" value="1" step="1">
+        </div>
+        <div class="field"><label>사유</label>
+          <input type="text" id="pointManualReason" placeholder="예: 발표 잘함, 친구 도와줌">
+        </div>
+        <button class="btn" id="pointManualApplyBtn">적용</button>
+        <span class="msg" id="pointManualMsg"></span>
+      </div>
+      <div class="section">
+        <h3>📊 전체 포인트 현황</h3>
+        <div id="pointAllList">불러오는 중...</div>
       </div>
     </div>
 
@@ -453,6 +486,10 @@ function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1
 function dateStrToCompact(s){ return String(s).replaceAll('-',''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* ---------- 포인트 시스템 ---------- */
+function awardPoints(studentId, delta){
+  return db.ref(`points/${studentId}`).transaction(cur => (cur||0) + delta);
+}
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
 
@@ -635,6 +672,7 @@ async function initAdmin(){
   await loadHistoryList();
   await loadRoster();
   await loadAttendanceTab();
+  await loadPointsTab();
   await loadWeeklyEditor();
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
@@ -963,6 +1001,66 @@ async function loadAttendanceTab(){
   });
 }
 document.getElementById('attDate').addEventListener('change', loadAttendanceTab);
+
+/* ---- 포인트 ---- */
+async function loadPointsTab(){
+  const roster = await getRosterList();
+  const pointsSnap = await db.ref('points').once('value');
+  const points = pointsSnap.val() || {};
+  const metaSnap = await db.ref('pointMeta').once('value');
+  const meta = metaSnap.val() || {};
+
+  const sel = document.getElementById('pointManualStudent');
+  const prevSelected = sel.value;
+  sel.innerHTML = roster.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  if(prevSelected) sel.value = prevSelected;
+
+  const candidates = roster.map(s=>{
+    const p = points[s.id] || 0;
+    const given = (meta[s.id] && meta[s.id].rewardsGiven) || 0;
+    const pending = Math.floor(p/10) - given;
+    return { id: s.id, name: s.name, points: p, pending };
+  }).filter(s => s.pending >= 1);
+
+  const rcBox = document.getElementById('rewardCandidateList');
+  rcBox.innerHTML = candidates.length ? candidates.map(c => `
+    <div class="roster-row">
+      <span class="name">${escapeHtml(c.name)} <span style="color:var(--muted); font-size:12px; font-weight:500;">(${c.points}점 · ${c.pending}회 대기)</span></span>
+      <button class="btn secondary" data-give="${c.id}" style="margin:0;">지급 완료</button>
+    </div>`).join('') : '<p class="hint">현재 상점 대상 학생이 없어요.</p>';
+  rcBox.querySelectorAll('[data-give]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.give;
+      const cur = (meta[id] && meta[id].rewardsGiven) || 0;
+      await db.ref(`pointMeta/${id}`).update({ rewardsGiven: cur+1, pendingCelebrate: true });
+      await loadPointsTab();
+    });
+  });
+
+  const allBox = document.getElementById('pointAllList');
+  const allSorted = roster.map(s=>({ id:s.id, name:s.name, points: points[s.id]||0 })).sort((a,b)=> b.points - a.points);
+  allBox.innerHTML = allSorted.length ? allSorted.map(s=>`
+    <div class="roster-row">
+      <span class="name">${escapeHtml(s.name)}</span>
+      <span style="font-weight:700; color:var(--pink-deep);">${s.points}점</span>
+    </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
+}
+document.getElementById('pointManualApplyBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('pointManualStudent').value;
+  const amount = parseInt(document.getElementById('pointManualAmount').value, 10);
+  const reason = document.getElementById('pointManualReason').value.trim();
+  const msgEl = document.getElementById('pointManualMsg');
+  if(!id){ msgEl.textContent = '학생을 선택해주세요.'; return; }
+  if(!amount){ msgEl.textContent = '0이 아닌 점수를 입력해주세요.'; return; }
+  await awardPoints(id, amount);
+  await db.ref(`pointLog/${id}`).push({ delta: amount, reason: reason || '(사유 없음)', at: Date.now() });
+  document.getElementById('pointManualReason').value = '';
+  msgEl.textContent = '적용됐어요 ✓';
+  setTimeout(()=> msgEl.textContent = '', 2000);
+  await loadPointsTab();
+});
+db.ref('points').on('value', ()=>{ if(initedOnce) loadPointsTab(); });
+db.ref('pointMeta').on('value', ()=>{ if(initedOnce) loadPointsTab(); });
 document.getElementById('attSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
 });
@@ -992,6 +1090,13 @@ document.getElementById('clapToggleBtn').addEventListener('click', async ()=>{
   const date = currentAttDate();
   setClapBtn(!clapAllowed);
   await db.ref('clapAllowed/'+date).set(clapAllowed);
+});
+document.getElementById('luckyResetBtn').addEventListener('click', async ()=>{
+  const date = currentAttDate();
+  await db.ref('luckyDraw/'+date).remove();
+  const msgEl = document.getElementById('luckyResetMsg');
+  msgEl.textContent = '초기화됐어요 ✓ 대시보드에서 다시 뽑을 수 있어요.';
+  setTimeout(()=> msgEl.textContent = '', 2500);
 });
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */
@@ -1267,8 +1372,12 @@ async function loadQuizAnswers(date){
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.id;
       const current = val[id].verdict;
+      const wasAwarded = !!val[id].pointAwarded;
       const next = current === btn.dataset.verdict ? null : btn.dataset.verdict;
-      await db.ref('quizAnswers/'+date+'/'+id+'/verdict').set(next);
+      const nowAwarded = next === 'correct';
+      await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: next, pointAwarded: nowAwarded });
+      if(nowAwarded && !wasAwarded) await awardPoints(id, +1);
+      else if(!nowAwarded && wasAwarded) await awardPoints(id, -1);
       await loadQuizAnswers(date);
     });
   });
