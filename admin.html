@@ -910,7 +910,7 @@ async function loadAttendanceTab(){
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <span class="att-status">${rec ? (rec.status==='out' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : (rec.status==='present' && rec.time ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status])) : '미체크'}</span>
+      <span class="att-status">${rec ? (((rec.status==='out' && rec.time) || (rec.status==='present' && rec.time && rec.source==='dashboard')) ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -923,7 +923,7 @@ async function loadAttendanceTab(){
         if(isSameStatus){
           await db.ref(`attendance/${currentAttDate()}/${id}`).remove();
         } else {
-          await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM() });
+          await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM(), source: 'admin' });
         }
         await loadAttendanceTab();
       });
@@ -950,7 +950,7 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   const time = nowHHMM();
   const date = currentAttDate();
   const updates = {};
-  checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time });
+  checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time, source: 'admin' });
   await db.ref().update(updates);
   await loadAttendanceTab();
 });
