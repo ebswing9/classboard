@@ -67,6 +67,8 @@
   .field input[type="date"]:focus{ border-color:var(--primary-dark); background:#fff; }
   .field input[type="date"]::-webkit-calendar-picker-indicator{ filter: invert(48%) sepia(60%) saturate(900%) hue-rotate(280deg) brightness(105%); cursor:pointer; padding:4px; border-radius:6px; }
   .field input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(255,255,255,0.5); }
+  .date-nav-btn{ border:2px solid var(--primary); background:var(--primary-soft); color:var(--primary-text); width:38px; height:38px; min-width:38px; border-radius:11px; font-size:16px; font-weight:800; cursor:pointer; flex-shrink:0; }
+  .date-nav-btn:hover{ background:var(--primary); color:#fff; }
 
   /* 커스텀 달력 피커 */
   .cal-wrap{ position:relative; display:inline-block; width:100%; }
@@ -200,7 +202,13 @@
       <div class="tab-panel active" id="subtab-write">
         <div class="section">
           <h3>📣 조회 · 종례 작성 <span class="sub" id="noticeDateSub"></span></h3>
-          <div class="field"><label>날짜</label><input type="date" id="noticeDate"></div>
+          <div class="field"><label>날짜</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="date-nav-btn" id="noticeDatePrevBtn">‹</button>
+              <input type="date" id="noticeDate" style="flex:1;">
+              <button type="button" class="date-nav-btn" id="noticeDateNextBtn">›</button>
+            </div>
+          </div>
           <div class="publish-row">
             <span>조회사항 공개</span>
             <button class="publish-btn off" id="publishToggleMorning">비공개</button>
@@ -232,8 +240,12 @@
         </div>
         <div class="section">
           <h3>✅ 오늘의 할 일 <span class="sub" id="todoDateSub"></span></h3>
-          <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요.</p>
-          <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;동의서 제출하기"></textarea></div>
+          <p class="hint">한 줄에 하나씩 입력하세요. 대시보드에 체크리스트로 표시돼요. "/" 이후 내용은 대시보드에서 작게 표시돼요. (예: 동의서 제출하기 / 종례시간에 제출)</p>
+          <div class="publish-row">
+            <span>할 일 공개</span>
+            <button class="publish-btn off" id="todosPublishToggle">비공개</button>
+          </div>
+          <div class="field"><textarea id="inputTodos" placeholder="준비물 챙기기&#10;동의서 제출하기 / 종례시간에 제출"></textarea></div>
           <button class="btn" id="saveTodosBtn">할 일 저장</button>
           <span class="msg" id="todosMsg"></span>
         </div>
@@ -739,6 +751,26 @@ document.getElementById('publishToggleClosing').addEventListener('click', async 
   await db.ref('notices/'+date+'/closingPublished').set(closingPublished);
   await loadHistoryList();
 });
+function shiftNoticeDate(deltaDays){
+  const cur = document.getElementById('noticeDate').value || todayStr();
+  const [y,m,d] = cur.split('-').map(Number);
+  const newDate = todayStr(new Date(y, m-1, d+deltaDays));
+  if(datePickers['noticeDate']) datePickers['noticeDate'].setValue(newDate);
+  else document.getElementById('noticeDate').value = newDate;
+  loadNoticeForDate(newDate);
+}
+document.getElementById('noticeDatePrevBtn').addEventListener('click', ()=> shiftNoticeDate(-1));
+document.getElementById('noticeDateNextBtn').addEventListener('click', ()=> shiftNoticeDate(1));
+let todosPublished = true;
+function setTodosPublishBtn(on){
+  todosPublished = on;
+  const btn = document.getElementById('todosPublishToggle');
+  btn.textContent = on ? '공개 중' : '비공개';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+document.getElementById('todosPublishToggle').addEventListener('click', ()=>{
+  setTodosPublishBtn(!todosPublished);
+});
 async function loadNoticeForDate(date){
   const snap = await db.ref('notices/'+date).once('value');
   const data = snap.val() || {};
@@ -749,7 +781,13 @@ async function loadNoticeForDate(date){
   setPublishBtn('closing', !!data.closingPublished);
 
   const todoSnap = await db.ref('todos/'+date).once('value');
-  document.getElementById('inputTodos').value = todoSnap.val() || '';
+  const todoVal = todoSnap.val();
+  // 이전 버전에는 문자열로만 저장됐어서(공개 개념 없음), 문자열이면 항상 공개였던 걸로 취급
+  const todoData = (todoVal === null || todoVal === undefined) ? { text:'', published:true }
+    : (typeof todoVal === 'string') ? { text: todoVal, published:true }
+    : { text: todoVal.text || '', published: todoVal.published !== false };
+  document.getElementById('inputTodos').value = todoData.text;
+  setTodosPublishBtn(todoData.published);
   document.getElementById('todoDateSub').textContent = date;
   document.getElementById('mealCacheDateSub').textContent = date;
   await refreshMealCachePreview(date);
@@ -757,7 +795,7 @@ async function loadNoticeForDate(date){
 document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   const text = document.getElementById('inputTodos').value;
-  await db.ref('todos/'+date).set(text);
+  await db.ref('todos/'+date).set({ text, published: todosPublished });
   document.getElementById('todosMsg').textContent = '저장됐어요 ✓';
   setTimeout(()=>document.getElementById('todosMsg').textContent='', 2000);
 });

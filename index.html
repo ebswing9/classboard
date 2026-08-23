@@ -26,7 +26,7 @@
     --mint:#c8f0e2; --mint-deep:#4fbe9c;
     --lav:#e2dcfb; --lav-deep:#9b7fea;
     --yellow:#fff0bf; --yellow-deep:#f0b93a;
-    --sky:#c6d8fa; --sky-deep:#79b3ec;
+    --sky:#d3ecfb; --sky-deep:#79b3ec;
     --text:#4a4458; --muted:#a79fc0; --line:#f2ebf7;
     --shadow: 0 10px 28px rgba(160,140,190,0.16);
     --vh: 1vh;
@@ -99,7 +99,7 @@
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
   #clockCard{ flex:0 0 clamp(650px, 62vw, 815px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
+  #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.7; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
   .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
   .meal-section{ flex:0.6; display:flex; flex-direction:column; min-height:0; }
@@ -143,6 +143,7 @@
   .todo-list{ display:flex; flex-direction:column; gap:10px; }
   .todo-row{ display:flex; align-items:center; gap:11px; }
   .todo-text{ flex:1; font-size:15px; font-weight:600; color:var(--text); text-align:left; min-height:1.4em; }
+  .todo-text .todo-sub{ font-size:60%; font-weight:500; color:var(--muted); }
   .cute-checkbox.todo .box{ border-color:var(--pink-deep); }
   .cute-checkbox.todo input:checked ~ .box{ background:var(--pink-deep); }
   .quick-btn{
@@ -210,7 +211,7 @@
   #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
-  #luckyDrawIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:var(--yellow); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #luckyDrawIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
   #luckyDrawIconBtn:hover{ transform:scale(1.08); }
   #luckyDrawIconBtn:active{ transform:scale(0.92); }
   #luckyDrawOverlay{ position:fixed; inset:0; background:rgba(74,68,88,0.32); display:flex; align-items:center; justify-content:center; z-index:300; opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s; }
@@ -730,11 +731,27 @@ function shrinkToFit(el, opts){
 }
 
 /* ---------- 오늘의 할 일 ---------- */
+function renderTodoLineHtml(l){
+  const idx = l.indexOf('/');
+  if(idx === -1) return escapeHtml(l);
+  const main = escapeHtml(l.slice(0, idx));
+  const rest = escapeHtml(l.slice(idx));
+  return `${main}<span class="todo-sub">${rest}</span>`;
+}
 async function loadTodos(){
   const snap = await db.ref('todos/'+todayStr()).once('value');
-  const text = snap.val() || '';
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const val = snap.val();
+  // 이전 버전엔 문자열로만 저장됐어서(공개 개념 없음), 문자열이면 항상 공개였던 걸로 취급
+  const data = (val === null || val === undefined) ? { text:'', published:true }
+    : (typeof val === 'string') ? { text: val, published:true }
+    : { text: val.text || '', published: val.published !== false };
   const box = document.getElementById('todoSection');
+  if(!data.published){
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  const lines = data.text.split('\n').map(l=>l.trim()).filter(Boolean);
   if(!lines.length){
     box.classList.remove('show');
     box.innerHTML = '';
@@ -747,7 +764,7 @@ async function loadTodos(){
         <input type="checkbox" class="todo-check">
         <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
       </label>
-      <span class="todo-text">${escapeHtml(l)}</span>
+      <span class="todo-text">${renderTodoLineHtml(l)}</span>
     </div>`).join('') + '</div>';
 }
 
