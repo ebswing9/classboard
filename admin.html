@@ -111,6 +111,17 @@
   .roster-row:last-child, .att-row:last-child{ border-bottom:none; }
   .roster-row .name{ flex:1; font-size:14px; font-weight:600; }
   .att-row .name{ width:96px; font-weight:700; font-size:14px; }
+
+  /* 큐트 체크박스 (핑크톤, 대시보드 스타일과 통일) */
+  .cute-checkbox{ position:relative; display:inline-flex; flex-shrink:0; cursor:pointer; width:22px; height:22px; }
+  .cute-checkbox input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .cute-checkbox .box{ width:22px; height:22px; border-radius:8px; background:#fff; border:2.2px solid var(--border); display:flex; align-items:center; justify-content:center; transition:background .15s, border-color .15s, transform .1s; box-shadow:0 2px 4px rgba(220,180,220,.18); }
+  .cute-checkbox input:active ~ .box{ transform:scale(0.9); }
+  .cute-checkbox .check-icon{ width:13px; height:13px; opacity:0; transform:scale(0.4); transition:opacity .15s, transform .15s; }
+  .cute-checkbox input:checked ~ .box{ border-color:var(--primary-dark); background:var(--primary-dark); }
+  .cute-checkbox input:checked ~ .box .check-icon{ opacity:1; transform:scale(1); }
+  .cute-checkbox-label{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+
   .pill{ border:1.5px solid var(--border); background:#fafafa; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; color:var(--text); }
   .pill.on-present{ background:var(--mint); color:var(--mint-text); border-color:var(--mint); }
   .pill.on-out{ background:var(--sky); color:var(--sky-text); border-color:var(--sky); }
@@ -295,8 +306,12 @@
         <div class="field"><label>날짜</label><input type="date" id="attDate"></div>
         <p class="hint">출석/조퇴/결석 버튼으로 체크하세요. 아무것도 안 누르면 미체크 상태예요.</p>
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;">
-            <input type="checkbox" id="attSelectAll"> 전체 선택
+          <label class="cute-checkbox-label">
+            <span class="cute-checkbox">
+              <input type="checkbox" id="attSelectAll">
+              <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+            </span>
+            전체 선택
           </label>
           <button class="btn secondary" id="markSelectedPresentBtn" style="margin:0;">선택 학생 출석 체크</button>
           <button class="btn danger" id="clearSelectedAttBtn" style="margin:0;">선택 학생 체크 해제</button>
@@ -365,8 +380,12 @@
       <div class="section">
         <h3>현재 명단 <span class="sub" id="rosterCountLabel"></span></h3>
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;">
-            <input type="checkbox" id="rosterSelectAll"> 전체 선택
+          <label class="cute-checkbox-label">
+            <span class="cute-checkbox">
+              <input type="checkbox" id="rosterSelectAll">
+              <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+            </span>
+            전체 선택
           </label>
           <button class="btn danger" id="rosterBulkDeleteBtn" style="margin:0 0 0 auto;">선택 삭제</button>
         </div>
@@ -807,7 +826,10 @@ async function loadRoster(){
   const box = document.getElementById('rosterList');
   box.innerHTML = roster.length ? roster.map(s=>`
     <div class="roster-row">
-      <input type="checkbox" class="roster-check" data-id="${s.id}">
+      <label class="cute-checkbox">
+        <input type="checkbox" class="roster-check" data-id="${s.id}">
+        <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+      </label>
       <span class="name">${escapeHtml(s.name)}</span>
       <button class="del-link" data-id="${s.id}">삭제</button>
     </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
@@ -905,7 +927,10 @@ async function loadAttendanceTab(){
   box.innerHTML = ordered.map(s=>{
     const rec = att[s.id];
     return `<div class="att-row" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-      <input type="checkbox" class="att-check" data-id="${s.id}">
+      <label class="cute-checkbox">
+        <input type="checkbox" class="att-check" data-id="${s.id}">
+        <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+      </label>
       <span class="name">${escapeHtml(s.name)}</span>
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
