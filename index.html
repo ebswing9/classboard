@@ -605,8 +605,8 @@ async function loadTodos(){
 /* ---------- 출석률 위젯 & 축하 효과음 ----------
    합성음 대신 외부 mp3 URL(팡파레 + 환호성)을 함께 재생.
    아래 두 URL 자리에 블로그에서 따온 mp3 주소를 채워넣으면 됨. */
-const CELEBRATION_FANFARE_URL = ''; // https://blog.kakaocdn.net/dn/brptek/dJMcaixLQay/4djLJDU7nkeEo2e1pkW4e0/celebration-fanfare.mp3?attach=2&knm=tfile.mp3
-const CELEBRATION_CROWD_URL = '';   // https://blog.kakaocdn.net/dn/SKlCq/dJMcaixLQaz/c6R9WY0KDK5l7wR3GxmKv1/celebration-crowd.mp3?attach=2&knm=tfile.mp3
+const CELEBRATION_FANFARE_URL = ''; // 팡파레 mp3 주소
+const CELEBRATION_CROWD_URL = '';   // 환호성 mp3 주소
 function playCelebrationSound(){
   try{
     if(!CELEBRATION_FANFARE_URL || !CELEBRATION_CROWD_URL){
