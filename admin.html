@@ -345,20 +345,31 @@
       </div>
       <div class="section">
         <h3>➕ 포인트 직접 부여 / 회수</h3>
-        <div class="field"><label>학생</label>
-          <select id="pointManualStudent"></select>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+          <label class="cute-checkbox-label">
+            <span class="cute-checkbox">
+              <input type="checkbox" id="pointManualSelectAll">
+              <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+            </span>
+            전체 선택
+          </label>
         </div>
+        <div id="pointManualStudentList" style="max-height:220px; overflow-y:auto; border:1.5px solid var(--border); border-radius:12px; padding:6px 12px; margin-bottom:12px;">불러오는 중...</div>
         <div class="field"><label>점수 (음수 입력 시 회수)</label>
           <input type="number" id="pointManualAmount" value="1" step="1">
         </div>
         <div class="field"><label>사유</label>
           <input type="text" id="pointManualReason" placeholder="예: 발표 잘함, 친구 도와줌">
         </div>
-        <button class="btn" id="pointManualApplyBtn">적용</button>
+        <button class="btn" id="pointManualApplyBtn">선택 학생에게 적용</button>
         <span class="msg" id="pointManualMsg"></span>
       </div>
       <div class="section">
         <h3>📊 전체 포인트 현황</h3>
+        <div class="tabs" id="pointSortTabs" style="max-width:260px; margin-bottom:12px;">
+          <button class="filter-btn active" data-sort="score">점수 내림차순</button>
+          <button class="filter-btn" data-sort="name">이름 오름차순</button>
+        </div>
         <div id="pointAllList">불러오는 중...</div>
       </div>
     </div>
@@ -1003,6 +1014,7 @@ async function loadAttendanceTab(){
 document.getElementById('attDate').addEventListener('change', loadAttendanceTab);
 
 /* ---- 포인트 ---- */
+let pointSortMode = 'score';
 async function loadPointsTab(){
   const roster = await getRosterList();
   const pointsSnap = await db.ref('points').once('value');
@@ -1010,10 +1022,14 @@ async function loadPointsTab(){
   const metaSnap = await db.ref('pointMeta').once('value');
   const meta = metaSnap.val() || {};
 
-  const sel = document.getElementById('pointManualStudent');
-  const prevSelected = sel.value;
-  sel.innerHTML = roster.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-  if(prevSelected) sel.value = prevSelected;
+  const listBox = document.getElementById('pointManualStudentList');
+  const prevChecked = new Set([...listBox.querySelectorAll('.point-student-check:checked')].map(cb=>cb.dataset.id));
+  listBox.innerHTML = roster.length ? roster.map(s=>`
+    <label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13.5px; font-weight:600; cursor:pointer;">
+      <input type="checkbox" class="point-student-check" data-id="${s.id}" ${prevChecked.has(s.id)?'checked':''}>
+      ${escapeHtml(s.name)} <span style="color:var(--muted); font-weight:500;">(${points[s.id]||0}점)</span>
+    </label>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
+  document.getElementById('pointManualSelectAll').checked = false;
 
   const candidates = roster.map(s=>{
     const p = points[s.id] || 0;
@@ -1038,25 +1054,39 @@ async function loadPointsTab(){
   });
 
   const allBox = document.getElementById('pointAllList');
-  const allSorted = roster.map(s=>({ id:s.id, name:s.name, points: points[s.id]||0 })).sort((a,b)=> b.points - a.points);
+  const allList = roster.map(s=>({ id:s.id, name:s.name, points: points[s.id]||0 }));
+  const allSorted = pointSortMode === 'name'
+    ? allList.sort((a,b)=> a.name.localeCompare(b.name, 'ko'))
+    : allList.sort((a,b)=> b.points - a.points);
   allBox.innerHTML = allSorted.length ? allSorted.map(s=>`
     <div class="roster-row">
       <span class="name">${escapeHtml(s.name)}</span>
       <span style="font-weight:700; color:var(--pink-deep);">${s.points}점</span>
     </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
 }
+document.getElementById('pointManualSelectAll').addEventListener('change', (e)=>{
+  document.querySelectorAll('.point-student-check').forEach(cb=> cb.checked = e.target.checked);
+});
+document.querySelectorAll('#pointSortTabs .filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#pointSortTabs .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    pointSortMode = btn.dataset.sort;
+    loadPointsTab();
+  });
+});
 document.getElementById('pointManualApplyBtn').addEventListener('click', async ()=>{
-  const id = document.getElementById('pointManualStudent').value;
+  const ids = [...document.querySelectorAll('.point-student-check:checked')].map(cb=>cb.dataset.id);
   const amount = parseInt(document.getElementById('pointManualAmount').value, 10);
   const reason = document.getElementById('pointManualReason').value.trim();
   const msgEl = document.getElementById('pointManualMsg');
-  if(!id){ msgEl.textContent = '학생을 선택해주세요.'; return; }
+  if(!ids.length){ msgEl.textContent = '학생을 한 명 이상 선택해주세요.'; return; }
   if(!amount){ msgEl.textContent = '0이 아닌 점수를 입력해주세요.'; return; }
-  await awardPoints(id, amount);
-  await db.ref(`pointLog/${id}`).push({ delta: amount, reason: reason || '(사유 없음)', at: Date.now() });
+  await Promise.all(ids.map(id => awardPoints(id, amount)));
+  await Promise.all(ids.map(id => db.ref(`pointLog/${id}`).push({ delta: amount, reason: reason || '(사유 없음)', at: Date.now() })));
   document.getElementById('pointManualReason').value = '';
-  msgEl.textContent = '적용됐어요 ✓';
-  setTimeout(()=> msgEl.textContent = '', 2000);
+  msgEl.textContent = `적용됐어요 ✓ (${ids.length}명)`;
+  setTimeout(()=> msgEl.textContent = '', 2200);
   await loadPointsTab();
 });
 db.ref('points').on('value', ()=>{ if(initedOnce) loadPointsTab(); });

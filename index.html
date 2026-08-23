@@ -26,7 +26,7 @@
     --mint:#c8f0e2; --mint-deep:#4fbe9c;
     --lav:#e2dcfb; --lav-deep:#9b7fea;
     --yellow:#fff0bf; --yellow-deep:#f0b93a;
-    --sky:#d3ecfb; --sky-deep:#63b8e9;
+    --sky:#d3ecfb; --sky-deep:#79b3ec;
     --text:#4a4458; --muted:#a79fc0; --line:#f2ebf7;
     --shadow: 0 10px 28px rgba(160,140,190,0.16);
     --vh: 1vh;
@@ -97,7 +97,7 @@
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:0 0 clamp(540px, 52vw, 680px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #clockCard{ flex:0 0 clamp(650px, 62vw, 815px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 220%); }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.7; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
   .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
@@ -111,7 +111,7 @@
   #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
-  #quizCard{ flex:1; max-width:640px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
+  #quizCard{ flex:1; max-width:520px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
@@ -162,7 +162,7 @@
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .tt-empty{ color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
 
-  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(99,184,233,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
+  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(121,179,236,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
   .quiz-icon{ transition: font-size .32s ease; }
   .quiz-question, .quiz-image, .quiz-choices{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
@@ -179,8 +179,8 @@
   .quiz-image{ max-width:min(100%, 320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
   .quiz-choices{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; margin:0 auto; }
   .quiz-choice{ background:rgba(255,255,255,0.85); border-radius:14px; padding:12px 18px; font-size:16px; font-weight:700; text-align:left; display:flex; align-items:center; gap:10px; box-shadow:0 2px 6px rgba(74,68,88,0.06); }
-  .quiz-choice .qc-num{ width:26px; height:26px; min-width:26px; border-radius:50%; background:var(--sky-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; font-family:'Jua',sans-serif; }
-  .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--sky-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(99,184,233,0.3); }
+  .quiz-choice .qc-num{ width:20px; height:20px; min-width:20px; border-radius:50%; background:var(--sky-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; font-family:'Jua',sans-serif; }
+  .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--sky-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(121,179,236,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
@@ -208,13 +208,23 @@
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
   #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* 오늘의 행운번호 뽑기 */
-  .lucky-draw-box{ background:linear-gradient(135deg, var(--yellow), var(--pink) 130%); border-radius:16px; padding:14px 16px; margin-bottom:14px; text-align:center; }
-  .lucky-draw-btn{ border:none; background:var(--pink-deep); color:#fff; padding:10px 18px; border-radius:16px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:'Jua',sans-serif; }
-  .lucky-draw-btn:disabled{ background:var(--muted); cursor:default; opacity:.6; }
-  .lucky-draw-result{ font-family:'Jua',sans-serif; font-size:15px; color:var(--text); }
-  .lucky-draw-result b{ color:var(--pink-deep); font-size:18px; }
-  .lucky-draw-hint{ font-size:11px; color:var(--muted); font-weight:600; margin-top:6px; }
+  /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
+  #luckyDrawIconBtn{ width:38px; height:38px; min-width:38px; border-radius:50%; border:none; background:var(--yellow); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 3px 8px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #luckyDrawIconBtn:hover{ transform:scale(1.08); }
+  #luckyDrawIconBtn:active{ transform:scale(0.92); }
+  #luckyDrawOverlay{ position:fixed; inset:0; background:rgba(74,68,88,0.32); display:flex; align-items:center; justify-content:center; z-index:300; opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s; }
+  #luckyDrawOverlay.open{ opacity:1; visibility:visible; transition:opacity .2s ease, visibility 0s; }
+  .lucky-modal{ width:min(88vw, 360px); background:linear-gradient(160deg, #fff, var(--yellow) 220%); border-radius:24px; padding:28px 24px; text-align:center; box-shadow:0 20px 48px rgba(74,68,88,0.3); position:relative; }
+  .lucky-modal .close-x{ position:absolute; top:10px; right:10px; }
+  .lucky-modal h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:16px; color:var(--pink-deep); margin:0 0 16px; }
+  .lucky-modal .lucky-emoji{ font-size:46px; transition:transform .1s ease; }
+  .lucky-modal .lucky-emoji.spinning{ animation: luckySpin .12s linear infinite; }
+  @keyframes luckySpin{ 0%{transform:rotate(0deg) scale(1);} 50%{transform:rotate(180deg) scale(1.15);} 100%{transform:rotate(360deg) scale(1);} }
+  .lucky-modal .lucky-draw-btn{ margin-top:16px; border:none; background:var(--pink-deep); color:#fff; padding:11px 22px; border-radius:16px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Jua',sans-serif; }
+  .lucky-modal .lucky-draw-btn:disabled{ background:var(--muted); cursor:default; opacity:.6; }
+  .lucky-modal .lucky-draw-result{ font-family:'Jua',sans-serif; font-size:16px; color:var(--text); margin-top:14px; line-height:1.6; }
+  .lucky-modal .lucky-draw-result b{ color:var(--pink-deep); font-size:20px; }
+  .lucky-modal .lucky-draw-hint{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:10px; }
 
   /* 모바일/좁은 화면: 가로 배치 대신 세로 스크롤 */
   @media (max-width: 820px){
@@ -283,6 +293,7 @@
       </div>
       <div id="quickBtnRow">
         <div class="quick-btn" id="attendTile">🙋 출결</div>
+        <button id="luckyDrawIconBtn" title="오늘의 행운번호">🍀</button>
         <div class="quick-btn" id="morningTile">📣 조회</div>
         <div class="quick-btn" id="closingTile">🌇 종례</div>
       </div>
@@ -300,6 +311,17 @@
     </div>
   </div>
 </div></div>
+
+<div id="luckyDrawOverlay">
+  <div class="lucky-modal">
+    <button class="close-x" id="luckyDrawCloseBtn">✕</button>
+    <h2>🍀 오늘의 행운번호</h2>
+    <div class="lucky-emoji" id="luckyDrawEmoji">🍀</div>
+    <button class="lucky-draw-btn" id="luckyDrawBtn">뽑기</button>
+    <div class="lucky-draw-result" id="luckyDrawResult" style="display:none;"></div>
+    <div class="lucky-draw-hint">대시보드에서 직접 출석 체크한 학생 중 하루 딱 한 번 뽑혀요</div>
+  </div>
+</div>
 
 <div id="pointToast"></div>
 
@@ -520,12 +542,7 @@ async function renderAttendancePanel(){
   const unchecked = roster.filter(s=>!att[s.id]);
   const ordered = [...checked, ...unchecked];
 
-  const luckyBoxHtml = `<div class="lucky-draw-box" id="luckyDrawBox">
-      <button class="lucky-draw-btn" id="luckyDrawBtn">🍀 오늘의 행운번호 뽑기</button>
-      <div class="lucky-draw-result" id="luckyDrawResult" style="display:none;"></div>
-    </div>`;
-
-  box.innerHTML = luckyBoxHtml + '<div class="att-grid">' + ordered.map(s=>{
+  box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
     if(rec && rec.status === 'absent'){
       return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
@@ -570,44 +587,62 @@ async function renderAttendancePanel(){
       });
     });
   });
-  await renderLuckyDraw(roster, att);
+  await renderLuckyDraw();
   checkOverflowFallback();
 }
 
-/* ---------- 오늘의 행운번호 뽑기 ----------
+/* ---------- 오늘의 행운번호 뽑기 (모달 팝업) ----------
    그날 대시보드에서 직접 출석 체크한 학생들을 시간순으로 줄 세워 번호를 매기고,
    그 중 하나를 무작위로 뽑음. 하루 한 번만 뽑히고, 같은 날 다시 눌러도 같은 결과가 나옴.
    관리자 페이지에서 초기화하면 다시 뽑을 수 있음. */
-async function renderLuckyDraw(roster, att){
-  const btn = document.getElementById('luckyDrawBtn');
-  const resultEl = document.getElementById('luckyDrawResult');
-  if(!btn) return;
+const luckyDrawOverlay = document.getElementById('luckyDrawOverlay');
+const luckyDrawEmoji = document.getElementById('luckyDrawEmoji');
+const luckyDrawBtn = document.getElementById('luckyDrawBtn');
+const luckyDrawResult = document.getElementById('luckyDrawResult');
+
+async function renderLuckyDraw(){
   const snap = await db.ref('luckyDraw/'+todayStr()).once('value');
   const existing = snap.val();
+  luckyDrawEmoji.classList.remove('spinning');
+  luckyDrawEmoji.textContent = '🍀';
   if(existing){
-    btn.style.display = 'none';
-    resultEl.style.display = 'block';
-    resultEl.innerHTML = `🍀 오늘 <b>${existing.number}번</b>으로 출석한 <b>${escapeHtml(existing.studentName)}</b>님!`;
+    luckyDrawBtn.style.display = 'none';
+    luckyDrawResult.style.display = 'block';
+    luckyDrawResult.innerHTML = `오늘 <b>${existing.number}번째</b>로 출석한 <b>${escapeHtml(existing.studentName)}</b>님`;
+  } else {
+    luckyDrawBtn.style.display = 'inline-block';
+    luckyDrawBtn.disabled = false;
+    luckyDrawBtn.textContent = '뽑기';
+    luckyDrawResult.style.display = 'none';
+  }
+}
+document.getElementById('luckyDrawIconBtn').addEventListener('click', async ()=>{
+  luckyDrawOverlay.classList.add('open');
+  await renderLuckyDraw();
+});
+document.getElementById('luckyDrawCloseBtn').addEventListener('click', ()=> luckyDrawOverlay.classList.remove('open'));
+luckyDrawBtn.addEventListener('click', async ()=>{
+  const roster = await getRosterList();
+  const attSnap = await db.ref('attendance/'+todayStr()).once('value');
+  const att = attSnap.val() || {};
+  const pool = roster
+    .filter(s=> att[s.id] && att[s.id].status==='present' && att[s.id].source==='dashboard')
+    .sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+  if(!pool.length){
+    luckyDrawResult.style.display = 'block';
+    luckyDrawResult.textContent = '아직 출석한 학생이 없어요';
     return;
   }
-  btn.style.display = 'inline-block';
-  resultEl.style.display = 'none';
-  btn.onclick = async ()=>{
-    const pool = roster
-      .filter(s=> att[s.id] && att[s.id].status==='present' && att[s.id].source==='dashboard')
-      .sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
-    if(!pool.length){
-      btn.textContent = '아직 출석한 학생이 없어요';
-      setTimeout(()=>{ btn.textContent = '🍀 오늘의 행운번호 뽑기'; }, 1600);
-      return;
-    }
-    const number = 1 + Math.floor(Math.random() * pool.length);
-    const winner = pool[number-1];
-    const payload = { number, studentId: winner.id, studentName: winner.name, drawnAt: Date.now() };
-    await db.ref('luckyDraw/'+todayStr()).set(payload);
-    await renderLuckyDraw(roster, att);
-  };
-}
+  luckyDrawBtn.disabled = true;
+  luckyDrawEmoji.classList.add('spinning');
+  // 바로 결과가 나오면 심심하니, 살짝 도는 연출을 보여준 뒤 결과를 공개
+  await new Promise(res=> setTimeout(res, 1400));
+  const number = 1 + Math.floor(Math.random() * pool.length);
+  const winner = pool[number-1];
+  const payload = { number, studentId: winner.id, studentName: winner.name, drawnAt: Date.now() };
+  await db.ref('luckyDraw/'+todayStr()).set(payload);
+  await renderLuckyDraw();
+});
 
 /* ---------- 시간표 ---------- */
 async function loadTimetable(){
