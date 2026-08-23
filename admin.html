@@ -262,6 +262,7 @@
         </div>
         <div class="collapse-body" id="quizEditorCollapseBody">
           <div class="field"><label>날짜</label><input type="date" id="quizAnswerDate"></div>
+          <div class="field"><label>정답 시 지급 포인트</label><input type="number" id="quizPointsInput" value="1" min="0" step="1"></div>
           <div class="publish-row">
             <span>퀴즈 공개</span>
             <button class="publish-btn off" id="quizPublishToggle">비공개</button>
@@ -371,6 +372,12 @@
           <button class="filter-btn" data-sort="name">이름 오름차순</button>
         </div>
         <div id="pointAllList">불러오는 중...</div>
+      </div>
+      <div class="section">
+        <h3>⚠️ 포인트 초기화</h3>
+        <p class="hint">모든 학생의 포인트를 0점으로 되돌리고, 상점 지급 기록도 함께 초기화해요. 되돌릴 수 없으니 신중하게 눌러주세요.</p>
+        <button class="btn danger" id="pointResetBtn">전체 포인트 초기화</button>
+        <span class="msg" id="pointResetMsg"></span>
       </div>
     </div>
 
@@ -500,6 +507,24 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 /* ---------- 포인트 시스템 ---------- */
 function awardPoints(studentId, delta){
   return db.ref(`points/${studentId}`).transaction(cur => (cur||0) + delta);
+}
+// 하루 출석 포인트가 "정확히 1번만" 지급되도록 하는 정산 함수 (index.html과 동일한 로직).
+// 관리자 페이지에서 출석을 체크/해제할 때도 이걸 거쳐야 대시보드 쪽 지급 여부와 어긋나지 않음.
+async function reconcileAttendancePoint(date, studentId){
+  const [recSnap, ledgerSnap] = await Promise.all([
+    db.ref(`attendance/${date}/${studentId}`).once('value'),
+    db.ref(`pointLedger/attendance/${date}/${studentId}`).once('value')
+  ]);
+  const rec = recSnap.val();
+  const shouldHave = !!(rec && rec.status === 'present' && rec.source === 'dashboard');
+  const already = !!ledgerSnap.val();
+  if(shouldHave && !already){
+    await awardPoints(studentId, +1);
+    await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(true);
+  } else if(!shouldHave && already){
+    await awardPoints(studentId, -1);
+    await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(false);
+  }
 }
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
@@ -999,6 +1024,7 @@ async function loadAttendanceTab(){
         } else {
           await db.ref(`attendance/${currentAttDate()}/${id}`).set({ name, status: btn.dataset.status, time: nowHHMM(), source: 'admin' });
         }
+        await reconcileAttendancePoint(currentAttDate(), id);
         await loadAttendanceTab();
       });
     });
@@ -1006,6 +1032,7 @@ async function loadAttendanceTab(){
     if(resetBtn){
       resetBtn.addEventListener('click', async ()=>{
         await db.ref(`attendance/${currentAttDate()}/${id}`).remove();
+        await reconcileAttendancePoint(currentAttDate(), id);
         await loadAttendanceTab();
       });
     }
@@ -1091,6 +1118,30 @@ document.getElementById('pointManualApplyBtn').addEventListener('click', async (
 });
 db.ref('points').on('value', ()=>{ if(initedOnce) loadPointsTab(); });
 db.ref('pointMeta').on('value', ()=>{ if(initedOnce) loadPointsTab(); });
+document.getElementById('pointResetBtn').addEventListener('click', async ()=>{
+  const ok = confirm('정말 모든 학생의 포인트를 0점으로 초기화할까요?\n상점 지급 기록도 함께 초기화되며, 되돌릴 수 없어요.');
+  if(!ok) return;
+  const msgEl = document.getElementById('pointResetMsg');
+  await Promise.all([
+    db.ref('points').remove(),
+    db.ref('pointMeta').remove(),
+    db.ref('pointLog').remove(),
+    db.ref('pointLedger').remove()
+  ]);
+  // 과거 퀴즈 답안에 남아있는 지급 기록도 지워서, 이후 정답 토글 시 꼬이지 않게 정리
+  const qaSnap = await db.ref('quizAnswers').once('value');
+  const qaVal = qaSnap.val() || {};
+  const qaUpdates = {};
+  Object.keys(qaVal).forEach(d=>{
+    Object.keys(qaVal[d]).forEach(id=>{
+      if(qaVal[d][id].awardedAmount) qaUpdates[`quizAnswers/${d}/${id}/awardedAmount`] = 0;
+    });
+  });
+  if(Object.keys(qaUpdates).length) await db.ref().update(qaUpdates);
+  msgEl.textContent = '초기화됐어요 ✓';
+  setTimeout(()=> msgEl.textContent = '', 2500);
+  await loadPointsTab();
+});
 document.getElementById('attSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
 });
@@ -1105,6 +1156,7 @@ document.getElementById('markSelectedPresentBtn').addEventListener('click', asyn
   const updates = {};
   checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = { name: nameById[id], status: 'present', time, source: 'admin' });
   await db.ref().update(updates);
+  await Promise.all(checkedIds.map(id => reconcileAttendancePoint(date, id)));
   await loadAttendanceTab();
 });
 document.getElementById('clearSelectedAttBtn').addEventListener('click', async ()=>{
@@ -1114,6 +1166,7 @@ document.getElementById('clearSelectedAttBtn').addEventListener('click', async (
   const updates = {};
   checkedIds.forEach(id => updates[`attendance/${date}/${id}`] = null);
   await db.ref().update(updates);
+  await Promise.all(checkedIds.map(id => reconcileAttendancePoint(date, id)));
   await loadAttendanceTab();
 });
 document.getElementById('clapToggleBtn').addEventListener('click', async ()=>{
@@ -1325,6 +1378,7 @@ async function loadQuizEditor(date){
   const data = snap.val() || {};
   document.getElementById('quizQuestionInput').value = data.question || '';
   document.getElementById('quizChoicesInput').value = Array.isArray(data.choices) ? data.choices.join('\n') : '';
+  document.getElementById('quizPointsInput').value = (data.points === undefined || data.points === null) ? 1 : data.points;
   document.getElementById('quizEditorDateSub').textContent = date;
   setQuizImagePreview(data.imageDataUrl || null);
   setQuizPublishBtn(!!data.published);
@@ -1336,11 +1390,13 @@ document.getElementById('saveQuizBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   const question = document.getElementById('quizQuestionInput').value.trim();
   const choices = document.getElementById('quizChoicesInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const points = Math.max(0, parseInt(document.getElementById('quizPointsInput').value, 10) || 0);
   const msgEl = document.getElementById('quizMsg');
   if(!question){ alert('문제를 입력해주세요.'); return; }
   await db.ref('quiz/'+date).set({
     question,
     choices,
+    points,
     imageDataUrl: quizImageDataUrl || null,
     published: quizPublished,
     updatedAt: Date.now()
@@ -1371,8 +1427,13 @@ document.querySelectorAll('#quizSortTabs .filter-btn').forEach(btn=>{
 async function loadQuizAnswers(date){
   const box = document.getElementById('quizAnswerGrid');
   box.innerHTML = '불러오는 중...';
-  const snap = await db.ref('quizAnswers/'+date).once('value');
+  const [snap, quizPointsSnap] = await Promise.all([
+    db.ref('quizAnswers/'+date).once('value'),
+    db.ref('quiz/'+date+'/points').once('value')
+  ]);
   const val = snap.val() || {};
+  const quizPointsRaw = quizPointsSnap.val();
+  const quizPoints = (quizPointsRaw === null || quizPointsRaw === undefined) ? 1 : quizPointsRaw;
   let entries = Object.keys(val).map(id=>({id, ...val[id]}));
 
   if(quizAnswerFilter === 'unclassified') entries = entries.filter(e => !e.verdict);
@@ -1402,18 +1463,21 @@ async function loadQuizAnswers(date){
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.id;
       const current = val[id].verdict;
-      const wasAwarded = !!val[id].pointAwarded;
+      const prevAmount = val[id].awardedAmount || 0;
       const next = current === btn.dataset.verdict ? null : btn.dataset.verdict;
-      const nowAwarded = next === 'correct';
-      await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: next, pointAwarded: nowAwarded });
-      if(nowAwarded && !wasAwarded) await awardPoints(id, +1);
-      else if(!nowAwarded && wasAwarded) await awardPoints(id, -1);
+      const nextAmount = next === 'correct' ? quizPoints : 0;
+      await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: next, awardedAmount: nextAmount });
+      const delta = nextAmount - prevAmount;
+      if(delta !== 0) await awardPoints(id, delta);
       await loadQuizAnswers(date);
     });
   });
   box.querySelectorAll('[data-reset]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      await db.ref('quizAnswers/'+date+'/'+btn.dataset.reset).remove();
+      const id = btn.dataset.reset;
+      const prevAmount = (val[id] && val[id].awardedAmount) || 0;
+      await db.ref('quizAnswers/'+date+'/'+id).remove();
+      if(prevAmount) await awardPoints(id, -prevAmount);
       await loadQuizAnswers(date);
     });
   });
