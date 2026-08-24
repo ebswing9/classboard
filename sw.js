@@ -4,7 +4,7 @@
 //
 // 나중에 index.html/admin.html 등을 수정하고 나서 사용자 화면에 바로 반영되지 않으면,
 // 아래 CACHE_NAME의 버전 숫자(v1 -> v2)를 올려서 다시 배포하면 새 캐시로 교체돼요.
-const CACHE_NAME = 'class-dashboard-v1';
+const CACHE_NAME = 'class-dashboard-v2';
 
 const PRECACHE_URLS = [
   './',

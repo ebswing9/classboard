@@ -182,7 +182,7 @@
   <header>
     <div style="display:flex; align-items:center; gap:8px;">
       <h1 style="margin:0;">🎒 학급 대시보드 관리자</h1>
-      <a href="https://ebswing9.github.io/classboard" title="대시보드 화면으로 이동" style="width:26px; height:26px; min-width:26px; border-radius:50%; background:transparent; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; flex-shrink:0;">🏠</a>
+      <a href="index.html" target="_blank" rel="noopener" title="대시보드 화면으로 이동" style="width:26px; height:26px; min-width:26px; border-radius:50%; background:transparent; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; flex-shrink:0;">🏠</a>
     </div>
     <button id="logoutBtn">로그아웃</button>
   </header>
@@ -1058,7 +1058,7 @@ async function loadAttendanceTab(){
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <input type="text" class="att-note" data-id="${s.id}" placeholder="특이사항/사유" value="${escapeHtml((rec && rec.note) || '')}">
+      <input type="text" class="att-note" data-id="${s.id}" value="${escapeHtml((rec && rec.note) || '')}">
       <span class="att-status">${(rec && rec.status) ? (((rec.status==='out' && rec.time) || (rec.status==='present' && rec.time && rec.source==='dashboard')) ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
