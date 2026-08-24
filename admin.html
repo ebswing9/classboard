@@ -1594,8 +1594,16 @@ document.getElementById('clearDdayBtn').addEventListener('click', async ()=>{
 
 /* 로그인이 이미 되어있던 브라우저면 자동으로 관리자 화면 표시 (모든 선언이 끝난 뒤 실행) */
 if(db && localStorage.getItem('dashboardAdminOk') === '1'){ showAdmin(); }
+// PWA 오프라인 캐싱(서비스워커)을 완전히 그만 쓰기로 함 - 기기마다 옛날 버전이 남아있는
+// 문제가 반복돼서, 캐싱의 이점보다 부작용이 커 껐음. 이미 등록되어 있던 기기는
+// 아래 코드가 자동으로 해제하고 캐시도 지워서 스스로 정리됨(사용자가 수동으로 안 지워도 됨).
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(reg=> reg.unregister());
+  }).catch(()=>{});
+}
+if(window.caches){
+  caches.keys().then(keys=> keys.forEach(k=> caches.delete(k))).catch(()=>{});
 }
 </script>
 </body>

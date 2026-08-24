@@ -100,8 +100,8 @@
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:1; min-width:650px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
-  #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
+  #clockCard{ flex:1 1 480px; min-width:280px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #timetableCard{ flex:0 1 260px; min-width:160px; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.7; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
   .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
   .meal-section{ flex:0.6; display:flex; flex-direction:column; min-height:0; }
@@ -114,7 +114,7 @@
   #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
-  #quizCard{ flex:0 0 520px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
+  #quizCard{ flex:0 1 520px; min-width:300px; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
@@ -230,10 +230,10 @@
   .lucky-modal .lucky-draw-result b{ color:var(--pink-deep); font-size:20px; }
   .lucky-modal .lucky-draw-hint{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:10px; }
 
-  /* 모바일/좁은 화면 + 전자칠판처럼 가로 배치 레이아웃이 다 안 들어가는 화면: 세로 스크롤 배치로 전환
-     (시계 650px + 시간표 260px + 퀴즈 520px + 여백을 다 더하면 약 1510px가 필요해서,
-      이보다 좁은 화면에서 가로 배치를 그대로 두면 오른쪽(퀴즈 영역)이 화면 밖으로 잘림) */
-  @media (max-width: 1500px){
+  /* 진짜 좁은 화면(휴대폰)에서만 세로 스택으로 전환.
+     전자칠판처럼 중간 폭의 화면은 아래 카드들의 min-width 덕분에 가로 배치를 유지한 채
+     알아서 줄어들도록 만들어서(스택 전환 X), "전자칠판이 모바일처럼 보이는" 문제를 피함. */
+  @media (max-width: 820px){
     html,body{ overflow:auto; height:auto; }
     #app{ height:auto; min-height:100vh; padding:14px; }
     #board{ gap:14px; }
@@ -1035,8 +1035,16 @@ if(initFirebase()){
   attachRealtimeListeners();
   setInterval(()=>{ loadMeal(); loadQuiz(); }, 5*60*1000);
 }
+// PWA 오프라인 캐싱(서비스워커)을 완전히 그만 쓰기로 함 - 기기마다 옛날 버전이 남아있는
+// 문제가 반복돼서, 캐싱의 이점보다 부작용이 커 껐음. 이미 등록되어 있던 기기는
+// 아래 코드가 자동으로 해제하고 캐시도 지워서 스스로 정리됨(사용자가 수동으로 안 지워도 됨).
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(reg=> reg.unregister());
+  }).catch(()=>{});
+}
+if(window.caches){
+  caches.keys().then(keys=> keys.forEach(k=> caches.delete(k))).catch(()=>{});
 }
 </script>
 </body>
