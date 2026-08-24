@@ -32,7 +32,7 @@
     --vh: 1vh;
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; overscroll-behavior:none; touch-action:pan-x pan-y; }
+  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
   body{
     background: radial-gradient(circle at 8% 12%, var(--pink) 0%, transparent 32%),
                 radial-gradient(circle at 92% 15%, var(--sky) 0%, transparent 34%),
@@ -90,7 +90,9 @@
   .att-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
   .att-cell{ background:var(--line); border-radius:16px; padding:12px 12px; display:flex; flex-direction:column; gap:8px; }
   .att-cell .att-name-row{ display:flex; align-items:baseline; justify-content:space-between; }
+  .att-cell .att-name-group{ display:flex; align-items:baseline; gap:4px; min-width:0; }
   .att-cell .att-name{ font-size:15px; font-weight:800; }
+  .att-cell .att-rank{ font-size:10px; font-weight:800; color:var(--pink-deep); }
   .att-cell .att-time{ font-size:11.5px; font-weight:700; color:var(--mint-deep); }
   .att-cell .att-btns{ display:flex; gap:6px; }
   .att-absent-label{ color:#e0556f; font-weight:800; font-size:14px; text-align:center; padding:4px 0; }
@@ -228,8 +230,10 @@
   .lucky-modal .lucky-draw-result b{ color:var(--pink-deep); font-size:20px; }
   .lucky-modal .lucky-draw-hint{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:10px; }
 
-  /* 모바일/좁은 화면: 가로 배치 대신 세로 스크롤 */
-  @media (max-width: 820px){
+  /* 모바일/좁은 화면 + 전자칠판처럼 가로 배치 레이아웃이 다 안 들어가는 화면: 세로 스크롤 배치로 전환
+     (시계 650px + 시간표 260px + 퀴즈 520px + 여백을 다 더하면 약 1510px가 필요해서,
+      이보다 좁은 화면에서 가로 배치를 그대로 두면 오른쪽(퀴즈 영역)이 화면 밖으로 잘림) */
+  @media (max-width: 1500px){
     html,body{ overflow:auto; height:auto; }
     #app{ height:auto; min-height:100vh; padding:14px; }
     #board{ gap:14px; }
@@ -323,7 +327,7 @@
     <div class="lucky-emoji" id="luckyDrawEmoji">🍀</div>
     <button class="lucky-draw-btn" id="luckyDrawBtn">뽑기</button>
     <div class="lucky-draw-result" id="luckyDrawResult" style="display:none;"></div>
-    <div class="lucky-draw-hint">대시보드에서 직접 출석 체크한 학생 중 하루 딱 한 번 뽑아요</div>
+    <div class="lucky-draw-hint">대시보드에서 직접 출석 체크한 학생 중 하루 딱 한 번 뽑혀요</div>
   </div>
 </div>
 
@@ -556,7 +560,13 @@ async function renderAttendancePanel(){
 
   const checked = roster.filter(s=>att[s.id]).sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
   const unchecked = roster.filter(s=>!att[s.id]);
-  const ordered = [...checked, ...unchecked];
+  const ordered = [...unchecked, ...checked];
+
+  const dashboardPresentOrder = roster
+    .filter(s=> att[s.id] && att[s.id].status==='present' && att[s.id].source==='dashboard')
+    .sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+  const rankById = {};
+  dashboardPresentOrder.forEach((s,i)=> rankById[s.id] = i+1);
 
   box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
@@ -570,7 +580,10 @@ async function renderAttendancePanel(){
     }
     return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <div class="att-name-row">
-        <span class="att-name">${escapeHtml(s.name)}</span>
+        <span class="att-name-group">
+          <span class="att-name">${escapeHtml(s.name)}</span>
+          ${rankById[s.id] ? `<span class="att-rank">${rankById[s.id]}등</span>` : ''}
+        </span>
         ${(rec && rec.status==='out') ? `<span class="att-time">${rec.time}</span>` : ''}
       </div>
       <div class="att-btns">
@@ -1013,6 +1026,8 @@ function attachRealtimeListeners(){
   });
   db.ref('timetableWeekly/'+dowKey).on('value', ()=> loadTimetable());
   db.ref('timetableOverride/'+todayStr()).on('value', ()=> loadTimetable());
+  // 관리자가 "급식 미리 저장"으로 오늘자 mealCache를 갱신하면 화면을 새로고침 안 해도 바로 반영되도록 함
+  db.ref('mealCache/'+todayStrCompact(new Date())).on('value', ()=> loadMeal());
 }
 
 if(initFirebase()){

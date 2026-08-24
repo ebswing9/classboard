@@ -113,6 +113,8 @@
   .roster-row:last-child, .att-row:last-child{ border-bottom:none; }
   .roster-row .name{ flex:1; font-size:14px; font-weight:600; }
   .att-row .name{ width:96px; font-weight:700; font-size:14px; }
+  .att-note{ flex:1; min-width:120px; padding:7px 10px; border:1.5px solid var(--border); border-radius:10px; font-size:12.5px; font-family:inherit; outline:none; }
+  .att-note:focus{ border-color:var(--primary); }
 
   /* 큐트 체크박스 (핑크톤, 대시보드 스타일과 통일) */
   .cute-checkbox{ position:relative; display:inline-flex; flex-shrink:0; cursor:pointer; width:22px; height:22px; }
@@ -180,7 +182,7 @@
   <header>
     <div style="display:flex; align-items:center; gap:8px;">
       <h1 style="margin:0;">🎒 학급 대시보드 관리자</h1>
-      <a href="index.html" title="대시보드 화면으로 이동" style="width:34px; height:34px; min-width:34px; border-radius:50%; background:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; font-size:16px; text-decoration:none; flex-shrink:0;">🖥️</a>
+      <a href="index.html" title="대시보드 화면으로 이동" style="width:26px; height:26px; min-width:26px; border-radius:50%; background:transparent; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; flex-shrink:0;">🏠</a>
     </div>
     <button id="logoutBtn">로그아웃</button>
   </header>
@@ -1056,7 +1058,8 @@ async function loadAttendanceTab(){
       <button class="pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
       <button class="pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
       <button class="pill ${(rec&&rec.status==='absent')?'on-absent':''}" data-status="absent">결석</button>
-      <span class="att-status">${rec ? (((rec.status==='out' && rec.time) || (rec.status==='present' && rec.time && rec.source==='dashboard')) ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
+      <input type="text" class="att-note" data-id="${s.id}" placeholder="특이사항/사유" value="${escapeHtml((rec && rec.note) || '')}">
+      <span class="att-status">${(rec && rec.status) ? (((rec.status==='out' && rec.time) || (rec.status==='present' && rec.time && rec.source==='dashboard')) ? `${STATUS_LABEL[rec.status]} · ${rec.time}` : STATUS_LABEL[rec.status]) : '미체크'}</span>
       ${rec ? '<button class="del-link" data-reset="1">지우기</button>' : ''}
     </div>`;
   }).join('');
@@ -1075,6 +1078,13 @@ async function loadAttendanceTab(){
         await loadAttendanceTab();
       });
     });
+    const noteInput = row.querySelector('.att-note');
+    if(noteInput){
+      noteInput.addEventListener('blur', async ()=>{
+        await db.ref(`attendance/${currentAttDate()}/${id}`).update({ name, note: noteInput.value });
+      });
+      noteInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') noteInput.blur(); });
+    }
     const resetBtn = row.querySelector('[data-reset]');
     if(resetBtn){
       resetBtn.addEventListener('click', async ()=>{
