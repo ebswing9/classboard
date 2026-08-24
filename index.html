@@ -98,7 +98,7 @@
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
-  #clockCard{ flex:0 0 clamp(650px, 62vw, 815px); align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
+  #clockCard{ flex:1; min-width:650px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 0 260px; min-width:0; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1.7; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-width:0; min-height:0; }
   .tt-divider{ height:1px; background:rgba(90,169,221,0.25); margin:10px 0; flex-shrink:0; }
@@ -112,7 +112,7 @@
   #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
-  #quizCard{ flex:1; max-width:520px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
+  #quizCard{ flex:0 0 520px; min-width:0; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
 
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
