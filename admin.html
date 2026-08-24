@@ -178,7 +178,10 @@
 
 <div id="adminApp" style="display:none;">
   <header>
-    <h1>🎒 학급 대시보드 관리자</h1>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <h1 style="margin:0;">🎒 학급 대시보드 관리자</h1>
+      <a href="index.html" title="대시보드 화면으로 이동" style="width:34px; height:34px; min-width:34px; border-radius:50%; background:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; font-size:16px; text-decoration:none; flex-shrink:0;">🖥️</a>
+    </div>
     <button id="logoutBtn">로그아웃</button>
   </header>
   <main>
@@ -317,7 +320,13 @@
     <div class="tab-panel" id="tab-attendance">
       <div class="section">
         <h3>🙋 출결 체크</h3>
-        <div class="field"><label>날짜</label><input type="date" id="attDate"></div>
+        <div class="field"><label>날짜</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="date-nav-btn" id="attDatePrevBtn">‹</button>
+            <input type="date" id="attDate" style="flex:1;">
+            <button type="button" class="date-nav-btn" id="attDateNextBtn">›</button>
+          </div>
+        </div>
         <p class="hint">출석/조퇴/결석 버튼으로 체크하세요. 아무것도 안 누르면 미체크 상태예요.</p>
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
           <label class="cute-checkbox-label">
@@ -1077,6 +1086,16 @@ async function loadAttendanceTab(){
   });
 }
 document.getElementById('attDate').addEventListener('change', loadAttendanceTab);
+function shiftAttDate(deltaDays){
+  const cur = document.getElementById('attDate').value || todayStr();
+  const [y,m,d] = cur.split('-').map(Number);
+  const newDate = todayStr(new Date(y, m-1, d+deltaDays));
+  if(datePickers['attDate']) datePickers['attDate'].setValue(newDate);
+  else document.getElementById('attDate').value = newDate;
+  loadAttendanceTab();
+}
+document.getElementById('attDatePrevBtn').addEventListener('click', ()=> shiftAttDate(-1));
+document.getElementById('attDateNextBtn').addEventListener('click', ()=> shiftAttDate(1));
 
 /* ---- 포인트 ---- */
 let pointSortMode = 'score';
@@ -1090,8 +1109,11 @@ async function loadPointsTab(){
   const listBox = document.getElementById('pointManualStudentList');
   const prevChecked = new Set([...listBox.querySelectorAll('.point-student-check:checked')].map(cb=>cb.dataset.id));
   listBox.innerHTML = roster.length ? roster.map(s=>`
-    <label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13.5px; font-weight:600; cursor:pointer;">
-      <input type="checkbox" class="point-student-check" data-id="${s.id}" ${prevChecked.has(s.id)?'checked':''}>
+    <label class="cute-checkbox-label" style="padding:6px 0;">
+      <span class="cute-checkbox">
+        <input type="checkbox" class="point-student-check" data-id="${s.id}" ${prevChecked.has(s.id)?'checked':''}>
+        <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+      </span>
       ${escapeHtml(s.name)} <span style="color:var(--muted); font-weight:500;">(${points[s.id]||0}점)</span>
     </label>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
   document.getElementById('pointManualSelectAll').checked = false;

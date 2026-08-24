@@ -46,20 +46,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // stale-while-revalidate: 캐시가 있으면 일단 그걸로 빠르게 보여주고,
-  // 뒤에서 네트워크로 최신 버전을 받아와 캐시를 갱신함. 캐시도 없고 네트워크도 안 되면 실패.
+  // network-first: 온라인이면 항상 네트워크에서 최신 파일을 받아와 보여주고 캐시도 갱신함.
+  // 네트워크가 안 될 때만(오프라인) 캐시에 있던 예전 버전으로 대체함.
+  // → 자주 수정하는 동안에는 이 방식이 "왜 수정한 게 안 보이지?" 하는 혼란이 적음.
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const networkFetch = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const resClone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });

@@ -32,7 +32,7 @@
     --vh: 1vh;
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; overscroll-behavior:none; }
+  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow:hidden; overscroll-behavior:none; touch-action:pan-x pan-y; }
   body{
     background: radial-gradient(circle at 8% 12%, var(--pink) 0%, transparent 32%),
                 radial-gradient(circle at 92% 15%, var(--sky) 0%, transparent 34%),
@@ -429,24 +429,13 @@ function initFirebase(){
 }
 
 /* ---------- 전자칠판에서 여러 명이 동시에 터치할 때 확대(핀치줌/더블탭줌) 방지 ----------
-   viewport의 user-scalable=no 만으로는 일부 브라우저(특히 일부 안드로이드 전자칠판)에서
-   막히지 않는 경우가 있어 JS로 한 번 더 막아준다. */
+   이전에는 touchmove에서 손가락 2개 이상이면 무조건 preventDefault 했었는데,
+   이 방식이 스크롤(특히 2손가락 스크롤)까지 같이 막아버리는 부작용이 있었음.
+   그래서 표준 CSS touch-action으로 교체: "pan-x pan-y"는 스크롤(가로/세로 이동)은 허용하고
+   확대축소(핀치줌·더블탭줌)만 막아줌 — html,body의 touch-action 선언이 그 역할을 함. */
 (function preventPinchAndDoubleTapZoom(){
-  // 손가락 두 개 이상이 동시에 닿으면(핀치줌 제스처) 기본 동작을 막음
-  document.addEventListener('touchmove', function(e){
-    if(e.touches && e.touches.length > 1) e.preventDefault();
-  }, { passive:false });
-
-  // Safari 계열의 제스처 확대 이벤트 자체를 막음
+  // Safari 계열은 touch-action만으로 안 막히는 경우가 있어, 제스처 확대 이벤트 자체를 추가로 막음
   document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-
-  // 더블탭으로 확대되는 것을 막음 (마지막 탭과의 간격이 300ms 미만이면 두 번째 탭 무시)
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', function(e){
-    const now = Date.now();
-    if(now - lastTouchEnd <= 300) e.preventDefault();
-    lastTouchEnd = now;
-  }, { passive:false });
 
   // 마우스가 연결된 전자칠판에서 Ctrl+휠 확대도 막음
   document.addEventListener('wheel', function(e){
