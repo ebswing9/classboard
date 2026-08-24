@@ -323,7 +323,7 @@
     <div class="lucky-emoji" id="luckyDrawEmoji">🍀</div>
     <button class="lucky-draw-btn" id="luckyDrawBtn">뽑기</button>
     <div class="lucky-draw-result" id="luckyDrawResult" style="display:none;"></div>
-    <div class="lucky-draw-hint">대시보드에서 직접 출석 체크한 학생 중 하루 딱 한 번 뽑혀요</div>
+    <div class="lucky-draw-hint">대시보드에서 직접 출석 체크한 학생 중 하루 딱 한 번 뽑아요</div>
   </div>
 </div>
 
@@ -466,7 +466,7 @@ function tickClock(){
   document.getElementById('clockTime').textContent = [now.getHours(),now.getMinutes(),now.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
   document.getElementById('clockDate').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${DAYS_KR[now.getDay()]})`;
   const hour = now.getHours();
-  document.getElementById('clockDday').textContent = hour<12 ? '좋은 아침이에요 ☀️' : (hour<16 ? '오늘도 힘차게 📖' : '수고 많았어요 🌙');
+  document.getElementById('clockDday').textContent = hour<9 ? '좋은 아침이에요 ☀️' : (hour<15 ? '오늘도 힘차게 📖' : '수고 많았어요 🌙');
 }
 setInterval(tickClock,1000); tickClock();
 
