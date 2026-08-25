@@ -478,11 +478,13 @@ setInterval(tickClock,1000); tickClock();
 const sidePanel = document.getElementById('sidePanel');
 const quizCardEl = document.getElementById('quizCard');
 let openPanelType = null;
+let panelRequestId = 0;
 
 function closePanel(){
   sidePanel.classList.remove('open');
   quizCardEl.classList.remove('squished');
   openPanelType = null;
+  panelRequestId++; // 닫는 시점에 아직 진행 중이던 이전 렌더링 요청은 무효화
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('luckyDrawIconBtn').style.display = 'none';
 }
@@ -496,6 +498,7 @@ quizCardEl.addEventListener('click', (e)=>{
 async function openPanel(type){
   if(openPanelType === type){ closePanel(); return; }
   openPanelType = type;
+  panelRequestId++; // 새 패널 요청 시작 → 이전에 진행 중이던 렌더링은 완료돼도 화면에 반영 안 되게 함
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : 'closingTile')).classList.add('active');
   sidePanel.classList.add('open');
@@ -536,7 +539,9 @@ function renderNoticeList(text, which){
   }).join('') + `</div>`;
 }
 async function renderNoticePanel(which){
+  const myRequestId = panelRequestId;
   const snap = await db.ref('notices/'+todayStr()).once('value');
+  if(myRequestId !== panelRequestId) return; // 그 사이 다른 패널로 전환됨 → 이 결과는 버림
   const d = snap.val();
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
@@ -552,8 +557,10 @@ async function getRosterList(){
   return Object.keys(val).map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
 async function renderAttendancePanel(){
+  const myRequestId = panelRequestId;
   const roster = await getRosterList();
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
+  if(myRequestId !== panelRequestId) return; // 그 사이 다른 패널로 전환됨 → 이 결과는 버림
   const att = attSnap.val() || {};
   const box = document.getElementById('panelBody');
   if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
@@ -838,6 +845,7 @@ document.getElementById('attRateBarTrack').addEventListener('click', ()=>{
    캐시에 값이 없는 날짜(관리자가 아직 저장하지 않은 날짜)만 예외적으로
    기기에서 직접 NEIS를 호출해보는 폴백을 둔다. */
 let mealDate = new Date();
+let mealRequestId = 0;
 function withTimeout(promise, ms){
   return Promise.race([
     promise,
@@ -845,6 +853,7 @@ function withTimeout(promise, ms){
   ]);
 }
 async function loadMeal(){
+  const myRequestId = ++mealRequestId; // 이 호출만의 번호표 (초기 로딩과 실시간 리스너가 겹쳐 호출되는 경우 대비)
   const bodyEl = document.getElementById('mealBody');
   document.getElementById('mealDateLabel').textContent = `${mealDate.getMonth()+1}월 ${mealDate.getDate()}일`;
   const dateCompact = todayStrCompact(mealDate);
@@ -852,6 +861,7 @@ async function loadMeal(){
 
   try{
     const cacheSnap = await withTimeout(db.ref('mealCache/'+dateCompact).once('value'), 8000);
+    if(myRequestId !== mealRequestId) return; // 그 사이 더 최신 요청이 시작됨 → 이 결과는 버림
     const cached = cacheSnap.val();
     if(cached && cached.items && cached.items.length){
       renderMealItems(bodyEl, cached.items);
@@ -863,6 +873,7 @@ async function loadMeal(){
     }
   }catch(e){
     console.error('mealCache read error', e);
+    if(myRequestId !== mealRequestId) return;
     bodyEl.innerHTML = '<div class="meal-empty">⚠️ 저장된 급식 정보를<br>불러오지 못했어요.<br>새로고침해보세요.</div>';
     return;
   }
@@ -870,6 +881,7 @@ async function loadMeal(){
   // 캐시에 아직 없는 날짜 → 폴백으로 NEIS 직접 호출 시도 (방화벽 기기에서는 실패할 수 있음)
   try{
     const cfgSnap = await withTimeout(db.ref('config/neis').once('value'), 8000);
+    if(myRequestId !== mealRequestId) return;
     const cfg = cfgSnap.val();
     if(!cfg || !cfg.officeCode || !cfg.schoolCode){
       bodyEl.innerHTML = '<div class="meal-empty">🫧 관리자 페이지에서<br>학교를 등록해주세요.</div>';
@@ -882,11 +894,13 @@ async function loadMeal(){
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     const json = await res.json();
+    if(myRequestId !== mealRequestId) return;
     const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
     if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
     const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
     renderMealItems(bodyEl, items);
   }catch(e){
+    if(myRequestId !== mealRequestId) return;
     const timedOut = e && (e.name === 'AbortError' || e.name === 'TimeoutError');
     bodyEl.innerHTML = timedOut
       ? '<div class="meal-empty">⚠️ 응답이 없어요.<br>이 기기의 인터넷/방화벽을<br>확인해주세요.</div>'
@@ -1043,8 +1057,7 @@ function attachRealtimeListeners(){
 }
 
 if(initFirebase()){
-  loadAll();
-  attachRealtimeListeners();
+  loadAll().then(()=> attachRealtimeListeners());
   setInterval(()=>{ loadMeal(); loadQuiz(); }, 5*60*1000);
 }
 // PWA 오프라인 캐싱(서비스워커)을 완전히 그만 쓰기로 함 - 기기마다 옛날 버전이 남아있는
