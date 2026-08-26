@@ -540,12 +540,21 @@ function renderNoticeList(text, which){
 }
 async function renderNoticePanel(which){
   const myRequestId = panelRequestId;
-  const snap = await db.ref('notices/'+todayStr()).once('value');
+  const body = document.getElementById('panelBody');
+  body.innerHTML = `<div class="notice-empty"><div class="e-icon">⏳</div><div>불러오는 중...</div></div>`;
+  let snap;
+  try{
+    snap = await withTimeout(db.ref('notices/'+todayStr()).once('value'), 8000);
+  }catch(e){
+    console.error('notices read error', e);
+    if(myRequestId !== panelRequestId) return;
+    body.innerHTML = `<div class="notice-empty"><div class="e-icon">⚠️</div><div>불러오지 못했어요.<br>네트워크 상태를 확인해주세요.</div></div>`;
+    return;
+  }
   if(myRequestId !== panelRequestId) return; // 그 사이 다른 패널로 전환됨 → 이 결과는 버림
   const d = snap.val();
   const published = d && (which==='morning' ? d.morningPublished : d.closingPublished);
   const text = d && (which==='morning' ? d.morning : d.closing);
-  const body = document.getElementById('panelBody');
   body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
     : `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
@@ -837,13 +846,12 @@ document.getElementById('attRateBarTrack').addEventListener('click', ()=>{
 });
 
 /* ---------- 급식 (NEIS) ----------
-   전자칠판 등 일부 기기는 open.neis.go.kr 도메인을 방화벽이 막아서
-   직접 호출하면 계속 "불러오는 중"에 멈추는 문제가 있었음.
-   그래서 관리자(admin.html의 "조회·종례" 탭 > 급식 미리 저장)가 미리
-   NEIS에서 받아와 Firebase의 mealCache/{YYYYMMDD}에 저장해두고,
-   여기서는 그 캐시만 읽는다. (전자칠판 자체는 NEIS에 접속할 필요가 없어짐)
-   캐시에 값이 없는 날짜(관리자가 아직 저장하지 않은 날짜)만 예외적으로
-   기기에서 직접 NEIS를 호출해보는 폴백을 둔다. */
+   대시보드는 NEIS에 절대 직접 접속하지 않는다. 관리자(admin.html의 "조회·종례" 탭 >
+   급식 미리 저장)가 미리 NEIS에서 받아와 Firebase의 mealCache/{YYYYMMDD}에 저장해두면,
+   여기서는 그 캐시만 읽는다. 관리자가 아직 그 날짜를 저장해두지 않았으면
+   "아직 식단표가 전달되지 않았습니다"라고만 표시하고 끝낸다.
+   (예전엔 캐시가 없을 때 대시보드가 직접 NEIS를 호출하는 폴백이 있었는데,
+    전자칠판 등 일부 기기에서 그 호출이 계속 멈춰있는 원인 중 하나였던 것으로 보여 제거함) */
 let mealDate = new Date();
 let mealRequestId = 0;
 function withTimeout(promise, ms){
@@ -871,40 +879,12 @@ async function loadMeal(){
       bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>';
       return;
     }
+    // 캐시 자체가 아예 없음 = 관리자가 아직 이 날짜 급식을 저장해두지 않음
+    bodyEl.innerHTML = '<div class="meal-empty">☁️ 아직 식단표가<br>전달되지 않았습니다.</div>';
   }catch(e){
     console.error('mealCache read error', e);
     if(myRequestId !== mealRequestId) return;
-    bodyEl.innerHTML = '<div class="meal-empty">⚠️ 저장된 급식 정보를<br>불러오지 못했어요.<br>새로고침해보세요.</div>';
-    return;
-  }
-
-  // 캐시에 아직 없는 날짜 → 폴백으로 NEIS 직접 호출 시도 (방화벽 기기에서는 실패할 수 있음)
-  try{
-    const cfgSnap = await withTimeout(db.ref('config/neis').once('value'), 8000);
-    if(myRequestId !== mealRequestId) return;
-    const cfg = cfgSnap.val();
-    if(!cfg || !cfg.officeCode || !cfg.schoolCode){
-      bodyEl.innerHTML = '<div class="meal-empty">🫧 관리자 페이지에서<br>학교를 등록해주세요.</div>';
-      return;
-    }
-    const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
-    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_YMD=${dateCompact}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(()=> controller.abort(), 8000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    const json = await res.json();
-    if(myRequestId !== mealRequestId) return;
-    const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
-    if(!rows || !rows.length){ bodyEl.innerHTML = '<div class="meal-empty">🍽️ 이 날은<br>급식 정보가 없어요.</div>'; return; }
-    const items = rows[0].DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
-    renderMealItems(bodyEl, items);
-  }catch(e){
-    if(myRequestId !== mealRequestId) return;
-    const timedOut = e && (e.name === 'AbortError' || e.name === 'TimeoutError');
-    bodyEl.innerHTML = timedOut
-      ? '<div class="meal-empty">⚠️ 응답이 없어요.<br>이 기기의 인터넷/방화벽을<br>확인해주세요.</div>'
-      : '<div class="meal-empty">⚠️ 급식 정보를<br>가져오지 못했어요.</div>';
+    bodyEl.innerHTML = '<div class="meal-empty">⚠️ 저장된 급식 정보를<br>불러오지 못했어요.<br>네트워크 상태를 확인해주세요.</div>';
   }
 }
 function renderMealItems(bodyEl, items){
