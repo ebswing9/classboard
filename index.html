@@ -526,7 +526,7 @@ document.getElementById('closingTile').addEventListener('click', ()=> openPanel(
 /* 조회/종례: 빈 줄로 항목을 구분, 항목 안에서의 줄바꿈은 그대로 <br>로 유지 (체크박스 1개 = 빈 줄로 구분된 1개 문단) */
 function renderNoticeList(text, which){
   const items = text.split(/\n[ \t]*\n+/).map(s=>s.trim()).filter(Boolean);
-  if(!items.length) return `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
+  if(!items.length) return `<div class="notice-empty"><div class="e-icon">☁️</div><div>아직 공개된 내용이 없어요</div></div>`;
   return `<div class="notice-list">` + items.map(item=>{
     const htmlText = escapeHtml(item).replaceAll('\n','<br>');
     return `<div class="notice-item">
@@ -538,16 +538,23 @@ function renderNoticeList(text, which){
   </div>`;
   }).join('') + `</div>`;
 }
-async function renderNoticePanel(which){
+async function renderNoticePanel(which, opts){
+  // silent: true면 실시간 리스너 재발동으로 인한 백그라운드 재조회로 간주해서,
+  // 이미 패널에 보여줄 내용이 있으면 로딩 스피너로 되돌리지 않고, 실패해도 기존 화면을 유지함
+  const silent = !!(opts && opts.silent);
   const myRequestId = panelRequestId;
   const body = document.getElementById('panelBody');
-  body.innerHTML = `<div class="notice-empty"><div class="e-icon">⏳</div><div>불러오는 중...</div></div>`;
+  const hadContent = body.innerHTML.trim() !== '' && !body.querySelector('.notice-loading');
+  if(!silent || !hadContent){
+    body.innerHTML = `<div class="notice-empty notice-loading"><div class="e-icon">⏳</div><div>불러오는 중...</div></div>`;
+  }
   let snap;
   try{
     snap = await withTimeout(db.ref('notices/'+todayStr()).once('value'), 8000);
   }catch(e){
     console.error('notices read error', e);
     if(myRequestId !== panelRequestId) return;
+    if(silent && hadContent) return; // 이미 보여주던 내용이 있으면 일시적 오류로 덮어쓰지 않음
     body.innerHTML = `<div class="notice-empty"><div class="e-icon">⚠️</div><div>불러오지 못했어요.<br>네트워크 상태를 확인해주세요.</div></div>`;
     return;
   }
@@ -557,7 +564,7 @@ async function renderNoticePanel(which){
   const text = d && (which==='morning' ? d.morning : d.closing);
   body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
-    : `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
+    : `<div class="notice-empty"><div class="e-icon">☁️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
 async function getRosterList(){
@@ -860,12 +867,19 @@ function withTimeout(promise, ms){
     new Promise((_, reject)=> setTimeout(()=> reject(Object.assign(new Error('timeout'), {name:'TimeoutError'})), ms))
   ]);
 }
-async function loadMeal(){
+async function loadMeal(opts){
+  // silent: true면 실시간 리스너 재발동(재연결 등)으로 인한 "백그라운드 재조회"로 간주해서,
+  // 이미 화면에 보여줄 내용이 있는 경우 로딩 스피너로 되돌리지 않고, 실패해도 기존 화면을 그대로 유지함
+  // (전자칠판처럼 연결이 자주 끊겼다 재연결되는 환경에서 로딩 문구가 계속 리셋되며 영원히 멈춘 것처럼 보이는 문제 방지)
+  const silent = !!(opts && opts.silent);
   const myRequestId = ++mealRequestId; // 이 호출만의 번호표 (초기 로딩과 실시간 리스너가 겹쳐 호출되는 경우 대비)
   const bodyEl = document.getElementById('mealBody');
   document.getElementById('mealDateLabel').textContent = `${mealDate.getMonth()+1}월 ${mealDate.getDate()}일`;
   const dateCompact = todayStrCompact(mealDate);
-  bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
+  const hadContent = bodyEl.innerHTML.trim() !== '' && !bodyEl.querySelector('.meal-loading');
+  if(!silent || !hadContent){
+    bodyEl.innerHTML = '<div class="meal-loading">불러오는 중...</div>';
+  }
 
   try{
     const cacheSnap = await withTimeout(db.ref('mealCache/'+dateCompact).once('value'), 8000);
@@ -884,6 +898,7 @@ async function loadMeal(){
   }catch(e){
     console.error('mealCache read error', e);
     if(myRequestId !== mealRequestId) return;
+    if(silent && hadContent) return; // 이미 보여주던 내용이 있으면 일시적 오류로 덮어쓰지 않음
     bodyEl.innerHTML = '<div class="meal-empty">⚠️ 저장된 급식 정보를<br>불러오지 못했어요.<br>네트워크 상태를 확인해주세요.</div>';
   }
 }
@@ -908,7 +923,7 @@ async function loadDday(){
   if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
   else if(diffDays === 0) text = `${cfg.label} D-DAY`;
   else text = `${cfg.label} D+${Math.abs(diffDays)}`;
-  el.textContent = '🤍 ' + text;
+  el.textContent = '💕 ' + text;
   el.style.display = 'inline-block';
 }
 
@@ -1024,7 +1039,7 @@ function attachRealtimeListeners(){
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
   db.ref('quiz/'+todayStr()).on('value', ()=> loadQuiz());
   db.ref('notices/'+todayStr()).on('value', async ()=>{
-    if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
+    if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType, {silent:true});
   });
   db.ref('timetableWeekly/'+dowKey).on('value', ()=> loadTimetable());
   db.ref('timetableOverride/'+todayStr()).on('value', ()=> loadTimetable());
@@ -1032,13 +1047,13 @@ function attachRealtimeListeners(){
   // (혹시 이전/다음 버튼으로 다른 날짜를 보고 있던 상태였다면, 오늘 날짜로 되돌려서 보여줌)
   db.ref('mealCache/'+todayStrCompact(new Date())).on('value', ()=>{
     mealDate = new Date();
-    loadMeal();
+    loadMeal({silent:true});
   });
 }
 
 if(initFirebase()){
   loadAll().then(()=> attachRealtimeListeners());
-  setInterval(()=>{ loadMeal(); loadQuiz(); }, 5*60*1000);
+  setInterval(()=>{ loadMeal({silent:true}); loadQuiz(); }, 5*60*1000);
 }
 // PWA 오프라인 캐싱(서비스워커)을 완전히 그만 쓰기로 함 - 기기마다 옛날 버전이 남아있는
 // 문제가 반복돼서, 캐싱의 이점보다 부작용이 커 껐음. 이미 등록되어 있던 기기는
