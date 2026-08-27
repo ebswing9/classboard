@@ -524,7 +524,7 @@ const DEFAULT_PERIODS = 7;
 const STATUS_LABEL = {present:'출석', out:'조퇴', absent:'결석'};
 
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-function dateStrToCompact(s){ return String(s).replaceAll('-',''); }
+function dateStrToCompact(s){ return String(s).split('-').join(''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 /* ---------- 포인트 시스템 ---------- */
@@ -730,13 +730,16 @@ async function initAdmin(){
   await loadRecentChips();
   await loadHistoryList();
   await loadRoster();
+  db.ref('roster').on('value', ()=>{ if(initedOnce) loadRoster(); });
   await loadAttendanceTab();
+  bindAttendanceListener();
   await loadPointsTab();
   await loadWeeklyEditor();
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
   await loadQuizEditor(todayStr());
   await loadQuizAnswers(todayStr());
+  bindQuizAnswersListener();
   await loadNeisForm();
   await loadSettingsForm();
 }
@@ -912,8 +915,8 @@ async function loadHistoryList(){
       </div>
       <div class="history-preview">${escapeHtml(prev)}</div>
       <div class="history-body">
-        <b>조회:</b> ${n.morning ? escapeHtml(n.morning).replaceAll('\n','<br>') : '(없음)'}<br><br>
-        <b>종례:</b> ${n.closing ? escapeHtml(n.closing).replaceAll('\n','<br>') : '(없음)'}
+        <b>조회:</b> ${n.morning ? escapeHtml(n.morning).split('\n').join('<br>') : '(없음)'}<br><br>
+        <b>종례:</b> ${n.closing ? escapeHtml(n.closing).split('\n').join('<br>') : '(없음)'}
         <div class="history-edit-link" data-edit="${date}">✏️ 이 날짜 수정하기</div>
       </div>
     </div>`;
@@ -1095,7 +1098,7 @@ async function loadAttendanceTab(){
     }
   });
 }
-document.getElementById('attDate').addEventListener('change', loadAttendanceTab);
+document.getElementById('attDate').addEventListener('change', ()=>{ loadAttendanceTab(); bindAttendanceListener(); });
 function shiftAttDate(deltaDays){
   const cur = document.getElementById('attDate').value || todayStr();
   const [y,m,d] = cur.split('-').map(Number);
@@ -1103,9 +1106,20 @@ function shiftAttDate(deltaDays){
   if(datePickers['attDate']) datePickers['attDate'].setValue(newDate);
   else document.getElementById('attDate').value = newDate;
   loadAttendanceTab();
+  bindAttendanceListener();
 }
 document.getElementById('attDatePrevBtn').addEventListener('click', ()=> shiftAttDate(-1));
 document.getElementById('attDateNextBtn').addEventListener('click', ()=> shiftAttDate(1));
+
+// 출결 목록은 텍스트를 입력하는 폼이 아니라 상태 표시 + 버튼 조작 화면이라,
+// 대시보드에서 학생이 체크하는 즉시 관리자 화면에도 실시간으로 반영되도록 리스너를 건다.
+// (날짜를 바꾸면 이전 날짜의 리스너는 끊고 새 날짜에 다시 걸어준다)
+let attendanceListenerRef = null;
+function bindAttendanceListener(){
+  if(attendanceListenerRef) attendanceListenerRef.off();
+  attendanceListenerRef = db.ref('attendance/'+currentAttDate());
+  attendanceListenerRef.on('value', ()=>{ if(initedOnce) loadAttendanceTab(); });
+}
 
 /* ---- 포인트 ---- */
 let pointSortMode = 'score';
@@ -1556,7 +1570,19 @@ document.getElementById('quizAnswerDate').addEventListener('change', (e)=>{
   const date = e.target.value || todayStr();
   loadQuizEditor(date);
   loadQuizAnswers(date);
+  bindQuizAnswersListener();
 });
+
+// 답안 채점 리스트도 텍스트 입력 폼이 아니라 상태 표시(그림 답안 + 정답/오답 버튼) 화면이라,
+// 학생이 새로 답안을 제출하면 관리자 화면에 실시간으로 바로 나타나도록 리스너를 건다.
+// (퀴즈 문제/선택지를 입력하는 작성 폼 쪽은 타이핑 중에 덮어써질 수 있어 일부러 실시간 반영을 걸지 않았다)
+let quizAnswersListenerRef = null;
+function bindQuizAnswersListener(){
+  if(quizAnswersListenerRef) quizAnswersListenerRef.off();
+  const date = document.getElementById('quizAnswerDate').value || todayStr();
+  quizAnswersListenerRef = db.ref('quizAnswers/'+date);
+  quizAnswersListenerRef.on('value', ()=>{ if(initedOnce) loadQuizAnswers(date); });
+}
 
 /* ---- 설정: 비밀번호 변경 / D-Day ---- */
 async function loadSettingsForm(){

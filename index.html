@@ -202,8 +202,6 @@
   .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; opacity:.55; }
   .name-pill.done:hover{ background:var(--line); color:var(--muted); }
   .name-pill .pill-hearts{ font-size:9.5px; letter-spacing:-1px; }
-  #drawingForLabel .pill-hearts{ font-size:14px; letter-spacing:-1px; margin-left:4px; vertical-align:1px; }
-  #buildBadge{ position:fixed; right:4px; bottom:2px; font-size:8px; line-height:1; color:rgba(0,0,0,0.18); z-index:9999; pointer-events:none; user-select:none; font-family:monospace; }
   #drawCanvas{ width:100%; height:70px; border-radius:10px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
   .draw-actions{ display:flex; align-items:center; gap:5px; margin-top:8px; }
   .draw-btn{ border:none; background:var(--line); color:var(--text); padding:7px 10px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; }
@@ -366,7 +364,7 @@ const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
 const CHIP_COLORS = ['pink','mint','yellow','lav','sky'];
 function todayStr(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-function todayStrCompact(d=new Date()){ return todayStr(d).replaceAll('-',''); }
+function todayStrCompact(d=new Date()){ return todayStr(d).split('-').join(''); }
 function nowHHMM(){ const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -528,9 +526,9 @@ document.getElementById('closingTile').addEventListener('click', ()=> openPanel(
 /* 조회/종례: 빈 줄로 항목을 구분, 항목 안에서의 줄바꿈은 그대로 <br>로 유지 (체크박스 1개 = 빈 줄로 구분된 1개 문단) */
 function renderNoticeList(text, which){
   const items = text.split(/\n[ \t]*\n+/).map(s=>s.trim()).filter(Boolean);
-  if(!items.length) return `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
+  if(!items.length) return `<div class="notice-empty"><div class="e-icon">☁️</div><div>아직 공개된 내용이 없어요</div></div>`;
   return `<div class="notice-list">` + items.map(item=>{
-    const htmlText = escapeHtml(item).replaceAll('\n','<br>');
+    const htmlText = escapeHtml(item).split('\n').join('<br>');
     return `<div class="notice-item">
     <label class="cute-checkbox ${which}">
       <input type="checkbox" class="notice-checkbox">
@@ -566,7 +564,7 @@ async function renderNoticePanel(which, opts){
   const text = d && (which==='morning' ? d.morning : d.closing);
   body.innerHTML = (published && text)
     ? renderNoticeList(text, which)
-    : `<div class="notice-empty"><div class="e-icon">🫧</div><div>아직 공개된 내용이 없어요</div></div>`;
+    : `<div class="notice-empty"><div class="e-icon">☁️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
 async function getRosterList(){
@@ -925,7 +923,7 @@ async function loadDday(){
   if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
   else if(diffDays === 0) text = `${cfg.label} D-DAY`;
   else text = `${cfg.label} D+${Math.abs(diffDays)}`;
-  el.textContent = '🤍 ' + text;
+  el.textContent = '💕 ' + text;
   el.style.display = 'inline-block';
 }
 
@@ -984,8 +982,7 @@ async function openDrawOverlay(){
     btn.addEventListener('click', ()=>{
       selectedStudent = { id: btn.dataset.id, name: btn.dataset.name };
       const hearts = pointsToHearts(pointsVal[selectedStudent.id]);
-      const heartsHtml = hearts ? `<span class="pill-hearts">${hearts}</span>` : '';
-      document.getElementById('drawingForLabel').innerHTML = `✏️ ${escapeHtml(selectedStudent.name)}님${heartsHtml}`;
+      document.getElementById('drawingForLabel').innerHTML = `✏️ ${escapeHtml(selectedStudent.name)}님 ${hearts ? `<span class="pill-hearts">${hearts}</span>` : ''}`;
       document.getElementById('drawStepName').style.display = 'none';
       document.getElementById('drawStepCanvas').style.display = 'block';
       document.querySelector('.draw-box').classList.remove('wide');
@@ -1068,12 +1065,6 @@ if('serviceWorker' in navigator){
 if(window.caches){
   caches.keys().then(keys=> keys.forEach(k=> caches.delete(k))).catch(()=>{});
 }
-// 화면 우측 하단에 아주 작게(거의 안 보이게) 이 파일이 서버에서 마지막으로 수정된 시각을 표시.
-// 전자칠판 등에서 "지금 화면이 최신 파일을 받아온 게 맞는지" F12 없이 눈으로 바로 확인하기 위한 용도.
-// (호스팅 서버가 Last-Modified 헤더를 안 주는 경우엔 페이지를 연 시각으로 대체 표시될 수 있음)
-document.getElementById('buildBadge').textContent =
-  new Date(document.lastModified).toLocaleString('ko-KR', {hour12:false});
 </script>
-<div id="buildBadge"></div>
 </body>
 </html>
