@@ -109,7 +109,7 @@
   .meal-label{ font-size:16px; color:var(--text); }
   .meal-nav{ display:flex; gap:4px; }
   .meal-nav button{ border:none; background:rgba(255,255,255,0.7); color:var(--sky-deep); width:24px; height:24px; border-radius:8px; font-size:13px; font-weight:800; cursor:pointer; }
-  .meal-nav button#mealTodayBtn{ width:auto; padding:0 8px; font-size:11px; }
+  .meal-nav button#mealTodayBtn{ width:auto; padding:0 8px; font-size:11px; white-space:nowrap; flex-shrink:0; }
   #mealDateLabel{ font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; flex-shrink:0; }
   #mealBody{ flex:1; overflow-y:auto; min-height:0; }
   .meal-list{ list-style:none; margin:0; padding:0; font-size:13.5px; font-weight:600; line-height:1.6; }
@@ -216,7 +216,7 @@
   #luckyDrawIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
   #luckyDrawIconBtn:hover{ transform:scale(1.08); }
   #luckyDrawIconBtn:active{ transform:scale(0.92); }
-  #luckyDrawOverlay{ position:fixed; inset:0; background:rgba(74,68,88,0.32); display:flex; align-items:center; justify-content:center; z-index:300; opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s; }
+  #luckyDrawOverlay{ position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.32); display:flex; align-items:center; justify-content:center; z-index:300; opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s; }
   #luckyDrawOverlay.open{ opacity:1; visibility:visible; transition:opacity .2s ease, visibility 0s; }
   .lucky-modal{ width:min(88vw, 360px); background:linear-gradient(160deg, #fff, var(--yellow) 220%); border-radius:24px; padding:28px 24px; text-align:center; box-shadow:0 20px 48px rgba(74,68,88,0.3); position:relative; }
   .lucky-modal .close-x{ position:absolute; top:10px; right:10px; }
