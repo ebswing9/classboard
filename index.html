@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script src="firebase.js"></script>
 
 <style>
@@ -32,7 +33,7 @@
     --vh: 1vh;
   }
   *{box-sizing:border-box;}
-  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
+  html,body{ margin:0;padding:0;height:100%; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   body{
     background: radial-gradient(circle at 8% 12%, var(--pink) 0%, transparent 32%),
                 radial-gradient(circle at 92% 15%, var(--sky) 0%, transparent 34%),
@@ -210,6 +211,10 @@
 
   /* 포인트 축하 토스트 */
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
+  #lunchNowPlaying{ display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); color:var(--muted); font-size:12px; font-weight:700; padding:7px 16px; border-radius:14px; box-shadow:0 4px 12px rgba(160,140,190,0.2); z-index:998; align-items:center; gap:4px; max-width:70vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
+  #suspendOverlay .emoji{ font-size:56px; margin-bottom:16px; }
+  #suspendOverlay .msg{ font-family:'Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
   #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
@@ -252,6 +257,13 @@
 </head>
 <body>
 <div id="configErrorBanner"></div>
+<div id="suspendOverlay">
+  <div class="box">
+    <div class="emoji">🌙</div>
+    <div class="msg">당분간 대시보드를 운영하지 않습니다</div>
+  </div>
+</div>
+
 <div id="app"><div id="board">
   <div id="mainRow">
     <div class="card" id="timetableCard">
@@ -332,6 +344,12 @@
 </div>
 
 <div id="pointToast"></div>
+
+<!-- 점심 음악: 화면에 안 보이는 숨겨진 플레이어. 관리자 페이지에서 재생/정지 명령이 오면 여기서 재생됨. -->
+<div style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden;">
+  <div id="lunchPlayer"></div>
+</div>
+<div id="lunchNowPlaying">🎵 지금 재생 중: <span id="lunchNowPlayingTitle"></span></div>
 
 <div id="drawOverlay">
   <div class="draw-box">
@@ -431,6 +449,11 @@ function initFirebase(){
   }
   return true;
 }
+
+/* ---------- 오른쪽 클릭(텍스트 드래그 선택 후 "웹에서 검색" 등)으로 퀴즈 답을 찾는 것 방지 ----------
+   위쪽 CSS에서 이미 텍스트 자체를 드래그로 선택 못 하게 막아뒀고(user-select:none),
+   여기서는 혹시 모를 우클릭 메뉴 자체도 아예 뜨지 않게 막는다. */
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 
 /* ---------- 전자칠판에서 여러 명이 동시에 터치할 때 확대(핀치줌/더블탭줌) 방지 ----------
    이전에는 touchmove에서 손가락 2개 이상이면 무조건 preventDefault 했었는데,
@@ -1023,6 +1046,80 @@ async function loadAll(){
 }
 
 /* ---------- 관리자 페이지 변경 사항을 실시간으로 반영 ---------- */
+/* ---------- 점심 음악 (관리자 페이지에서만 조작, 학생 화면엔 숨겨진 재생기) ----------
+   - 학생들이 평소에 하는 클릭(출석 체크, 퀴즈 답 고르기 등) 아무거나 한 번 있으면
+     그걸로 브라우저의 "자동재생 허락"을 몰래 받아둠 (전용 버튼 없음)
+   - 그 이후로는 관리자 페이지의 재생/정지 명령을 실시간으로 받아서 조용히 재생/정지함
+   - 한 곡이 끝나거나 재생 오류가 나면 자동으로 다음 곡으로 넘어감 */
+let ytPlayer = null;
+let ytReady = false;
+let lunchTracks = [];
+let lunchShowNowPlaying = false;
+let lunchAudioUnlocked = false;
+let lunchLastLoadedIndex = -1;
+
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('lunchPlayer', {
+    height: '1', width: '1',
+    playerVars: { autoplay: 0, controls: 0 },
+    events: {
+      onReady: ()=>{ ytReady = true; cueLunchFirstTrackIfReady(); },
+      onStateChange: (e)=>{ if(e.data === YT.PlayerState.ENDED) advanceLunchTrack(); },
+      onError: ()=>{ advanceLunchTrack(); }
+    }
+  });
+}
+function cueLunchFirstTrackIfReady(){
+  if(ytReady && lunchTracks.length && !lunchAudioUnlocked){
+    try{ ytPlayer.cueVideoById(lunchTracks[0].videoId); }catch(e){}
+  }
+}
+function unlockLunchAudioOnce(){
+  if(lunchAudioUnlocked || !ytReady || !lunchTracks.length) return;
+  try{
+    ytPlayer.mute();
+    ytPlayer.playVideo();
+    setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch(e){} }, 300);
+    lunchAudioUnlocked = true;
+  }catch(e){}
+}
+document.addEventListener('click', unlockLunchAudioOnce);
+document.addEventListener('touchstart', unlockLunchAudioOnce);
+
+function applyLunchControl(c){
+  if(!ytReady) return;
+  if(c.playing && lunchTracks[c.index]){
+    if(lunchLastLoadedIndex !== c.index){
+      ytPlayer.loadVideoById(lunchTracks[c.index].videoId);
+      lunchLastLoadedIndex = c.index;
+    }
+    try{ ytPlayer.unMute(); ytPlayer.playVideo(); }catch(e){}
+    showNowPlayingBadge(lunchTracks[c.index].title);
+  } else {
+    try{ ytPlayer.pauseVideo(); }catch(e){}
+    hideNowPlayingBadge();
+  }
+}
+function showNowPlayingBadge(title){
+  if(!lunchShowNowPlaying){ hideNowPlayingBadge(); return; }
+  document.getElementById('lunchNowPlayingTitle').textContent = title || '음악';
+  document.getElementById('lunchNowPlaying').style.display = 'flex';
+}
+function hideNowPlayingBadge(){
+  document.getElementById('lunchNowPlaying').style.display = 'none';
+}
+async function advanceLunchTrack(){
+  const ref = db.ref('lunchControl/'+todayStr());
+  const snap = await ref.once('value');
+  const c = snap.val() || {};
+  const nextIndex = (c.index||0) + 1;
+  if(nextIndex < lunchTracks.length){
+    await ref.update({ index: nextIndex, updatedAt: Date.now() });
+  } else {
+    await ref.update({ playing: false, updatedAt: Date.now() });
+  }
+}
+
 function attachRealtimeListeners(){
   const dowKey = DAY_KEYS[new Date().getDay()];
   db.ref('config/dday').on('value', ()=> loadDday());
@@ -1048,9 +1145,28 @@ function attachRealtimeListeners(){
     mealDate = new Date();
     loadMeal({silent:true});
   });
+  // 점심 음악: 플레이리스트/재생 조작 명령 실시간 반영
+  db.ref('lunchPlaylist/'+todayStr()).on('value', (snap)=>{
+    const data = snap.val() || {};
+    lunchTracks = data.tracks || [];
+    lunchShowNowPlaying = !!data.showNowPlaying;
+    cueLunchFirstTrackIfReady();
+    if(!lunchShowNowPlaying) hideNowPlayingBadge();
+  });
+  db.ref('lunchControl/'+todayStr()).on('value', (snap)=>{
+    applyLunchControl(snap.val() || {});
+  });
 }
 
 if(initFirebase()){
+  // 관리자가 "대시보드 일시 정지"를 켜두면, 다른 로딩과 상관없이 이 리스너가 즉시(그리고 실시간으로)
+  // 화면을 잠금 화면으로 덮어씀. 데이터는 전혀 건드리지 않고 화면만 가리는 방식이라, 나중에 꺼면
+  // 모든 기록/설정이 그대로 원래대로 돌아옴.
+  db.ref('config/dashboardSuspended').on('value', (snap)=>{
+    const suspended = !!snap.val();
+    document.getElementById('suspendOverlay').style.display = suspended ? 'flex' : 'none';
+    document.getElementById('app').style.display = suspended ? 'none' : '';
+  });
   loadAll().then(()=> attachRealtimeListeners());
   setInterval(()=>{ loadMeal({silent:true}); loadQuiz(); }, 5*60*1000);
 }

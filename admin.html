@@ -192,6 +192,7 @@
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="points">포인트</button>
+      <button class="tab-btn" data-tab="lunch">점심 음악</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="settings">설정</button>
@@ -240,6 +241,7 @@
           <h3>🍱 급식 미리 저장 <span class="sub" id="mealCacheDateSub"></span></h3>
           <p class="hint">전자칠판에서 급식이 "불러오는 중"에 멈추는 경우가 있어서, NEIS에서 미리 받아와 저장해두는 기능이에요. 위 <b>조회·종례 날짜</b> 기준으로 저장돼요. 조회·종례 쓰실 때 같이 한 번 눌러주세요.</p>
           <button class="btn" id="fetchMealBtn">NEIS에서 급식 불러와 저장</button>
+          <button class="btn secondary" id="fetchMealWeekBtn" style="margin-top:8px;">이번 주(월~금) 한번에 불러오기</button>
           <span class="msg" id="mealCacheMsg"></span>
           <div id="mealCachePreview" style="margin-top:10px;"></div>
         </div>
@@ -404,6 +406,34 @@
       </div>
     </div>
 
+    <!-- ===== 점심 음악 ===== -->
+    <div class="tab-panel" id="tab-lunch">
+      <div class="section">
+        <h3>🎵 오늘의 플레이리스트 <span class="sub" id="lunchDateSub"></span></h3>
+        <p class="hint">위 "조회·종례 날짜" 기준으로 저장돼요. 한 줄에 곡 하나씩, <b>유튜브 링크 | 곡 제목</b> 형식으로 입력하세요. (제목은 안 써도 되지만, 써두면 재생 중 표시에 나와요)</p>
+        <div class="field"><textarea id="lunchTracksInput" placeholder="https://youtu.be/abcdefghijk | 좋은날 - 아이유&#10;https://youtu.be/1234567890a | Dynamite - BTS"></textarea></div>
+        <button class="btn" id="lunchSaveBtn">플레이리스트 저장</button>
+        <span class="msg" id="lunchMsg"></span>
+      </div>
+      <div class="section">
+        <h3>🔊 재생 중 표시 (학생 화면)</h3>
+        <p class="hint">켜두면 대시보드 화면에 재생 중일 때만 "🎵 지금 재생 중: 곡 제목"이 작게 표시돼요. 꺼두면 대시보드엔 아무 표시도 안 남아요.</p>
+        <div class="publish-row">
+          <span>재생 중 표시</span>
+          <button class="publish-btn off" id="lunchShowNowPlayingToggle">비공개</button>
+        </div>
+      </div>
+      <div class="section">
+        <h3>▶️ 재생 조작</h3>
+        <p class="hint">재생을 누르면 목록 첫 곡부터 시작해서 순서대로 자동 재생돼요. 학생은 조작할 수 없고, 여기서만 재생·정지할 수 있어요.</p>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <button class="btn" id="lunchPlayBtn" style="margin:0;">▶ 재생</button>
+          <button class="btn danger" id="lunchStopBtn" style="margin:0;">⏸ 정지</button>
+        </div>
+        <p id="lunchStatus" style="font-weight:700; color:var(--primary-dark);">⏸ 정지됨</p>
+      </div>
+    </div>
+
     <!-- ===== 시간표 ===== -->
     <div class="tab-panel" id="tab-timetable">
       <div class="section">
@@ -475,6 +505,14 @@
       </div>
 
       <div class="tab-panel active" id="subtab-general">
+        <div class="section">
+          <h3>⏸️ 대시보드 일시 정지</h3>
+          <p class="hint">켜두면 학생들이 대시보드에 접속했을 때 화면 대신 "잠시 쉬고 있어요" 안내만 보여요. 출석·퀴즈·포인트 등 모든 기록과 설정은 전혀 건드리지 않으니, 끄면 그대로 원래대로 돌아와요.</p>
+          <div class="publish-row">
+            <span>대시보드 운영</span>
+            <button class="publish-btn on" id="dashboardSuspendToggle">운영 중</button>
+          </div>
+        </div>
         <div class="section">
           <h3>🔑 관리자 비밀번호 변경</h3>
           <div class="field"><label>새 비밀번호</label><input type="password" id="newPasswordInput" placeholder="새 비밀번호 입력"></div>
@@ -805,6 +843,8 @@ async function loadNoticeForDate(date){
   document.getElementById('todoDateSub').textContent = date;
   document.getElementById('mealCacheDateSub').textContent = date;
   await refreshMealCachePreview(date);
+  await loadLunchEditor(date);
+  bindLunchControlAdminListener(date);
 }
 document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
@@ -861,6 +901,56 @@ document.getElementById('fetchMealBtn').addEventListener('click', async ()=>{
   await refreshMealCachePreview(date);
   setTimeout(()=>{ msgEl.textContent=''; }, 4000);
 });
+function mondayOfWeek(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  const day = dt.getDay(); // 0=일,1=월,...6=토
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diffToMonday);
+  return dt;
+}
+document.getElementById('fetchMealWeekBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  const msgEl = document.getElementById('mealCacheMsg');
+  msgEl.textContent = '한 주치 불러오는 중...';
+
+  const cfgSnap = await db.ref('config/neis').once('value');
+  const cfg = cfgSnap.val();
+  if(!cfg || !cfg.officeCode || !cfg.schoolCode){
+    msgEl.textContent = '⚠️ 먼저 "설정 > 급식" 탭에서 학교를 등록해주세요.';
+    return;
+  }
+  const mon = mondayOfWeek(date);
+  const fri = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+4);
+  const fromCompact = todayStr(mon).split('-').join('');
+  const toCompact = todayStr(fri).split('-').join('');
+  try{
+    const keyParam = cfg.apiKey ? `&KEY=${encodeURIComponent(cfg.apiKey)}` : '';
+    const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json${keyParam}&ATPT_OFCDC_SC_CODE=${cfg.officeCode}&SD_SCHUL_CODE=${cfg.schoolCode}&MLSV_FROM_YMD=${fromCompact}&MLSV_TO_YMD=${toCompact}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const rows = json && json.mealServiceDietInfo && json.mealServiceDietInfo[1] && json.mealServiceDietInfo[1].row;
+    const byDate = {};
+    (rows||[]).forEach(r=>{
+      byDate[r.MLSV_YMD] = r.DDISH_NM.split('<br/>').map(s=>s.replace(/\([0-9.]+\)/g,'').trim()).filter(Boolean);
+    });
+    const updates = {};
+    for(let i=0;i<5;i++){
+      const dt = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
+      const compact = todayStr(dt).split('-').join('');
+      const items = byDate[compact];
+      updates[`mealCache/${compact}`] = (items && items.length)
+        ? { items, empty:false, updatedAt: Date.now() }
+        : { items: [], empty:true, updatedAt: Date.now() };
+    }
+    await db.ref().update(updates);
+    msgEl.textContent = `이번 주 5일치 저장 완료 ✓ (${Object.keys(byDate).length}일 정보 있음)`;
+  }catch(e){
+    msgEl.textContent = '⚠️ NEIS에서 가져오지 못했어요. 이 기기의 인터넷 상태를 확인해주세요.';
+  }
+  await refreshMealCachePreview(date);
+  setTimeout(()=>{ msgEl.textContent=''; }, 5000);
+});
 document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   const morning = document.getElementById('inputMorning').value;
@@ -900,7 +990,7 @@ async function loadRecentChips(){
 /* ---- 지난 기록 (읽기+수정 이동) ---- */
 async function loadHistoryList(){
   const box = document.getElementById('historyList');
-  const snap = await db.ref('notices').orderByKey().limitToLast(60).once('value');
+  const snap = await db.ref('notices').orderByKey().limitToLast(5).once('value');
   const val = snap.val() || {};
   const dates = Object.keys(val).sort().reverse();
   if(!dates.length){ box.innerHTML = '<p class="hint">기록이 없습니다.</p>'; return; }
@@ -1269,6 +1359,77 @@ document.getElementById('luckyResetBtn').addEventListener('click', async ()=>{
   setTimeout(()=> msgEl.textContent = '', 2500);
 });
 
+/* ---- 점심 음악 ---- */
+function extractYoutubeId(url){
+  const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+async function loadLunchEditor(date){
+  const snap = await db.ref('lunchPlaylist/'+date).once('value');
+  const data = snap.val() || {};
+  const tracks = data.tracks || [];
+  document.getElementById('lunchTracksInput').value = tracks.map(t=> `https://youtu.be/${t.videoId}${t.title ? ' | '+t.title : ''}`).join('\n');
+  document.getElementById('lunchDateSub').textContent = date;
+  setLunchShowNowPlayingBtn(!!data.showNowPlaying);
+}
+document.getElementById('lunchSaveBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  const lines = document.getElementById('lunchTracksInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const tracks = [];
+  let skipped = 0;
+  lines.forEach(line=>{
+    const idx = line.indexOf('|');
+    const url = (idx===-1 ? line : line.slice(0,idx)).trim();
+    const title = (idx===-1 ? '' : line.slice(idx+1)).trim();
+    const videoId = extractYoutubeId(url);
+    if(videoId) tracks.push({ videoId, title });
+    else skipped++;
+  });
+  await db.ref('lunchPlaylist/'+date+'/tracks').set(tracks);
+  const msgEl = document.getElementById('lunchMsg');
+  msgEl.textContent = skipped ? `저장됐어요 ✓ (인식 안 된 링크 ${skipped}개는 제외됨)` : `저장됐어요 ✓ (${tracks.length}곡)`;
+  setTimeout(()=> msgEl.textContent = '', 3000);
+});
+
+let lunchShowNowPlaying = false;
+function setLunchShowNowPlayingBtn(on){
+  lunchShowNowPlaying = on;
+  const btn = document.getElementById('lunchShowNowPlayingToggle');
+  btn.textContent = on ? '공개 중' : '비공개';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+document.getElementById('lunchShowNowPlayingToggle').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  setLunchShowNowPlayingBtn(!lunchShowNowPlaying);
+  await db.ref('lunchPlaylist/'+date+'/showNowPlaying').set(lunchShowNowPlaying);
+});
+
+document.getElementById('lunchPlayBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  await db.ref('lunchControl/'+date).set({ playing:true, index:0, updatedAt: Date.now() });
+});
+document.getElementById('lunchStopBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('noticeDate').value || todayStr();
+  await db.ref('lunchControl/'+date).update({ playing:false, updatedAt: Date.now() });
+});
+
+let lunchControlListenerRef = null;
+function bindLunchControlAdminListener(date){
+  if(lunchControlListenerRef) lunchControlListenerRef.off();
+  lunchControlListenerRef = db.ref('lunchControl/'+date);
+  lunchControlListenerRef.on('value', async (snap)=>{
+    const c = snap.val() || {};
+    const trackSnap = await db.ref('lunchPlaylist/'+date+'/tracks').once('value');
+    const tracks = trackSnap.val() || [];
+    const statusEl = document.getElementById('lunchStatus');
+    if(c.playing && tracks[c.index]){
+      statusEl.textContent = `▶ 재생 중 — ${c.index+1}번째 곡: ${tracks[c.index].title || '(제목 없음)'}`;
+    } else {
+      statusEl.textContent = '⏸ 정지됨';
+    }
+  });
+}
+
 /* ---- 시간표: 요일=열, 교시=행 ---- */
 async function getWeeklyPeriods(dayKey){
   const snap = await db.ref('timetableWeekly/'+dayKey).once('value');
@@ -1595,7 +1756,20 @@ async function loadSettingsForm(){
   const cfg = snap.val();
   document.getElementById('ddayLabelInput').value = (cfg && cfg.label) || '';
   document.getElementById('ddayDateInput').value = (cfg && cfg.date) || '';
+  const suspendSnap = await db.ref('config/dashboardSuspended').once('value');
+  setDashboardSuspendBtn(!!suspendSnap.val());
 }
+let dashboardSuspended = false;
+function setDashboardSuspendBtn(suspended){
+  dashboardSuspended = suspended;
+  const btn = document.getElementById('dashboardSuspendToggle');
+  btn.textContent = suspended ? '일시 정지됨' : '운영 중';
+  btn.className = 'publish-btn ' + (suspended ? 'off' : 'on');
+}
+document.getElementById('dashboardSuspendToggle').addEventListener('click', async ()=>{
+  setDashboardSuspendBtn(!dashboardSuspended);
+  await db.ref('config/dashboardSuspended').set(dashboardSuspended);
+});
 document.getElementById('savePasswordBtn').addEventListener('click', async ()=>{
   const newPw = document.getElementById('newPasswordInput').value.trim();
   const msgEl = document.getElementById('passwordMsg');
