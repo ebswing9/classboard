@@ -98,6 +98,8 @@
   .att-cell .att-btns{ display:flex; gap:6px; }
   .att-absent-label{ color:#e0556f; font-weight:800; font-size:14px; text-align:center; padding:4px 0; }
   .att-pill{ flex:1; border:none; background:#fff; color:var(--text); padding:8px 6px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
+  .att-pill:disabled{ opacity:.45; cursor:default; }
+  .att-locked-note{ text-align:center; font-size:12.5px; color:var(--muted); font-weight:700; margin-top:12px; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
 
@@ -257,10 +259,18 @@
 </head>
 <body>
 <div id="configErrorBanner"></div>
+<!-- 점심 음악: 화면에 안 보이는 숨겨진 플레이어. #app 바깥에 둬서, 대시보드를 일시정지해서
+     #app을 숨겨도(display:none) 음악 재생/재생중 표시는 영향을 안 받도록 함.
+     관리자 페이지에서 재생/정지 명령이 오면 여기서 재생됨. -->
+<div style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden;">
+  <div id="lunchPlayer"></div>
+</div>
+<div id="lunchNowPlaying">🎵 지금 재생 중: <span id="lunchNowPlayingTitle"></span></div>
+
 <div id="suspendOverlay">
   <div class="box">
     <div class="emoji">🌙</div>
-    <div class="msg">당분간 대시보드를 운영하지 않습니다</div>
+    <div class="msg">지금은 대시보드를 잠시 쉬고 있어요</div>
   </div>
 </div>
 
@@ -344,12 +354,6 @@
 </div>
 
 <div id="pointToast"></div>
-
-<!-- 점심 음악: 화면에 안 보이는 숨겨진 플레이어. 관리자 페이지에서 재생/정지 명령이 오면 여기서 재생됨. -->
-<div style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden;">
-  <div id="lunchPlayer"></div>
-</div>
-<div id="lunchNowPlaying">🎵 지금 재생 중: <span id="lunchNowPlayingTitle"></span></div>
 
 <div id="drawOverlay">
   <div class="draw-box">
@@ -633,15 +637,16 @@ async function renderAttendancePanel(){
         ${(rec && rec.status==='out') ? `<span class="att-time">${rec.time}</span>` : ''}
       </div>
       <div class="att-btns">
-        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present">출석</button>
-        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out">조퇴</button>
+        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present" ${attendanceLocked?'disabled':''}>출석</button>
+        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out" ${attendanceLocked?'disabled':''}>조퇴</button>
       </div>
     </div>`;
-  }).join('') + '</div>';
+  }).join('') + '</div>' + (attendanceLocked ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
   box.querySelectorAll('.att-cell').forEach(cell=>{
     const id = cell.dataset.id, name = cell.dataset.name;
     cell.querySelectorAll('.att-pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
+        if(attendanceLocked) return;
         const isActive = btn.classList.contains('on-present') || btn.classList.contains('on-out');
         if(isActive){
           await db.ref(`attendance/${todayStr()}/${id}`).remove();
@@ -836,6 +841,7 @@ function playCelebrationSound(){
 
 let attFullNow = false;
 let attClapAllowed = false;
+let attendanceLocked = false;
 async function loadAttendanceWidget(){
   const widget = document.getElementById('attendanceWidget');
   const roster = await getRosterList();
@@ -1155,6 +1161,11 @@ function attachRealtimeListeners(){
   });
   db.ref('lunchControl/'+todayStr()).on('value', (snap)=>{
     applyLunchControl(snap.val() || {});
+  });
+  // 관리자가 "학생 출결 버튼 막아두기"를 켜면, 이미 출결 패널이 열려있어도 즉시 버튼이 비활성화되도록 함
+  db.ref('config/attendanceLocked').on('value', (snap)=>{
+    attendanceLocked = !!snap.val();
+    if(openPanelType === 'attendance') renderAttendancePanel();
   });
 }
 

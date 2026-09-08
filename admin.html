@@ -352,6 +352,11 @@
           <button class="publish-btn off" id="clapToggleBtn">비활성</button>
         </div>
         <div class="publish-row" style="margin-bottom:14px;">
+          <span>🔒 학생 출결 버튼 막아두기</span>
+          <button class="publish-btn off" id="attendanceLockToggle">허용 중</button>
+        </div>
+        <p class="hint" style="margin-top:-10px; margin-bottom:14px;">켜두면 대시보드에서 학생이 출석/조퇴 버튼을 눌러도 반응하지 않아요. (여기 관리자 페이지에서 체크/해제하는 건 항상 가능해요)</p>
+        <div class="publish-row" style="margin-bottom:14px;">
           <span>🍀 오늘의 행운번호</span>
           <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
         </div>
@@ -409,8 +414,15 @@
     <!-- ===== 점심 음악 ===== -->
     <div class="tab-panel" id="tab-lunch">
       <div class="section">
-        <h3>🎵 오늘의 플레이리스트 <span class="sub" id="lunchDateSub"></span></h3>
-        <p class="hint">위 "조회·종례 날짜" 기준으로 저장돼요. 한 줄에 곡 하나씩, <b>유튜브 링크 | 곡 제목</b> 형식으로 입력하세요. (제목은 안 써도 되지만, 써두면 재생 중 표시에 나와요)</p>
+        <h3>🎵 오늘의 플레이리스트</h3>
+        <div class="field"><label>날짜</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="date-nav-btn" id="lunchDatePrevBtn">‹</button>
+            <input type="date" id="lunchDate" style="flex:1;">
+            <button type="button" class="date-nav-btn" id="lunchDateNextBtn">›</button>
+          </div>
+        </div>
+        <p class="hint">한 줄에 곡 하나씩, <b>유튜브 링크 | 곡 제목</b> 형식으로 입력하세요. (제목은 안 써도 되지만, 써두면 재생 중 표시와 아래 목록에 나와요)</p>
         <div class="field"><textarea id="lunchTracksInput" placeholder="https://youtu.be/abcdefghijk | 좋은날 - 아이유&#10;https://youtu.be/1234567890a | Dynamite - BTS"></textarea></div>
         <button class="btn" id="lunchSaveBtn">플레이리스트 저장</button>
         <span class="msg" id="lunchMsg"></span>
@@ -425,12 +437,13 @@
       </div>
       <div class="section">
         <h3>▶️ 재생 조작</h3>
-        <p class="hint">재생을 누르면 목록 첫 곡부터 시작해서 순서대로 자동 재생돼요. 학생은 조작할 수 없고, 여기서만 재생·정지할 수 있어요.</p>
+        <p class="hint">"▶ 처음부터 재생"을 누르면 1번 곡부터 순서대로 자동 재생돼요. 목록에서 특정 곡의 "▶ 이 곡부터 재생"을 누르면 그 곡부터 시작해서 이후 곡들이 이어서 순서대로 재생돼요. 학생은 조작할 수 없고, 여기서만 가능해요.</p>
         <div style="display:flex; gap:8px; margin-bottom:10px;">
-          <button class="btn" id="lunchPlayBtn" style="margin:0;">▶ 재생</button>
+          <button class="btn" id="lunchPlayBtn" style="margin:0;">▶ 처음부터 재생</button>
           <button class="btn danger" id="lunchStopBtn" style="margin:0;">⏸ 정지</button>
         </div>
-        <p id="lunchStatus" style="font-weight:700; color:var(--primary-dark);">⏸ 정지됨</p>
+        <p id="lunchStatus" style="font-weight:700; color:var(--primary-dark); margin-bottom:12px;">⏸ 정지됨</p>
+        <div id="lunchTrackButtons"></div>
       </div>
     </div>
 
@@ -690,6 +703,7 @@ attachCalendarPicker('overrideDate');
 attachCalendarPicker('quizAnswerDate');
 attachCalendarPicker('ddayDateInput');
 attachCalendarPicker('attDate');
+attachCalendarPicker('lunchDate');
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -778,6 +792,9 @@ async function initAdmin(){
   await loadQuizEditor(todayStr());
   await loadQuizAnswers(todayStr());
   bindQuizAnswersListener();
+  document.getElementById('lunchDate').value = todayStr();
+  await loadLunchEditor(todayStr());
+  bindLunchControlAdminListener(todayStr());
   await loadNeisForm();
   await loadSettingsForm();
 }
@@ -843,8 +860,6 @@ async function loadNoticeForDate(date){
   document.getElementById('todoDateSub').textContent = date;
   document.getElementById('mealCacheDateSub').textContent = date;
   await refreshMealCachePreview(date);
-  await loadLunchEditor(date);
-  bindLunchControlAdminListener(date);
 }
 document.getElementById('saveTodosBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
@@ -1103,6 +1118,7 @@ document.getElementById('rosterCsvInput').addEventListener('change', async (e)=>
 /* ---- 출결 ---- */
 function currentAttDate(){ return document.getElementById('attDate').value || todayStr(); }
 let clapAllowed = false;
+let attendanceLocked = false;
 let attSortMode = 'name'; // 'name' | 'time'
 function setClapBtn(on){
   clapAllowed = on;
@@ -1110,6 +1126,16 @@ function setClapBtn(on){
   btn.textContent = on ? '허용중' : '비활성';
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
+function setAttendanceLockBtn(locked){
+  attendanceLocked = locked;
+  const btn = document.getElementById('attendanceLockToggle');
+  btn.textContent = locked ? '막아둠' : '허용 중';
+  btn.className = 'publish-btn ' + (locked ? 'off' : 'on');
+}
+document.getElementById('attendanceLockToggle').addEventListener('click', async ()=>{
+  setAttendanceLockBtn(!attendanceLocked);
+  await db.ref('config/attendanceLocked').set(attendanceLocked);
+});
 document.querySelectorAll('#attSortTabs .filter-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('#attSortTabs .filter-btn').forEach(b=>b.classList.remove('active'));
@@ -1125,6 +1151,8 @@ async function loadAttendanceTab(){
   const att = attSnap.val() || {};
   const clapSnap = await db.ref('clapAllowed/'+date).once('value');
   setClapBtn(!!clapSnap.val());
+  const lockSnap = await db.ref('config/attendanceLocked').once('value');
+  setAttendanceLockBtn(!!lockSnap.val());
   let present=0, out=0, absentCount=0;
   roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
   const unchecked = roster.length - present - out - absentCount;
@@ -1364,16 +1392,36 @@ function extractYoutubeId(url){
   const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
+function currentLunchDate(){ return document.getElementById('lunchDate').value || todayStr(); }
 async function loadLunchEditor(date){
   const snap = await db.ref('lunchPlaylist/'+date).once('value');
   const data = snap.val() || {};
   const tracks = data.tracks || [];
   document.getElementById('lunchTracksInput').value = tracks.map(t=> `https://youtu.be/${t.videoId}${t.title ? ' | '+t.title : ''}`).join('\n');
-  document.getElementById('lunchDateSub').textContent = date;
   setLunchShowNowPlayingBtn(!!data.showNowPlaying);
+  await renderLunchTrackButtons(date, tracks);
+}
+async function renderLunchTrackButtons(date, tracks){
+  const box = document.getElementById('lunchTrackButtons');
+  if(!tracks.length){ box.innerHTML = '<p class="hint">아직 저장된 곡이 없어요.</p>'; return; }
+  const ctrlSnap = await db.ref('lunchControl/'+date).once('value');
+  const c = ctrlSnap.val() || {};
+  box.innerHTML = tracks.map((t,i)=>{
+    const active = c.playing && c.index === i;
+    return `<div class="roster-row">
+      <span class="name">${active ? '▶ ' : ''}${i+1}. ${escapeHtml(t.title || '(제목 없음)')}</span>
+      <button class="btn secondary" data-play-index="${i}" style="margin:0;">▶ 이 곡부터 재생</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-play-index]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const idx = Number(btn.dataset.playIndex);
+      await db.ref('lunchControl/'+currentLunchDate()).set({ playing:true, index:idx, updatedAt: Date.now() });
+    });
+  });
 }
 document.getElementById('lunchSaveBtn').addEventListener('click', async ()=>{
-  const date = document.getElementById('noticeDate').value || todayStr();
+  const date = currentLunchDate();
   const lines = document.getElementById('lunchTracksInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
   const tracks = [];
   let skipped = 0;
@@ -1389,6 +1437,7 @@ document.getElementById('lunchSaveBtn').addEventListener('click', async ()=>{
   const msgEl = document.getElementById('lunchMsg');
   msgEl.textContent = skipped ? `저장됐어요 ✓ (인식 안 된 링크 ${skipped}개는 제외됨)` : `저장됐어요 ✓ (${tracks.length}곡)`;
   setTimeout(()=> msgEl.textContent = '', 3000);
+  await renderLunchTrackButtons(date, tracks);
 });
 
 let lunchShowNowPlaying = false;
@@ -1399,18 +1448,16 @@ function setLunchShowNowPlayingBtn(on){
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
 document.getElementById('lunchShowNowPlayingToggle').addEventListener('click', async ()=>{
-  const date = document.getElementById('noticeDate').value || todayStr();
+  const date = currentLunchDate();
   setLunchShowNowPlayingBtn(!lunchShowNowPlaying);
   await db.ref('lunchPlaylist/'+date+'/showNowPlaying').set(lunchShowNowPlaying);
 });
 
 document.getElementById('lunchPlayBtn').addEventListener('click', async ()=>{
-  const date = document.getElementById('noticeDate').value || todayStr();
-  await db.ref('lunchControl/'+date).set({ playing:true, index:0, updatedAt: Date.now() });
+  await db.ref('lunchControl/'+currentLunchDate()).set({ playing:true, index:0, updatedAt: Date.now() });
 });
 document.getElementById('lunchStopBtn').addEventListener('click', async ()=>{
-  const date = document.getElementById('noticeDate').value || todayStr();
-  await db.ref('lunchControl/'+date).update({ playing:false, updatedAt: Date.now() });
+  await db.ref('lunchControl/'+currentLunchDate()).update({ playing:false, updatedAt: Date.now() });
 });
 
 let lunchControlListenerRef = null;
@@ -1427,8 +1474,25 @@ function bindLunchControlAdminListener(date){
     } else {
       statusEl.textContent = '⏸ 정지됨';
     }
+    await renderLunchTrackButtons(date, tracks);
   });
 }
+document.getElementById('lunchDate').addEventListener('change', ()=>{
+  const date = currentLunchDate();
+  loadLunchEditor(date);
+  bindLunchControlAdminListener(date);
+});
+function shiftLunchDate(deltaDays){
+  const cur = currentLunchDate();
+  const [y,m,d] = cur.split('-').map(Number);
+  const newDate = todayStr(new Date(y, m-1, d+deltaDays));
+  if(datePickers['lunchDate']) datePickers['lunchDate'].setValue(newDate);
+  else document.getElementById('lunchDate').value = newDate;
+  loadLunchEditor(newDate);
+  bindLunchControlAdminListener(newDate);
+}
+document.getElementById('lunchDatePrevBtn').addEventListener('click', ()=> shiftLunchDate(-1));
+document.getElementById('lunchDateNextBtn').addEventListener('click', ()=> shiftLunchDate(1));
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */
 async function getWeeklyPeriods(dayKey){
