@@ -15,8 +15,7 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
 
 <style>
@@ -213,7 +212,6 @@
 
   /* 포인트 축하 토스트 */
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
-  #lunchNowPlaying{ display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); color:var(--muted); font-size:12px; font-weight:700; padding:7px 16px; border-radius:14px; box-shadow:0 4px 12px rgba(160,140,190,0.2); z-index:998; align-items:center; gap:4px; max-width:70vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
   #suspendOverlay .emoji{ font-size:56px; margin-bottom:16px; }
   #suspendOverlay .msg{ font-family:'Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
@@ -259,14 +257,6 @@
 </head>
 <body>
 <div id="configErrorBanner"></div>
-<!-- 점심 음악: 화면에 안 보이는 숨겨진 플레이어. #app 바깥에 둬서, 대시보드를 일시정지해서
-     #app을 숨겨도(display:none) 음악 재생/재생중 표시는 영향을 안 받도록 함.
-     관리자 페이지에서 재생/정지 명령이 오면 여기서 재생됨. -->
-<div style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden;">
-  <div id="lunchPlayer"></div>
-</div>
-<div id="lunchNowPlaying">🎵 지금 재생 중: <span id="lunchNowPlayingTitle"></span></div>
-
 <div id="suspendOverlay">
   <div class="box">
     <div class="emoji">🌙</div>
@@ -1052,80 +1042,6 @@ async function loadAll(){
 }
 
 /* ---------- 관리자 페이지 변경 사항을 실시간으로 반영 ---------- */
-/* ---------- 점심 음악 (관리자 페이지에서만 조작, 학생 화면엔 숨겨진 재생기) ----------
-   - 학생들이 평소에 하는 클릭(출석 체크, 퀴즈 답 고르기 등) 아무거나 한 번 있으면
-     그걸로 브라우저의 "자동재생 허락"을 몰래 받아둠 (전용 버튼 없음)
-   - 그 이후로는 관리자 페이지의 재생/정지 명령을 실시간으로 받아서 조용히 재생/정지함
-   - 한 곡이 끝나거나 재생 오류가 나면 자동으로 다음 곡으로 넘어감 */
-let ytPlayer = null;
-let ytReady = false;
-let lunchTracks = [];
-let lunchShowNowPlaying = false;
-let lunchAudioUnlocked = false;
-let lunchLastLoadedIndex = -1;
-
-function onYouTubeIframeAPIReady(){
-  ytPlayer = new YT.Player('lunchPlayer', {
-    height: '1', width: '1',
-    playerVars: { autoplay: 0, controls: 0 },
-    events: {
-      onReady: ()=>{ ytReady = true; cueLunchFirstTrackIfReady(); },
-      onStateChange: (e)=>{ if(e.data === YT.PlayerState.ENDED) advanceLunchTrack(); },
-      onError: ()=>{ advanceLunchTrack(); }
-    }
-  });
-}
-function cueLunchFirstTrackIfReady(){
-  if(ytReady && lunchTracks.length && !lunchAudioUnlocked){
-    try{ ytPlayer.cueVideoById(lunchTracks[0].videoId); }catch(e){}
-  }
-}
-function unlockLunchAudioOnce(){
-  if(lunchAudioUnlocked || !ytReady || !lunchTracks.length) return;
-  try{
-    ytPlayer.mute();
-    ytPlayer.playVideo();
-    setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch(e){} }, 300);
-    lunchAudioUnlocked = true;
-  }catch(e){}
-}
-document.addEventListener('click', unlockLunchAudioOnce);
-document.addEventListener('touchstart', unlockLunchAudioOnce);
-
-function applyLunchControl(c){
-  if(!ytReady) return;
-  if(c.playing && lunchTracks[c.index]){
-    if(lunchLastLoadedIndex !== c.index){
-      ytPlayer.loadVideoById(lunchTracks[c.index].videoId);
-      lunchLastLoadedIndex = c.index;
-    }
-    try{ ytPlayer.unMute(); ytPlayer.playVideo(); }catch(e){}
-    showNowPlayingBadge(lunchTracks[c.index].title);
-  } else {
-    try{ ytPlayer.pauseVideo(); }catch(e){}
-    hideNowPlayingBadge();
-  }
-}
-function showNowPlayingBadge(title){
-  if(!lunchShowNowPlaying){ hideNowPlayingBadge(); return; }
-  document.getElementById('lunchNowPlayingTitle').textContent = title || '음악';
-  document.getElementById('lunchNowPlaying').style.display = 'flex';
-}
-function hideNowPlayingBadge(){
-  document.getElementById('lunchNowPlaying').style.display = 'none';
-}
-async function advanceLunchTrack(){
-  const ref = db.ref('lunchControl/'+todayStr());
-  const snap = await ref.once('value');
-  const c = snap.val() || {};
-  const nextIndex = (c.index||0) + 1;
-  if(nextIndex < lunchTracks.length){
-    await ref.update({ index: nextIndex, updatedAt: Date.now() });
-  } else {
-    await ref.update({ playing: false, updatedAt: Date.now() });
-  }
-}
-
 function attachRealtimeListeners(){
   const dowKey = DAY_KEYS[new Date().getDay()];
   db.ref('config/dday').on('value', ()=> loadDday());
@@ -1150,17 +1066,6 @@ function attachRealtimeListeners(){
   db.ref('mealCache/'+todayStrCompact(new Date())).on('value', ()=>{
     mealDate = new Date();
     loadMeal({silent:true});
-  });
-  // 점심 음악: 플레이리스트/재생 조작 명령 실시간 반영
-  db.ref('lunchPlaylist/'+todayStr()).on('value', (snap)=>{
-    const data = snap.val() || {};
-    lunchTracks = data.tracks || [];
-    lunchShowNowPlaying = !!data.showNowPlaying;
-    cueLunchFirstTrackIfReady();
-    if(!lunchShowNowPlaying) hideNowPlayingBadge();
-  });
-  db.ref('lunchControl/'+todayStr()).on('value', (snap)=>{
-    applyLunchControl(snap.val() || {});
   });
   // 관리자가 "학생 출결 버튼 막아두기"를 켜면, 이미 출결 패널이 열려있어도 즉시 버튼이 비활성화되도록 함
   db.ref('config/attendanceLocked').on('value', (snap)=>{

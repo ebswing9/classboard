@@ -192,7 +192,6 @@
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="points">포인트</button>
-      <button class="tab-btn" data-tab="lunch">점심 음악</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="settings">설정</button>
@@ -408,42 +407,6 @@
         <p class="hint">모든 학생의 포인트를 0점으로 되돌리고, 상점 지급 기록도 함께 초기화해요. 되돌릴 수 없으니 신중하게 눌러주세요.</p>
         <button class="btn danger" id="pointResetBtn">전체 포인트 초기화</button>
         <span class="msg" id="pointResetMsg"></span>
-      </div>
-    </div>
-
-    <!-- ===== 점심 음악 ===== -->
-    <div class="tab-panel" id="tab-lunch">
-      <div class="section">
-        <h3>🎵 오늘의 플레이리스트</h3>
-        <div class="field"><label>날짜</label>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button type="button" class="date-nav-btn" id="lunchDatePrevBtn">‹</button>
-            <input type="date" id="lunchDate" style="flex:1;">
-            <button type="button" class="date-nav-btn" id="lunchDateNextBtn">›</button>
-          </div>
-        </div>
-        <p class="hint">한 줄에 곡 하나씩, <b>유튜브 링크 | 곡 제목</b> 형식으로 입력하세요. (제목은 안 써도 되지만, 써두면 재생 중 표시와 아래 목록에 나와요)</p>
-        <div class="field"><textarea id="lunchTracksInput" placeholder="https://youtu.be/abcdefghijk | 좋은날 - 아이유&#10;https://youtu.be/1234567890a | Dynamite - BTS"></textarea></div>
-        <button class="btn" id="lunchSaveBtn">플레이리스트 저장</button>
-        <span class="msg" id="lunchMsg"></span>
-      </div>
-      <div class="section">
-        <h3>🔊 재생 중 표시 (학생 화면)</h3>
-        <p class="hint">켜두면 대시보드 화면에 재생 중일 때만 "🎵 지금 재생 중: 곡 제목"이 작게 표시돼요. 꺼두면 대시보드엔 아무 표시도 안 남아요.</p>
-        <div class="publish-row">
-          <span>재생 중 표시</span>
-          <button class="publish-btn off" id="lunchShowNowPlayingToggle">비공개</button>
-        </div>
-      </div>
-      <div class="section">
-        <h3>▶️ 재생 조작</h3>
-        <p class="hint">"▶ 처음부터 재생"을 누르면 1번 곡부터 순서대로 자동 재생돼요. 목록에서 특정 곡의 "▶ 이 곡부터 재생"을 누르면 그 곡부터 시작해서 이후 곡들이 이어서 순서대로 재생돼요. 학생은 조작할 수 없고, 여기서만 가능해요.</p>
-        <div style="display:flex; gap:8px; margin-bottom:10px;">
-          <button class="btn" id="lunchPlayBtn" style="margin:0;">▶ 처음부터 재생</button>
-          <button class="btn danger" id="lunchStopBtn" style="margin:0;">⏸ 정지</button>
-        </div>
-        <p id="lunchStatus" style="font-weight:700; color:var(--primary-dark); margin-bottom:12px;">⏸ 정지됨</p>
-        <div id="lunchTrackButtons"></div>
       </div>
     </div>
 
@@ -698,12 +661,19 @@ async function getNoticeMarkedDates(year, month){
   Object.keys(val).forEach(function(d){ marked[d] = true; });
   return marked;
 }
+async function getQuizMarkedDates(year, month){
+  const prefix = year+'-'+String(month+1).padStart(2,'0');
+  const snap = await db.ref('quiz').orderByKey().startAt(prefix).endAt(prefix+'\uf8ff').once('value');
+  const val = snap.val() || {};
+  const marked = {};
+  Object.keys(val).forEach(function(d){ marked[d] = true; });
+  return marked;
+}
 attachCalendarPicker('noticeDate', { markedDatesFn: getNoticeMarkedDates });
 attachCalendarPicker('overrideDate');
-attachCalendarPicker('quizAnswerDate');
+attachCalendarPicker('quizAnswerDate', { markedDatesFn: getQuizMarkedDates });
 attachCalendarPicker('ddayDateInput');
 attachCalendarPicker('attDate');
-attachCalendarPicker('lunchDate');
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -792,9 +762,6 @@ async function initAdmin(){
   await loadQuizEditor(todayStr());
   await loadQuizAnswers(todayStr());
   bindQuizAnswersListener();
-  document.getElementById('lunchDate').value = todayStr();
-  await loadLunchEditor(todayStr());
-  bindLunchControlAdminListener(todayStr());
   await loadNeisForm();
   await loadSettingsForm();
 }
@@ -1386,113 +1353,6 @@ document.getElementById('luckyResetBtn').addEventListener('click', async ()=>{
   msgEl.textContent = '초기화됐어요 ✓ 대시보드에서 다시 뽑을 수 있어요.';
   setTimeout(()=> msgEl.textContent = '', 2500);
 });
-
-/* ---- 점심 음악 ---- */
-function extractYoutubeId(url){
-  const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-function currentLunchDate(){ return document.getElementById('lunchDate').value || todayStr(); }
-async function loadLunchEditor(date){
-  const snap = await db.ref('lunchPlaylist/'+date).once('value');
-  const data = snap.val() || {};
-  const tracks = data.tracks || [];
-  document.getElementById('lunchTracksInput').value = tracks.map(t=> `https://youtu.be/${t.videoId}${t.title ? ' | '+t.title : ''}`).join('\n');
-  setLunchShowNowPlayingBtn(!!data.showNowPlaying);
-  await renderLunchTrackButtons(date, tracks);
-}
-async function renderLunchTrackButtons(date, tracks){
-  const box = document.getElementById('lunchTrackButtons');
-  if(!tracks.length){ box.innerHTML = '<p class="hint">아직 저장된 곡이 없어요.</p>'; return; }
-  const ctrlSnap = await db.ref('lunchControl/'+date).once('value');
-  const c = ctrlSnap.val() || {};
-  box.innerHTML = tracks.map((t,i)=>{
-    const active = c.playing && c.index === i;
-    return `<div class="roster-row">
-      <span class="name">${active ? '▶ ' : ''}${i+1}. ${escapeHtml(t.title || '(제목 없음)')}</span>
-      <button class="btn secondary" data-play-index="${i}" style="margin:0;">▶ 이 곡부터 재생</button>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('[data-play-index]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const idx = Number(btn.dataset.playIndex);
-      await db.ref('lunchControl/'+currentLunchDate()).set({ playing:true, index:idx, updatedAt: Date.now() });
-    });
-  });
-}
-document.getElementById('lunchSaveBtn').addEventListener('click', async ()=>{
-  const date = currentLunchDate();
-  const lines = document.getElementById('lunchTracksInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  const tracks = [];
-  let skipped = 0;
-  lines.forEach(line=>{
-    const idx = line.indexOf('|');
-    const url = (idx===-1 ? line : line.slice(0,idx)).trim();
-    const title = (idx===-1 ? '' : line.slice(idx+1)).trim();
-    const videoId = extractYoutubeId(url);
-    if(videoId) tracks.push({ videoId, title });
-    else skipped++;
-  });
-  await db.ref('lunchPlaylist/'+date+'/tracks').set(tracks);
-  const msgEl = document.getElementById('lunchMsg');
-  msgEl.textContent = skipped ? `저장됐어요 ✓ (인식 안 된 링크 ${skipped}개는 제외됨)` : `저장됐어요 ✓ (${tracks.length}곡)`;
-  setTimeout(()=> msgEl.textContent = '', 3000);
-  await renderLunchTrackButtons(date, tracks);
-});
-
-let lunchShowNowPlaying = false;
-function setLunchShowNowPlayingBtn(on){
-  lunchShowNowPlaying = on;
-  const btn = document.getElementById('lunchShowNowPlayingToggle');
-  btn.textContent = on ? '공개 중' : '비공개';
-  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
-}
-document.getElementById('lunchShowNowPlayingToggle').addEventListener('click', async ()=>{
-  const date = currentLunchDate();
-  setLunchShowNowPlayingBtn(!lunchShowNowPlaying);
-  await db.ref('lunchPlaylist/'+date+'/showNowPlaying').set(lunchShowNowPlaying);
-});
-
-document.getElementById('lunchPlayBtn').addEventListener('click', async ()=>{
-  await db.ref('lunchControl/'+currentLunchDate()).set({ playing:true, index:0, updatedAt: Date.now() });
-});
-document.getElementById('lunchStopBtn').addEventListener('click', async ()=>{
-  await db.ref('lunchControl/'+currentLunchDate()).update({ playing:false, updatedAt: Date.now() });
-});
-
-let lunchControlListenerRef = null;
-function bindLunchControlAdminListener(date){
-  if(lunchControlListenerRef) lunchControlListenerRef.off();
-  lunchControlListenerRef = db.ref('lunchControl/'+date);
-  lunchControlListenerRef.on('value', async (snap)=>{
-    const c = snap.val() || {};
-    const trackSnap = await db.ref('lunchPlaylist/'+date+'/tracks').once('value');
-    const tracks = trackSnap.val() || [];
-    const statusEl = document.getElementById('lunchStatus');
-    if(c.playing && tracks[c.index]){
-      statusEl.textContent = `▶ 재생 중 — ${c.index+1}번째 곡: ${tracks[c.index].title || '(제목 없음)'}`;
-    } else {
-      statusEl.textContent = '⏸ 정지됨';
-    }
-    await renderLunchTrackButtons(date, tracks);
-  });
-}
-document.getElementById('lunchDate').addEventListener('change', ()=>{
-  const date = currentLunchDate();
-  loadLunchEditor(date);
-  bindLunchControlAdminListener(date);
-});
-function shiftLunchDate(deltaDays){
-  const cur = currentLunchDate();
-  const [y,m,d] = cur.split('-').map(Number);
-  const newDate = todayStr(new Date(y, m-1, d+deltaDays));
-  if(datePickers['lunchDate']) datePickers['lunchDate'].setValue(newDate);
-  else document.getElementById('lunchDate').value = newDate;
-  loadLunchEditor(newDate);
-  bindLunchControlAdminListener(newDate);
-}
-document.getElementById('lunchDatePrevBtn').addEventListener('click', ()=> shiftLunchDate(-1));
-document.getElementById('lunchDateNextBtn').addEventListener('click', ()=> shiftLunchDate(1));
 
 /* ---- 시간표: 요일=열, 교시=행 ---- */
 async function getWeeklyPeriods(dayKey){
