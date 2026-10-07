@@ -292,6 +292,11 @@
             <p class="hint">번호(①②③...)는 대시보드에서 자동으로 붙어요. 그냥 보기 내용만 한 줄씩 적어주세요.</p>
           </div>
           <div class="field">
+            <label>힌트/해설 (선택)</label>
+            <textarea id="quizHintInput" placeholder="문제 밑에 작은 글씨로 보여줄 힌트나 해설을 입력하세요"></textarea>
+            <p class="hint">비워두면 대시보드에 아무것도 안 나와요.</p>
+          </div>
+          <div class="field">
             <label>이미지 첨부 (선택)</label>
             <input type="file" id="quizImageFileInput" accept="image/*">
             <div id="quizImagePreviewWrap" style="display:none; margin-top:10px;">
@@ -300,6 +305,7 @@
             </div>
           </div>
           <button class="btn" id="saveQuizBtn">퀴즈 저장</button>
+          <button class="btn danger" id="deleteQuizBtn" style="margin-top:8px;">이 날짜 퀴즈 삭제</button>
           <span class="msg" id="quizMsg"></span>
         </div>
       </div>
@@ -1550,6 +1556,7 @@ async function loadQuizEditor(date){
   const data = snap.val() || {};
   document.getElementById('quizQuestionInput').value = data.question || '';
   document.getElementById('quizChoicesInput').value = Array.isArray(data.choices) ? data.choices.join('\n') : '';
+  document.getElementById('quizHintInput').value = data.hint || '';
   document.getElementById('quizPointsInput').value = (data.points === undefined || data.points === null) ? 1 : data.points;
   document.getElementById('quizEditorDateSub').textContent = date;
   setQuizImagePreview(data.imageDataUrl || null);
@@ -1564,18 +1571,30 @@ document.getElementById('saveQuizBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   const question = document.getElementById('quizQuestionInput').value.trim();
   const choices = document.getElementById('quizChoicesInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const hint = document.getElementById('quizHintInput').value.trim();
   const points = Math.max(0, parseInt(document.getElementById('quizPointsInput').value, 10) || 0);
   const msgEl = document.getElementById('quizMsg');
   if(!question){ alert('문제를 입력해주세요.'); return; }
   await db.ref('quiz/'+date).set({
     question,
     choices,
+    hint,
     points,
     imageDataUrl: quizImageDataUrl || null,
     published: quizPublished,
     updatedAt: Date.now()
   });
   msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=>msgEl.textContent='', 2000);
+});
+document.getElementById('deleteQuizBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('quizAnswerDate').value || todayStr();
+  const ok = confirm(`${date} 퀴즈를 삭제할까요?\n학생들이 제출한 답안은 그대로 남아있어요.`);
+  if(!ok) return;
+  await db.ref('quiz/'+date).remove();
+  await loadQuizEditor(date);
+  const msgEl = document.getElementById('quizMsg');
+  msgEl.textContent = '삭제됐어요 ✓';
   setTimeout(()=>msgEl.textContent='', 2000);
 });
 
