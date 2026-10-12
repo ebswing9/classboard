@@ -394,7 +394,22 @@
       </div>
       <div class="tab-panel" id="subtab-roles">
       <div class="section">
-        <h3>📋 역할 체크</h3>
+        <h3>📊 수행 현황</h3>
+        <div class="field"><label>날짜</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="date-nav-btn" id="roleDatePrevBtn">‹</button>
+            <input type="date" id="roleDate" style="flex:1;">
+            <button type="button" class="date-nav-btn" id="roleDateNextBtn">›</button>
+          </div>
+        </div>
+        <div id="roleStatusList"></div>
+      </div>
+      <div class="section">
+        <div class="collapse-header" id="roleManageCollapseHeader">
+          <h3 style="margin:0;">📋 역할 등록·관리</h3>
+          <span class="chev">▾</span>
+        </div>
+        <div class="collapse-body" id="roleManageCollapseBody">
         <p class="hint">역할을 맡은 학생만 등록하세요. 대시보드의 "📋 역할" 버튼에서 학생이 <b>완료</b>를 누르면 완료로 표시되고, 안 누르면 <b>미수행</b>으로 남아요. 역할이 하나도 없으면 대시보드에 버튼이 보이지 않아요. 같은 역할을 여러 명이 맡으면 학생별로 따로 추가해주세요.</p>
         <div class="field"><label>역할 이름</label>
           <input type="text" id="roleNameInput" placeholder="예: 칠판 지우기">
@@ -407,18 +422,9 @@
         <div class="divider"></div>
         <label style="font-size:13px; font-weight:700;">등록된 역할</label>
         <div id="roleList"></div>
-      </div>
-      <div class="section">
-        <h3>📊 수행 현황</h3>
-        <div class="field"><label>날짜</label>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button type="button" class="date-nav-btn" id="roleDatePrevBtn">‹</button>
-            <input type="date" id="roleDate" style="flex:1;">
-            <button type="button" class="date-nav-btn" id="roleDateNextBtn">›</button>
-          </div>
         </div>
-        <div id="roleStatusList"></div>
       </div>
+
     
       </div>
     </div>
@@ -733,7 +739,15 @@ attachCalendarPicker('overrideDate');
 attachCalendarPicker('quizAnswerDate', { markedDatesFn: getQuizMarkedDates });
 attachCalendarPicker('ddayDateInput');
 attachCalendarPicker('attDate');
-attachCalendarPicker('roleDate');
+async function getRoleMarkedDates(year, month){
+  const prefix = year+'-'+String(month+1).padStart(2,'0');
+  const snap = await db.ref('roleChecks').orderByKey().startAt(prefix).endAt(prefix+'\uf8ff').once('value');
+  const val = snap.val() || {};
+  const marked = {};
+  Object.keys(val).forEach(function(d){ marked[d] = true; });
+  return marked;
+}
+attachCalendarPicker('roleDate', { markedDatesFn: getRoleMarkedDates });
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -794,6 +808,10 @@ function switchSubTab(panelId, subtab){
 }
 
 /* ---- 접기/펼치기 ---- */
+document.getElementById('roleManageCollapseHeader').addEventListener('click', ()=>{
+  document.getElementById('roleManageCollapseHeader').classList.toggle('open');
+  document.getElementById('roleManageCollapseBody').classList.toggle('open');
+});
 document.getElementById('overrideCollapseHeader').addEventListener('click', ()=>{
   document.getElementById('overrideCollapseHeader').classList.toggle('open');
   document.getElementById('overrideCollapseBody').classList.toggle('open');
