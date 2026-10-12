@@ -15,7 +15,8 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
 <script src="firebase.js"></script>
 
 <style>
@@ -161,6 +162,15 @@
   #attendTile{ background:var(--mint); }
   #morningTile{ background:var(--yellow); }
   #closingTile{ background:var(--pink); }
+  #roleTile{ background:var(--lav); display:none; }
+  .role-cell{ background:var(--line); border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .role-cell .role-info{ flex:1; min-width:0; }
+  .role-cell .role-name{ font-size:16px; font-weight:800; }
+  .role-cell .role-who{ font-size:12.5px; color:var(--muted); font-weight:600; margin-top:2px; }
+  .role-btn{ border:none; background:var(--lav-deep); color:#fff; padding:9px 16px; border-radius:14px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; }
+  .role-btn:disabled{ background:var(--mint-deep); cursor:default; }
+  .role-pending{ color:#e0556f; font-size:12.5px; font-weight:800; white-space:nowrap; }
+  .role-summary{ font-size:13px; font-weight:800; color:var(--lav-deep); margin-bottom:10px; }
 
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
   .period-chip{ flex:1; min-height:0; border-radius:14px; padding:4px 12px; display:flex; align-items:center; justify-content:center; gap:9px; font-weight:700; font-size:16px; min-width:0; overflow:hidden; }
@@ -318,6 +328,7 @@
         <div class="quick-btn" id="attendTile">🙋 출결</div>
         <div class="quick-btn" id="morningTile">📣 조회</div>
         <div class="quick-btn" id="closingTile">🌇 종례</div>
+        <div class="quick-btn" id="roleTile">🧹 역할</div>
       </div>
       <div id="todoSection"></div>
     </div>
@@ -520,7 +531,7 @@ async function openPanel(type){
   openPanelType = type;
   panelRequestId++; // 새 패널 요청 시작 → 이전에 진행 중이던 렌더링은 완료돼도 화면에 반영 안 되게 함
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : 'closingTile')).classList.add('active');
+  document.getElementById(type==='attendance' ? 'attendTile' : (type==='morning' ? 'morningTile' : (type==='roles' ? 'roleTile' : 'closingTile'))).classList.add('active');
   sidePanel.classList.add('open');
   quizCardEl.classList.add('squished');
 
@@ -528,6 +539,10 @@ async function openPanel(type){
     document.getElementById('panelTitle').textContent = '🙋 출결 체크';
     document.getElementById('luckyDrawIconBtn').style.display = 'flex';
     await renderAttendancePanel();
+  } else if(type==='roles'){
+    document.getElementById('panelTitle').textContent = '🧹 역할 체크';
+    document.getElementById('luckyDrawIconBtn').style.display = 'none';
+    await renderRolesPanel();
   } else if(type==='morning'){
     document.getElementById('panelTitle').textContent = '📣 조회사항';
     document.getElementById('luckyDrawIconBtn').style.display = 'none';
@@ -542,6 +557,50 @@ async function openPanel(type){
 document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
 document.getElementById('morningTile').addEventListener('click', ()=> openPanel('morning'));
 document.getElementById('closingTile').addEventListener('click', ()=> openPanel('closing'));
+document.getElementById('roleTile').addEventListener('click', ()=> openPanel('roles'));
+
+/* ---------- 역할 체크 패널 ----------
+   roles/{id} = {name, studentId, studentName}, roleChecks/{오늘}/{id} = {time, source}
+   완료 버튼을 누른 역할만 "완료", 아니면 "미수행". 한 번 누른 완료는 학생이 취소할 수 없고 선생님만 되돌릴 수 있음. */
+let rolesExist = false;
+async function renderRolesPanel(){
+  const myRequestId = panelRequestId;
+  const [rolesSnap, checksSnap] = await Promise.all([
+    db.ref('roles').once('value'),
+    db.ref('roleChecks/'+todayStr()).once('value')
+  ]);
+  if(myRequestId !== panelRequestId) return;
+  const roles = rolesSnap.val() || {};
+  const checks = checksSnap.val() || {};
+  const box = document.getElementById('panelBody');
+  const ids = Object.keys(roles);
+  if(!ids.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 역할이 없어요.</p>'; return; }
+  const byName = (a,b)=> (roles[a].name||'').localeCompare(roles[b].name||'','ko') || (roles[a].studentName||'').localeCompare(roles[b].studentName||'','ko');
+  const pending = ids.filter(id=>!checks[id]).sort(byName);
+  const done = ids.filter(id=>checks[id]).sort((a,b)=> (checks[a].time||'').localeCompare(checks[b].time||''));
+  box.innerHTML = '<div class="role-summary">완료 '+done.length+' / '+ids.length+'</div>' + pending.concat(done).map(id=>{
+    const r = roles[id], c = checks[id];
+    return `<div class="role-cell">
+      <div class="role-info">
+        <div class="role-name">${escapeHtml(r.name||'')}</div>
+        <div class="role-who">${escapeHtml(r.studentName||'')}${c ? ' · '+escapeHtml(c.time||'') : ''}</div>
+      </div>
+      ${c ? '<button class="role-btn" disabled>완료 ✓</button>' : `<span class="role-pending">미수행</span><button class="role-btn" data-role="${id}">완료</button>`}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-role]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      btn.disabled = true;
+      await db.ref('roleChecks/'+todayStr()+'/'+btn.dataset.role).set({ time: nowHHMM(), source: 'dashboard' });
+      await renderRolesPanel();
+    });
+  });
+  checkOverflowFallback();
+}
+function updateRoleTile(){
+  document.getElementById('roleTile').style.display = rolesExist ? 'flex' : 'none';
+  if(!rolesExist && openPanelType === 'roles') closePanel();
+}
 
 /* 조회/종례: 빈 줄로 항목을 구분, 항목 안에서의 줄바꿈은 그대로 <br>로 유지 (체크박스 1개 = 빈 줄로 구분된 1개 문단) */
 function renderNoticeList(text, which){
@@ -1048,6 +1107,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos(), loadAttendanceWidget()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
+  else if(openPanelType === 'roles') await renderRolesPanel();
   else if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType);
   checkOverflowFallback();
 }
@@ -1066,6 +1126,13 @@ function attachRealtimeListeners(){
     if(openPanelType === 'attendance') await renderAttendancePanel();
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
+  // 역할이 하나라도 등록돼 있을 때만 "🧹 역할" 버튼을 보여줌
+  db.ref('roles').on('value', async (snap)=>{
+    rolesExist = !!(snap.val() && Object.keys(snap.val()).length);
+    updateRoleTile();
+    if(openPanelType === 'roles') await renderRolesPanel();
+  });
+  db.ref('roleChecks/'+todayStr()).on('value', ()=>{ if(openPanelType === 'roles') renderRolesPanel(); });
   db.ref('quiz/'+todayStr()).on('value', ()=> loadQuiz());
   db.ref('notices/'+todayStr()).on('value', async ()=>{
     if(openPanelType === 'morning' || openPanelType === 'closing') await renderNoticePanel(openPanelType, {silent:true});

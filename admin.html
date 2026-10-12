@@ -164,6 +164,21 @@
   .school-item{ padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; }
   .school-item:hover{ border-color:var(--primary-dark); background:var(--primary-soft); }
   .school-item.selected{ border-color:var(--primary-dark); background:var(--primary-soft); font-weight:700; }
+
+/* 포인트 내역 팝업 */
+#pointHistoryOverlay{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(74,68,88,.35);z-index:200;align-items:center;justify-content:center;padding:16px;}
+#pointHistoryOverlay.open{display:flex;}
+#pointHistoryBox{background:#fff;border-radius:18px;padding:18px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.2);}
+.ph-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.ph-head h3{margin:0;font-size:18px;}
+.ph-close{border:none;background:#f3eef7;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:15px;}
+.ph-total{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+.ph-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0e9f5;}
+.ph-info{flex:1;min-width:0;font-size:14px;word-break:break-all;}
+.ph-date{font-size:11px;color:var(--muted);margin-top:2px;}
+.ph-delta{font-weight:800;min-width:38px;text-align:right;}
+.ph-delta.plus{color:#e0508f;}
+.ph-delta.minus{color:#5b7fd6;}
 </style>
 </head>
 <body>
@@ -191,6 +206,7 @@
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
+      <button class="tab-btn" data-tab="roles">역할</button>
       <button class="tab-btn" data-tab="points">포인트</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
@@ -373,6 +389,35 @@
     </div>
 
     <!-- ===== 포인트 ===== -->
+    <div class="tab-panel" id="tab-roles">
+      <div class="section">
+        <h3>🧹 역할 체크</h3>
+        <p class="hint">역할을 맡은 학생만 등록하세요. 대시보드의 "🧹 역할" 버튼에서 학생이 <b>완료</b>를 누르면 완료로 표시되고, 안 누르면 <b>미수행</b>으로 남아요. 역할이 하나도 없으면 대시보드에 버튼이 보이지 않아요. 같은 역할을 여러 명이 맡으면 학생별로 따로 추가해주세요.</p>
+        <div class="field"><label>역할 이름</label>
+          <input type="text" id="roleNameInput" placeholder="예: 칠판 지우기">
+        </div>
+        <div class="field"><label>맡은 학생</label>
+          <select id="roleStudentSelect"></select>
+        </div>
+        <button class="btn" id="roleAddBtn">역할 추가</button>
+        <span class="msg" id="roleAddMsg"></span>
+        <div class="divider"></div>
+        <label style="font-size:13px; font-weight:700;">등록된 역할</label>
+        <div id="roleList"></div>
+      </div>
+      <div class="section">
+        <h3>📋 수행 현황</h3>
+        <div class="field"><label>날짜</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="date-nav-btn" id="roleDatePrevBtn">‹</button>
+            <input type="date" id="roleDate" style="flex:1;">
+            <button type="button" class="date-nav-btn" id="roleDateNextBtn">›</button>
+          </div>
+        </div>
+        <div id="roleStatusList"></div>
+      </div>
+    </div>
+
     <div class="tab-panel" id="tab-points">
       <div class="section">
         <h3>🎁 상점 대상자</h3>
@@ -536,6 +581,8 @@
   </main>
 </div>
 
+<div id="pointHistoryOverlay"><div id="pointHistoryBox"><div class="ph-head"><h3 id="pointHistoryTitle"></h3><button class="ph-close" id="pointHistoryClose">✕</button></div><div class="ph-total" id="pointHistoryTotal"></div><div id="pointHistoryList"></div></div></div>
+
 <script>
 const WEEK_KEYS = ['mon','tue','wed','thu','fri'];
 const WEEK_LABEL = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
@@ -680,6 +727,7 @@ attachCalendarPicker('overrideDate');
 attachCalendarPicker('quizAnswerDate', { markedDatesFn: getQuizMarkedDates });
 attachCalendarPicker('ddayDateInput');
 attachCalendarPicker('attDate');
+attachCalendarPicker('roleDate');
 
 const banner = document.getElementById('configErrorBanner');
 let app, db;
@@ -762,6 +810,8 @@ async function initAdmin(){
   await loadAttendanceTab();
   bindAttendanceListener();
   await loadPointsTab();
+  await loadRolesTab();
+  bindRoleListeners();
   await loadWeeklyEditor();
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
@@ -1212,6 +1262,106 @@ function bindAttendanceListener(){
   attendanceListenerRef.on('value', ()=>{ if(initedOnce) loadAttendanceTab(); });
 }
 
+/* ---- 역할 체크 ---- */
+// roles/{roleId} = { name, studentId, studentName }
+// roleChecks/{날짜}/{roleId} = { time, source }   ← 있으면 "완료", 없으면 "미수행"
+function currentRoleDate(){ return document.getElementById('roleDate').value || todayStr(); }
+async function loadRolesTab(){
+  const roster = await getRosterList();
+  const sel = document.getElementById('roleStudentSelect');
+  const prev = sel.value;
+  sel.innerHTML = roster.length
+    ? roster.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')
+    : '<option value="">(등록된 학생이 없어요)</option>';
+  if(prev && roster.some(s=>s.id===prev)) sel.value = prev;
+  await renderRoleLists();
+}
+async function renderRoleLists(){
+  const date = currentRoleDate();
+  const [rolesSnap, checksSnap] = await Promise.all([
+    db.ref('roles').once('value'),
+    db.ref('roleChecks/'+date).once('value')
+  ]);
+  const roles = rolesSnap.val() || {};
+  const checks = checksSnap.val() || {};
+  const ids = Object.keys(roles).sort((a,b)=> (roles[a].name||'').localeCompare(roles[b].name||'','ko') || (roles[a].studentName||'').localeCompare(roles[b].studentName||'','ko'));
+
+  document.getElementById('roleList').innerHTML = ids.length ? ids.map(id=>`
+    <div class="roster-row">
+      <span class="name">${escapeHtml(roles[id].name)} <span style="color:var(--muted); font-size:12px; font-weight:500;">· ${escapeHtml(roles[id].studentName||'')}</span></span>
+      <button class="btn danger" data-del-role="${id}" style="margin:0;">삭제</button>
+    </div>`).join('') : '<p class="hint">아직 등록된 역할이 없어요.</p>';
+  document.querySelectorAll('[data-del-role]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.delRole;
+      if(!confirm('이 역할을 삭제할까요?\n'+roles[id].name+' · '+(roles[id].studentName||'')+'\n(지난 수행 기록도 함께 사라져요)')) return;
+      await db.ref('roles/'+id).remove();
+      // 날짜별 완료 기록도 정리
+      const all = (await db.ref('roleChecks').once('value')).val() || {};
+      const upd = {};
+      Object.keys(all).forEach(d=>{ if(all[d] && all[d][id]) upd['roleChecks/'+d+'/'+id] = null; });
+      if(Object.keys(upd).length) await db.ref().update(upd);
+      await renderRoleLists();
+    });
+  });
+
+  const doneCount = ids.filter(id=>checks[id]).length;
+  const box = document.getElementById('roleStatusList');
+  if(!ids.length){ box.innerHTML = '<p class="hint">등록된 역할이 없어요.</p>'; return; }
+  // 미수행을 위쪽에 먼저
+  const ordered = ids.filter(id=>!checks[id]).concat(ids.filter(id=>checks[id]));
+  box.innerHTML = `<p class="hint" style="font-weight:700; color:var(--primary-dark);">완료 ${doneCount} / ${ids.length}</p>` + ordered.map(id=>{
+    const c = checks[id];
+    return `<div class="roster-row">
+      <span class="name">${escapeHtml(roles[id].name)} <span style="color:var(--muted); font-size:12px; font-weight:500;">· ${escapeHtml(roles[id].studentName||'')}</span></span>
+      <span style="font-weight:700; margin-right:8px; color:${c?'#3aa585':'#e0556f'};">${c ? '완료 '+escapeHtml(c.time||'')+(c.source==='admin'?' (선생님)':'') : '미수행'}</span>
+      <button class="btn secondary" data-toggle-role="${id}" style="margin:0;">${c ? '미수행으로' : '완료로'}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-toggle-role]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.toggleRole;
+      const ref = db.ref('roleChecks/'+date+'/'+id);
+      if(checks[id]) await ref.remove();
+      else await ref.set({ time: nowHHMM(), source: 'admin' });
+      await renderRoleLists();
+    });
+  });
+}
+document.getElementById('roleAddBtn').addEventListener('click', async ()=>{
+  const name = document.getElementById('roleNameInput').value.trim();
+  const sel = document.getElementById('roleStudentSelect');
+  const msgEl = document.getElementById('roleAddMsg');
+  if(!name){ msgEl.textContent = '역할 이름을 입력해주세요.'; return; }
+  if(!sel.value){ msgEl.textContent = '학생을 선택해주세요.'; return; }
+  const studentName = sel.options[sel.selectedIndex].textContent;
+  await db.ref('roles').push({ name: name, studentId: sel.value, studentName: studentName });
+  document.getElementById('roleNameInput').value = '';
+  msgEl.textContent = '추가됐어요 ✓';
+  setTimeout(()=> msgEl.textContent = '', 2000);
+  await renderRoleLists();
+});
+document.getElementById('roleNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('roleAddBtn').click(); });
+function shiftRoleDate(delta){
+  const cur = currentRoleDate();
+  const [y,m,d] = cur.split('-').map(Number);
+  const nd = todayStr(new Date(y, m-1, d+delta));
+  if(datePickers['roleDate']) datePickers['roleDate'].setValue(nd); else document.getElementById('roleDate').value = nd;
+  bindRoleListeners();
+  renderRoleLists();
+}
+document.getElementById('roleDatePrevBtn').addEventListener('click', ()=> shiftRoleDate(-1));
+document.getElementById('roleDateNextBtn').addEventListener('click', ()=> shiftRoleDate(1));
+document.getElementById('roleDate').addEventListener('change', ()=>{ bindRoleListeners(); renderRoleLists(); });
+// 수행 현황은 상태 표시 화면이라 실시간 반영 (역할 이름 입력칸은 건드리지 않음)
+let roleChecksRef = null;
+function bindRoleListeners(){
+  if(roleChecksRef) roleChecksRef.off();
+  roleChecksRef = db.ref('roleChecks/'+currentRoleDate());
+  roleChecksRef.on('value', ()=>{ if(initedOnce) renderRoleLists(); });
+}
+db.ref('roster').on('value', ()=>{ if(initedOnce) loadRolesTab(); });
+
 /* ---- 포인트 ---- */
 let pointSortMode = 'score';
 async function loadPointsTab(){
@@ -1264,10 +1414,13 @@ async function loadPointsTab(){
     ? allList.sort((a,b)=> a.name.localeCompare(b.name, 'ko'))
     : allList.sort((a,b)=> b.points - a.points);
   allBox.innerHTML = allSorted.length ? allSorted.map(s=>`
-    <div class="roster-row">
+    <div class="roster-row point-row-clickable" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="cursor:pointer;">
       <span class="name">${escapeHtml(s.name)}</span>
-      <span style="font-weight:700; color:var(--pink-deep);">${s.points}점</span>
+      <span style="font-weight:700; color:var(--pink-deep);">${s.points}점 <span style="color:var(--muted); font-size:12px; font-weight:500;">내역 보기 ›</span></span>
     </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
+  allBox.querySelectorAll('.point-row-clickable').forEach(row=>{
+    row.addEventListener('click', ()=> openPointHistory(row.dataset.id, row.dataset.name));
+  });
 }
 document.getElementById('pointManualSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.point-student-check').forEach(cb=> cb.checked = e.target.checked);
@@ -1319,6 +1472,98 @@ document.getElementById('pointResetBtn').addEventListener('click', async ()=>{
   msgEl.textContent = '초기화됐어요 ✓';
   setTimeout(()=> msgEl.textContent = '', 2500);
   await loadPointsTab();
+});
+
+/* ---------- 학생별 포인트 내역 / 회수 ---------- */
+let pointHistoryStudent = null;
+function fmtTimestamp(ts){
+  const d = new Date(ts);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function dateKeyToTs(dateStr){ return new Date(dateStr+'T12:00:00').getTime(); }
+function openPointHistory(id, name){
+  pointHistoryStudent = { id: id, name: name };
+  document.getElementById('pointHistoryTitle').textContent = name + ' 포인트 내역';
+  document.getElementById('pointHistoryOverlay').classList.add('open');
+  renderPointHistory();
+}
+async function renderPointHistory(){
+  if(!pointHistoryStudent) return;
+  const id = pointHistoryStudent.id;
+  const listEl = document.getElementById('pointHistoryList');
+  listEl.innerHTML = '<p class="hint">불러오는 중...</p>';
+  const [totalSnap, logSnap, qaSnap, ledSnap] = await Promise.all([
+    db.ref('points/'+id).once('value'),
+    db.ref('pointLog/'+id).once('value'),
+    db.ref('quizAnswers').once('value'),
+    db.ref('pointLedger/attendance').once('value')
+  ]);
+  if(!pointHistoryStudent || pointHistoryStudent.id !== id) return;
+  const total = totalSnap.val() || 0;
+  const events = [];
+  const log = logSnap.val() || {};
+  Object.keys(log).forEach(k=>{
+    const v = log[k];
+    events.push({ type:'manual', logId:k, delta:v.delta||0, ts:v.at||0, label:'✍️ 직접 '+((v.delta||0)>0?'지급':'차감')+' — '+(v.reason||'(사유 없음)') });
+  });
+  const qa = qaSnap.val() || {};
+  Object.keys(qa).forEach(date=>{
+    const a = qa[date] && qa[date][id];
+    if(a && a.awardedAmount){
+      events.push({ type:'quiz', date:date, delta:a.awardedAmount, ts:dateKeyToTs(date), label:'🧩 퀴즈 정답 ('+date+')' });
+    }
+  });
+  const led = ledSnap.val() || {};
+  Object.keys(led).forEach(date=>{
+    if(led[date] && led[date][id] === true){
+      events.push({ type:'attendance', date:date, delta:1, ts:dateKeyToTs(date), label:'🙋 대시보드 출석 ('+date+')' });
+    }
+  });
+  events.sort((a,b)=> b.ts - a.ts);
+  const sum = events.reduce((acc,e)=> acc + e.delta, 0);
+  let totalHtml = '현재 포인트 <b>'+total+'점</b>';
+  if(sum !== total) totalHtml += '<br>※ 아래 내역 합계('+sum+'점)와 달라요. 초기화 전 기록이나 예전 지급분이 있을 수 있어요.';
+  document.getElementById('pointHistoryTotal').innerHTML = totalHtml;
+  if(!events.length){ listEl.innerHTML = '<p class="hint">아직 포인트 내역이 없어요.</p>'; return; }
+  listEl.innerHTML = events.map((e,i)=>`
+    <div class="ph-row">
+      <div class="ph-info">${escapeHtml(e.label)}<div class="ph-date">${e.type==='manual' ? fmtTimestamp(e.ts) : ''}</div></div>
+      <div class="ph-delta ${e.delta>0?'plus':'minus'}">${e.delta>0?'+':''}${e.delta}</div>
+      <button class="btn secondary ph-revoke" data-i="${i}" style="margin:0; padding:5px 10px; font-size:12px;">${e.type==='manual'?'되돌리기':'회수'}</button>
+    </div>`).join('');
+  listEl.querySelectorAll('.ph-revoke').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const e = events[parseInt(btn.dataset.i,10)];
+      if(!confirm('이 내역을 회수할까요?\n'+e.label+'  ('+(e.delta>0?'+':'')+e.delta+'점)')) return;
+      btn.disabled = true;
+      try{ await revokePointEvent(id, e); }catch(err){ alert('회수 중 오류가 났어요. 다시 시도해주세요.'); }
+      await renderPointHistory();
+      loadPointsTab();
+    });
+  });
+}
+async function revokePointEvent(id, e){
+  if(e.type === 'manual'){
+    await awardPoints(id, -e.delta);
+    await db.ref('pointLog/'+id+'/'+e.logId).remove();
+  } else if(e.type === 'quiz'){
+    await db.ref('quizAnswers/'+e.date+'/'+id).update({ verdict: null, awardedAmount: 0 });
+    await awardPoints(id, -e.delta);
+  } else if(e.type === 'attendance'){
+    // 출석 기록의 출처를 '관리자'로 바꾸면 정산 함수가 포인트를 되돌려줌 (출석 자체는 유지)
+    await db.ref('attendance/'+e.date+'/'+id).update({ source: 'admin' });
+    await reconcileAttendancePoint(e.date, id);
+  }
+}
+document.getElementById('pointHistoryClose').addEventListener('click', ()=>{
+  document.getElementById('pointHistoryOverlay').classList.remove('open');
+  pointHistoryStudent = null;
+});
+document.getElementById('pointHistoryOverlay').addEventListener('click', (ev)=>{
+  if(ev.target.id === 'pointHistoryOverlay'){
+    document.getElementById('pointHistoryOverlay').classList.remove('open');
+    pointHistoryStudent = null;
+  }
 });
 document.getElementById('attSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
