@@ -294,7 +294,13 @@
           <span class="chev">▾</span>
         </div>
         <div class="collapse-body" id="quizEditorCollapseBody">
-          <div class="field"><label>날짜</label><input type="date" id="quizAnswerDate"></div>
+          <div class="field"><label>날짜</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="date-nav-btn" id="quizDatePrevBtn">‹</button>
+              <input type="date" id="quizAnswerDate" style="flex:1;">
+              <button type="button" class="date-nav-btn" id="quizDateNextBtn">›</button>
+            </div>
+          </div>
           <div class="field"><label>정답 시 지급 포인트</label><input type="number" id="quizPointsInput" value="1" min="0" step="1"></div>
           <div class="publish-row">
             <span>퀴즈 공개</span>
@@ -1984,6 +1990,18 @@ async function loadQuizAnswers(date){
     });
   });
 }
+function shiftQuizDate(deltaDays){
+  const cur = document.getElementById('quizAnswerDate').value || todayStr();
+  const [y,m,d] = cur.split('-').map(Number);
+  const newDate = todayStr(new Date(y, m-1, d+deltaDays));
+  if(datePickers['quizAnswerDate']) datePickers['quizAnswerDate'].setValue(newDate);
+  else document.getElementById('quizAnswerDate').value = newDate;
+  loadQuizEditor(newDate);
+  loadQuizAnswers(newDate);
+  bindQuizAnswersListener();
+}
+document.getElementById('quizDatePrevBtn').addEventListener('click', ()=> shiftQuizDate(-1));
+document.getElementById('quizDateNextBtn').addEventListener('click', ()=> shiftQuizDate(1));
 document.getElementById('quizAnswerDate').addEventListener('change', (e)=>{
   const date = e.target.value || todayStr();
   loadQuizEditor(date);
