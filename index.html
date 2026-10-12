@@ -169,6 +169,11 @@
   .role-cell .role-who{ font-size:12.5px; color:var(--muted); font-weight:600; margin-top:2px; }
   .role-btn{ border:none; background:var(--lav-deep); color:#fff; padding:9px 16px; border-radius:14px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; }
   .role-btn:disabled{ background:var(--mint-deep); cursor:default; }
+  .role-btn.na{ background:#c9c3d6; }
+  .role-btn.na:disabled{ background:#c9c3d6; }
+  .role-btns{ display:flex; gap:6px; align-items:center; }
+  .role-btns .role-pending{ margin-right:14px; }
+  .role-btns .role-btn + .role-btn{ margin-left:8px; }
   .role-pending{ color:#e0556f; font-size:12.5px; font-weight:800; white-space:nowrap; }
   .role-summary{ font-size:13px; font-weight:800; color:var(--lav-deep); margin-bottom:10px; }
 
@@ -328,7 +333,7 @@
         <div class="quick-btn" id="attendTile">🙋 출결</div>
         <div class="quick-btn" id="morningTile">📣 조회</div>
         <div class="quick-btn" id="closingTile">🌇 종례</div>
-        <div class="quick-btn" id="roleTile">🧹 역할</div>
+        <div class="quick-btn" id="roleTile">📋 역할</div>
       </div>
       <div id="todoSection"></div>
     </div>
@@ -540,7 +545,7 @@ async function openPanel(type){
     document.getElementById('luckyDrawIconBtn').style.display = 'flex';
     await renderAttendancePanel();
   } else if(type==='roles'){
-    document.getElementById('panelTitle').textContent = '🧹 역할 체크';
+    document.getElementById('panelTitle').textContent = '📋 역할 체크';
     document.getElementById('luckyDrawIconBtn').style.display = 'none';
     await renderRolesPanel();
   } else if(type==='morning'){
@@ -578,20 +583,21 @@ async function renderRolesPanel(){
   const byName = (a,b)=> (roles[a].name||'').localeCompare(roles[b].name||'','ko') || (roles[a].studentName||'').localeCompare(roles[b].studentName||'','ko');
   const pending = ids.filter(id=>!checks[id]).sort(byName);
   const done = ids.filter(id=>checks[id]).sort((a,b)=> (checks[a].time||'').localeCompare(checks[b].time||''));
-  box.innerHTML = '<div class="role-summary">완료 '+done.length+' / '+ids.length+'</div>' + pending.concat(done).map(id=>{
+  const naCount = done.filter(id=> checks[id].status === 'na').length;
+  box.innerHTML = '<div class="role-summary">완료 '+(done.length-naCount)+' · 해당없음 '+naCount+' · 미수행 '+pending.length+'</div>' + pending.concat(done).map(id=>{
     const r = roles[id], c = checks[id];
     return `<div class="role-cell">
       <div class="role-info">
         <div class="role-name">${escapeHtml(r.name||'')}</div>
         <div class="role-who">${escapeHtml(r.studentName||'')}${c ? ' · '+escapeHtml(c.time||'') : ''}</div>
       </div>
-      ${c ? '<button class="role-btn" disabled>완료 ✓</button>' : `<span class="role-pending">미수행</span><button class="role-btn" data-role="${id}">완료</button>`}
+      ${c ? (c.status==='na' ? '<button class="role-btn na" disabled>해당없음</button>' : '<button class="role-btn" disabled>완료 ✓</button>') : `<div class="role-btns"><span class="role-pending">미수행</span><button class="role-btn" data-role="${id}" data-st="done">완료</button><button class="role-btn na" data-role="${id}" data-st="na">해당없음</button></div>`}
     </div>`;
   }).join('');
   box.querySelectorAll('[data-role]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       btn.disabled = true;
-      await db.ref('roleChecks/'+todayStr()+'/'+btn.dataset.role).set({ time: nowHHMM(), source: 'dashboard' });
+      await db.ref('roleChecks/'+todayStr()+'/'+btn.dataset.role).set({ status: btn.dataset.st, time: nowHHMM(), source: 'dashboard' });
       await renderRolesPanel();
     });
   });
@@ -1126,7 +1132,7 @@ function attachRealtimeListeners(){
     if(openPanelType === 'attendance') await renderAttendancePanel();
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
-  // 역할이 하나라도 등록돼 있을 때만 "🧹 역할" 버튼을 보여줌
+  // 역할이 하나라도 등록돼 있을 때만 "📋 역할" 버튼을 보여줌
   db.ref('roles').on('value', async (snap)=>{
     rolesExist = !!(snap.val() && Object.keys(snap.val()).length);
     updateRoleTile();

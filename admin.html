@@ -206,7 +206,6 @@
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
-      <button class="tab-btn" data-tab="roles">역할</button>
       <button class="tab-btn" data-tab="points">포인트</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn" data-tab="roster">학생 명단</button>
@@ -291,7 +290,7 @@
     <div class="tab-panel" id="tab-quiz">
       <div class="section">
         <div class="collapse-header" id="quizEditorCollapseHeader">
-          <h3 style="margin:0;">🧩 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
+          <h3 style="margin:0;">📝 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
           <span class="chev">▾</span>
         </div>
         <div class="collapse-body" id="quizEditorCollapseBody">
@@ -343,6 +342,11 @@
 
     <!-- ===== 출결 ===== -->
     <div class="tab-panel" id="tab-attendance">
+      <div class="tabs subtabs">
+        <button class="tab-btn active" data-subtab="att">출결</button>
+        <button class="tab-btn" data-subtab="roles">역할</button>
+      </div>
+      <div class="tab-panel active" id="subtab-att">
       <div class="section">
         <h3>🙋 출결 체크</h3>
         <div class="field"><label>날짜</label>
@@ -386,13 +390,12 @@
         <div id="attList">불러오는 중...</div>
         <p class="hint">축하 효과음을 켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 축하 효과음을 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
       </div>
-    </div>
-
-    <!-- ===== 포인트 ===== -->
-    <div class="tab-panel" id="tab-roles">
+    
+      </div>
+      <div class="tab-panel" id="subtab-roles">
       <div class="section">
-        <h3>🧹 역할 체크</h3>
-        <p class="hint">역할을 맡은 학생만 등록하세요. 대시보드의 "🧹 역할" 버튼에서 학생이 <b>완료</b>를 누르면 완료로 표시되고, 안 누르면 <b>미수행</b>으로 남아요. 역할이 하나도 없으면 대시보드에 버튼이 보이지 않아요. 같은 역할을 여러 명이 맡으면 학생별로 따로 추가해주세요.</p>
+        <h3>📋 역할 체크</h3>
+        <p class="hint">역할을 맡은 학생만 등록하세요. 대시보드의 "📋 역할" 버튼에서 학생이 <b>완료</b>를 누르면 완료로 표시되고, 안 누르면 <b>미수행</b>으로 남아요. 역할이 하나도 없으면 대시보드에 버튼이 보이지 않아요. 같은 역할을 여러 명이 맡으면 학생별로 따로 추가해주세요.</p>
         <div class="field"><label>역할 이름</label>
           <input type="text" id="roleNameInput" placeholder="예: 칠판 지우기">
         </div>
@@ -406,7 +409,7 @@
         <div id="roleList"></div>
       </div>
       <div class="section">
-        <h3>📋 수행 현황</h3>
+        <h3>📊 수행 현황</h3>
         <div class="field"><label>날짜</label>
           <div style="display:flex; align-items:center; gap:6px;">
             <button type="button" class="date-nav-btn" id="roleDatePrevBtn">‹</button>
@@ -416,8 +419,11 @@
         </div>
         <div id="roleStatusList"></div>
       </div>
+    
+      </div>
     </div>
 
+    <!-- ===== 포인트 ===== -->
     <div class="tab-panel" id="tab-points">
       <div class="section">
         <h3>🎁 상점 대상자</h3>
@@ -1276,8 +1282,11 @@ async function loadRolesTab(){
   if(prev && roster.some(s=>s.id===prev)) sel.value = prev;
   await renderRoleLists();
 }
+let roleEditingId = null;
+let roleRosterCache = [];
 async function renderRoleLists(){
   const date = currentRoleDate();
+  roleRosterCache = await getRosterList();
   const [rolesSnap, checksSnap] = await Promise.all([
     db.ref('roles').once('value'),
     db.ref('roleChecks/'+date).once('value')
@@ -1286,11 +1295,40 @@ async function renderRoleLists(){
   const checks = checksSnap.val() || {};
   const ids = Object.keys(roles).sort((a,b)=> (roles[a].name||'').localeCompare(roles[b].name||'','ko') || (roles[a].studentName||'').localeCompare(roles[b].studentName||'','ko'));
 
+  // 수정 중에는 입력칸이 덮어써지지 않도록 역할 목록은 다시 그리지 않음
+  if(!roleEditingId || !roles[roleEditingId]){
+  roleEditingId = null;
   document.getElementById('roleList').innerHTML = ids.length ? ids.map(id=>`
     <div class="roster-row">
       <span class="name">${escapeHtml(roles[id].name)} <span style="color:var(--muted); font-size:12px; font-weight:500;">· ${escapeHtml(roles[id].studentName||'')}</span></span>
+      <button class="btn secondary" data-edit-role="${id}" style="margin:0;">수정</button>
       <button class="btn danger" data-del-role="${id}" style="margin:0;">삭제</button>
     </div>`).join('') : '<p class="hint">아직 등록된 역할이 없어요.</p>';
+  document.querySelectorAll('[data-edit-role]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.editRole;
+      roleEditingId = id;
+      const r = roles[id];
+      const row = btn.closest('.roster-row');
+      const opts = roleRosterCache.map(st=>`<option value="${st.id}" ${st.id===r.studentId?'selected':''}>${escapeHtml(st.name)}</option>`).join('');
+      row.style.flexWrap = 'wrap';
+      row.innerHTML = `
+        <input type="text" class="role-edit-name" value="${escapeHtml(r.name||'').split('"').join('&quot;')}" style="flex:1 1 140px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:14px;">
+        <select class="role-edit-student" style="flex:1 1 120px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:14px;">${opts}</select>
+        <button class="btn" data-save-role="${id}" style="margin:0;">저장</button>
+        <button class="btn secondary" data-cancel-role style="margin:0;">취소</button>`;
+      row.querySelector('[data-cancel-role]').addEventListener('click', ()=>{ roleEditingId = null; renderRoleLists(); });
+      row.querySelector('[data-save-role]').addEventListener('click', async ()=>{
+        const nm = row.querySelector('.role-edit-name').value.trim();
+        const sel = row.querySelector('.role-edit-student');
+        if(!nm){ alert('역할 이름을 입력해주세요.'); return; }
+        if(!sel.value){ alert('학생을 선택해주세요.'); return; }
+        await db.ref('roles/'+id).update({ name: nm, studentId: sel.value, studentName: sel.options[sel.selectedIndex].textContent });
+        roleEditingId = null;
+        await renderRoleLists();
+      });
+    });
+  });
   document.querySelectorAll('[data-del-role]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.delRole;
@@ -1304,26 +1342,34 @@ async function renderRoleLists(){
       await renderRoleLists();
     });
   });
+  }
 
-  const doneCount = ids.filter(id=>checks[id]).length;
+  const isNa = id => !!(checks[id] && checks[id].status === 'na');
+  const doneCount = ids.filter(id=>checks[id] && !isNa(id)).length;
+  const naCount = ids.filter(isNa).length;
   const box = document.getElementById('roleStatusList');
   if(!ids.length){ box.innerHTML = '<p class="hint">등록된 역할이 없어요.</p>'; return; }
   // 미수행을 위쪽에 먼저
   const ordered = ids.filter(id=>!checks[id]).concat(ids.filter(id=>checks[id]));
-  box.innerHTML = `<p class="hint" style="font-weight:700; color:var(--primary-dark);">완료 ${doneCount} / ${ids.length}</p>` + ordered.map(id=>{
+  box.innerHTML = `<p class="hint" style="font-weight:700; color:var(--primary-dark);">완료 ${doneCount} · 해당없음 ${naCount} · 미수행 ${ids.length-doneCount-naCount}</p>` + ordered.map(id=>{
     const c = checks[id];
     return `<div class="roster-row">
       <span class="name">${escapeHtml(roles[id].name)} <span style="color:var(--muted); font-size:12px; font-weight:500;">· ${escapeHtml(roles[id].studentName||'')}</span></span>
-      <span style="font-weight:700; margin-right:8px; color:${c?'#3aa585':'#e0556f'};">${c ? '완료 '+escapeHtml(c.time||'')+(c.source==='admin'?' (선생님)':'') : '미수행'}</span>
-      <button class="btn secondary" data-toggle-role="${id}" style="margin:0;">${c ? '미수행으로' : '완료로'}</button>
+      <span style="font-weight:700; margin-right:8px; color:${!c?'#e0556f':(isNa(id)?'#8a8399':'#3aa585')};">${!c ? '미수행' : ((isNa(id)?'해당없음 ':'완료 ')+escapeHtml(c.time||'')+(c.source==='admin'?' (선생님)':''))}</span>
+      ${c ? `<button class="btn secondary" data-toggle-role="${id}" style="margin:0;">미수행으로</button>` : `<button class="btn secondary" data-set-role="${id}" data-st="done" style="margin:0;">완료로</button><button class="btn secondary" data-set-role="${id}" data-st="na" style="margin:0;">해당없음</button>`}
     </div>`;
   }).join('');
   box.querySelectorAll('[data-toggle-role]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.toggleRole;
       const ref = db.ref('roleChecks/'+date+'/'+id);
-      if(checks[id]) await ref.remove();
-      else await ref.set({ time: nowHHMM(), source: 'admin' });
+      await ref.remove();
+      await renderRoleLists();
+    });
+  });
+  box.querySelectorAll('[data-set-role]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await db.ref('roleChecks/'+date+'/'+btn.dataset.setRole).set({ status: btn.dataset.st, time: nowHHMM(), source: 'admin' });
       await renderRoleLists();
     });
   });
@@ -1510,7 +1556,7 @@ async function renderPointHistory(){
   Object.keys(qa).forEach(date=>{
     const a = qa[date] && qa[date][id];
     if(a && a.awardedAmount){
-      events.push({ type:'quiz', date:date, delta:a.awardedAmount, ts:dateKeyToTs(date), label:'🧩 퀴즈 정답 ('+date+')' });
+      events.push({ type:'quiz', date:date, delta:a.awardedAmount, ts:dateKeyToTs(date), label:'📝 퀴즈 정답 ('+date+')' });
     }
   });
   const led = ledSnap.val() || {};
