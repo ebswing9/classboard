@@ -217,6 +217,7 @@
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="write">작성</button>
         <button class="tab-btn" data-subtab="history">지난 기록</button>
+        <button class="tab-btn" data-subtab="alert">교실 알림</button>
       </div>
 
       <div class="tab-panel active" id="subtab-write">
@@ -282,6 +283,41 @@
           <h3>지난 조회·종례 기록</h3>
           <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
           <div id="historyList">불러오는 중...</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-alert">
+        <div class="section">
+          <h3>📢 교실 알림 보내기</h3>
+          <p class="hint">보내면 교실 대시보드 화면 전체에 알림창이 떠요. (대시보드 일시 정지 중에도 보여요)</p>
+          <div class="field"><label>메시지</label>
+            <textarea id="caMessage" placeholder="예: 5분 뒤에 급식실로 이동합니다" style="min-height:80px;"></textarea>
+          </div>
+          <div class="field"><label>학생 응답 방식</label>
+            <select id="caMode">
+              <option value="none">응답 없음 (메시지만 보여주기)</option>
+              <option value="yesno">네 / 아니오 선택 (가장 먼저 답한 1명)</option>
+              <option value="draw">그려서 답 제출 (가장 먼저 제출한 1명)</option>
+            </select>
+            <p class="hint" style="margin-top:6px;">응답이 필요한 알림은 <b>첫 번째로 답한 1명</b>의 답이 도착하면 모든 화면에서 자동으로 닫혀요.</p>
+          </div>
+          <div class="field"><label>닫히는 방식</label>
+            <select id="caCloseMode">
+              <option value="manual">선생님이 "내리기"를 누를 때까지 계속</option>
+              <option value="auto">정해진 시간이 지나면 자동으로 사라짐</option>
+              <option value="tap">학생이 ✕를 눌러서 닫기</option>
+            </select>
+          </div>
+          <div class="field" id="caSecondsField" style="display:none;"><label>몇 초 동안 보여줄까요?</label>
+            <input type="number" id="caSeconds" value="30" min="3" max="3600">
+          </div>
+          <button class="btn" id="caSendBtn">📢 보내기</button>
+          <button class="btn danger" id="caStopBtn">내리기</button>
+          <span class="msg" id="caMsg"></span>
+        </div>
+        <div class="section">
+          <h3>📊 현재 알림 / 응답 현황</h3>
+          <div id="caStatus"></div>
         </div>
       </div>
     </div>
@@ -852,6 +888,7 @@ async function initAdmin(){
   await loadPointsTab();
   await loadRolesTab();
   bindRoleListeners();
+  bindClassAlertListeners();
   await loadWeeklyEditor();
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
@@ -2028,6 +2065,57 @@ function bindQuizAnswersListener(){
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   quizAnswersListenerRef = db.ref('quizAnswers/'+date);
   quizAnswersListenerRef.on('value', ()=>{ if(initedOnce) loadQuizAnswers(date); });
+}
+
+/* ---- 교실 알림 ---- */
+// classAlert = { id, message, mode:'none'|'yesno'|'draw', closeMode:'manual'|'auto'|'tap', seconds, createdAt, active,
+//               response: { name, answer:'yes'|'no' } 또는 { name, dataUrl }  ← 가장 먼저 답한 1명 }
+document.getElementById('caCloseMode').addEventListener('change', ()=>{
+  document.getElementById('caSecondsField').style.display = document.getElementById('caCloseMode').value === 'auto' ? 'block' : 'none';
+});
+document.getElementById('caSendBtn').addEventListener('click', async ()=>{
+  const message = document.getElementById('caMessage').value.trim();
+  const msgEl = document.getElementById('caMsg');
+  if(!message){ msgEl.textContent = '메시지를 입력해주세요.'; return; }
+  const mode = document.getElementById('caMode').value;
+  const closeMode = document.getElementById('caCloseMode').value;
+  let seconds = parseInt(document.getElementById('caSeconds').value, 10);
+  if(!(seconds >= 3)) seconds = 30;
+  const id = Date.now().toString(36);
+  await db.ref('classAlert').set({
+    id: id, message: message, mode: mode, closeMode: closeMode, seconds: seconds,
+    createdAt: firebase.database.ServerValue.TIMESTAMP, active: true
+  });
+  msgEl.textContent = '보냈어요 ✓';
+  setTimeout(()=> msgEl.textContent = '', 2000);
+});
+document.getElementById('caStopBtn').addEventListener('click', async ()=>{
+  await db.ref('classAlert/active').set(false);
+  document.getElementById('caMsg').textContent = '내렸어요 ✓';
+  setTimeout(()=> document.getElementById('caMsg').textContent = '', 2000);
+});
+async function renderClassAlertStatus(){
+  const box = document.getElementById('caStatus');
+  const aSnap = await db.ref('classAlert').once('value');
+  const a = aSnap.val();
+  if(!a || !a.id){ box.innerHTML = '<p class="hint">보낸 알림이 없어요.</p>'; return; }
+  const modeLabel = { none:'응답 없음', yesno:'네/아니오', draw:'그려서 답 제출' }[a.mode] || '';
+  const closeLabel = a.closeMode === 'auto' ? (a.seconds+'초 후 자동 종료') : (a.closeMode === 'tap' ? '학생이 ✕로 닫기' : '내리기 전까지 계속');
+  const state = a.response ? '✅ 답변 도착 (자동으로 닫힘)' : (a.active ? '🟢 표시 중 — 답변 기다리는 중' : '⚪ 내려간 알림');
+  let html = `<p class="hint" style="font-weight:700;">${state} · ${modeLabel} · ${closeLabel}</p>`;
+  html += `<div style="background:var(--bg); border-radius:12px; padding:12px 14px; white-space:pre-wrap; margin-bottom:12px;">${escapeHtml(a.message||'')}</div>`;
+  if(a.response){
+    const r = a.response;
+    if(a.mode === 'yesno'){
+      html += `<p style="font-size:18px; font-weight:800; color:${r.answer==='yes'?'#3aa585':'#e0556f'};">${escapeHtml(r.name||'')} : ${r.answer==='yes' ? '네' : '아니오'}</p>`;
+    } else if(a.mode === 'draw'){
+      html += `<p style="font-weight:800;">${escapeHtml(r.name||'')} 의 답</p><img src="${r.dataUrl}" style="max-width:360px; width:100%; border:1.5px solid var(--border); border-radius:8px; background:#fff;">`;
+    }
+  }
+  box.innerHTML = html;
+}
+function bindClassAlertListeners(){
+  db.ref('classAlert').on('value', ()=>{ if(initedOnce) renderClassAlertStatus(); });
 }
 
 /* ---- 설정: 비밀번호 변경 / D-Day ---- */

@@ -228,6 +228,25 @@
   .draw-btn.primary{ background:var(--sky-deep); color:#fff; flex:1; padding:8px 10px; font-size:12px; }
   .draw-done{ text-align:center; font-size:14px; font-weight:800; padding:10px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
 
+
+  /* 교실 알림 (화면 전체) */
+  #classAlertOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.55); z-index:10000; align-items:center; justify-content:center; padding:20px; }
+  #classAlertOverlay.open{ display:flex; }
+  .ca-box{ position:relative; background:linear-gradient(160deg,#fff 0%, var(--lav) 220%); border-radius:28px; padding:36px 40px; width:100%; max-width:760px; max-height:94vh; overflow-y:auto; text-align:center; box-shadow:0 20px 50px rgba(74,68,88,0.35); }
+  .ca-x{ position:absolute; top:14px; right:16px; border:none; background:var(--line); width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; display:none; }
+  .ca-icon{ font-size:44px; margin-bottom:8px; }
+  .ca-msg{ font-family:'Jua',sans-serif; font-size:38px; line-height:1.4; color:var(--text); white-space:pre-wrap; word-break:keep-all; }
+  .ca-label{ font-family:'Jua',sans-serif; font-size:20px; color:var(--lav-deep); margin:18px 0 10px; }
+  .ca-pill{ border:none; background:var(--sky); color:var(--text); padding:10px 18px; margin:4px; border-radius:16px; font-size:18px; font-weight:700; cursor:pointer; }
+  .ca-pill.done{ background:var(--line); color:var(--muted); opacity:.55; cursor:default; }
+  .ca-yn{ border:none; color:#fff; padding:18px 44px; margin:6px 10px; border-radius:22px; font-family:'Jua',sans-serif; font-size:30px; cursor:pointer; }
+  .ca-yn.yes{ background:var(--mint-deep); }
+  .ca-yn.no{ background:#e98a9c; }
+  .ca-small{ border:none; background:var(--line); color:var(--text); padding:10px 18px; margin:6px 4px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; }
+  .ca-small.primary{ background:var(--lav-deep); color:#fff; }
+  #caCanvas{ width:100%; max-width:560px; height:auto; border-radius:14px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; margin:0 auto; }
+  .ca-done{ font-family:'Jua',sans-serif; font-size:28px; color:var(--mint-deep); padding:20px 0; }
+
   /* 포인트 축하 토스트 */
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
@@ -387,6 +406,33 @@
     <div id="drawStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료 🎉</div>
     </div>
+  </div>
+</div>
+
+<div id="classAlertOverlay">
+  <div class="ca-box">
+    <button class="ca-x" id="caCloseX">✕</button>
+    <div class="ca-icon">📢</div>
+    <div class="ca-msg" id="caMsgText"></div>
+    <div id="caStepYesNo" style="display:none;">
+      <div class="ca-label">선택해주세요</div>
+      <button class="ca-yn yes" id="caYesBtn">네</button><button class="ca-yn no" id="caNoBtn">아니오</button>
+    </div>
+    <div id="caStepName" style="display:none;">
+      <div class="ca-label" id="caPickWho">내 번호를 눌러주세요</div>
+      <div id="caNameGrid"></div>
+      <div><button class="ca-small" id="caNameBackBtn">‹ 다시 선택</button></div>
+    </div>
+    <div id="caStepDraw" style="display:none;">
+      <div class="ca-label" id="caDrawWho"></div>
+      <canvas id="caCanvas" width="560" height="260"></canvas>
+      <div>
+        <button class="ca-small" id="caDrawBackBtn">‹ 다른 사람</button>
+        <button class="ca-small" id="caDrawClearBtn">지우기</button>
+        <button class="ca-small primary" id="caDrawSubmitBtn">제출</button>
+      </div>
+    </div>
+    <div id="caStepDone" style="display:none;"><div class="ca-done" id="caDoneText">🎉 제출 완료 🎉</div></div>
   </div>
 </div>
 
@@ -1139,6 +1185,136 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
   setTimeout(()=>{ drawOverlay.classList.remove('open'); }, 1300);
 });
 
+/* ---------- 교실 알림 (관리자가 보내면 화면 전체에 표시) ----------
+   classAlert = {id, message, mode, closeMode, seconds, createdAt, active, response}
+   응답이 필요한 알림은 "가장 먼저 답한 1명"의 답이 도착하면 모든 화면에서 자동으로 닫힘.
+   자동 종료 시간은 서버 시각 기준으로 계산해서, 기기마다 시계가 달라도 같은 시점에 사라짐. */
+let caServerOffset = 0;
+let caRaw = null;           // 마지막으로 받은 알림 원본
+let caCurrentId = null;     // 지금 화면에 떠 있는 알림 id
+let caTimer = null;
+let caStudent = null;       // 이름을 고른 학생
+let caChoice = null;        // 네/아니오 중 고른 것
+let caJustSubmitted = false; // 내가 방금 답을 보낸 경우(완료 문구를 잠깐 보여주기 위함)
+let caDrawing = false;
+const caCanvas = document.getElementById('caCanvas');
+const caCtx = caCanvas.getContext('2d');
+function caResetCanvas(){
+  caCtx.fillStyle = '#ffffff';
+  caCtx.fillRect(0,0,caCanvas.width,caCanvas.height);
+  caCtx.lineCap = 'round'; caCtx.lineJoin = 'round'; caCtx.lineWidth = 4; caCtx.strokeStyle = '#4a4458';
+}
+function caPos(e){
+  const r = caCanvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*(caCanvas.width/r.width), y:(e.clientY-r.top)*(caCanvas.height/r.height) };
+}
+caCanvas.addEventListener('pointerdown', (e)=>{
+  caDrawing = true;
+  try{ caCanvas.setPointerCapture(e.pointerId); }catch(err){}
+  const p = caPos(e); caCtx.beginPath(); caCtx.moveTo(p.x,p.y);
+});
+caCanvas.addEventListener('pointermove', (e)=>{
+  if(!caDrawing) return;
+  const p = caPos(e); caCtx.lineTo(p.x,p.y); caCtx.stroke();
+});
+caCanvas.addEventListener('pointerup', ()=>{ caDrawing = false; });
+caCanvas.addEventListener('pointerleave', ()=>{ caDrawing = false; });
+
+function caShowStep(name){
+  ['caStepName','caStepYesNo','caStepDraw','caStepDone'].forEach(id=>{
+    document.getElementById(id).style.display = (id === name) ? 'block' : 'none';
+  });
+}
+function caHide(){
+  document.getElementById('classAlertOverlay').classList.remove('open');
+  if(caTimer){ clearTimeout(caTimer); caTimer = null; }
+}
+function caWasDismissed(id){ try{ return sessionStorage.getItem('caDismissed') === id; }catch(e){ return false; } }
+async function caRenderNames(){
+  const roster = await getRosterList();
+  const grid = document.getElementById('caNameGrid');
+  grid.innerHTML = roster.length ? roster.map(s=>
+    `<button class="ca-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`).join('') : '';
+  grid.querySelectorAll('.ca-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      caStudent = { id: btn.dataset.id, name: btn.dataset.name };
+      if(caRaw && caRaw.mode === 'yesno'){
+        caSubmit({ answer: caChoice });          // 네/아니오를 먼저 골랐으니 이름만 고르면 끝
+      } else {
+        document.getElementById('caDrawWho').textContent = '✏️ ' + caStudent.name + ' 님';
+        caResetCanvas();
+        caShowStep('caStepDraw');
+      }
+    });
+  });
+}
+function caStartSteps(a){
+  caStudent = null; caChoice = null;
+  if(a.mode === 'yesno'){ caShowStep('caStepYesNo'); }
+  else if(a.mode === 'draw'){ caRenderNames(); caShowStep('caStepName'); }
+  else { caShowStep(''); }
+}
+function caApply(){
+  const a = caRaw;
+  if(caTimer){ clearTimeout(caTimer); caTimer = null; }
+  if(!a || !a.active || !a.id){
+    if(!caJustSubmitted) caHide();
+    caCurrentId = null;
+    return;
+  }
+  if(a.closeMode === 'auto'){
+    const remaining = (a.createdAt || 0) + (a.seconds||30)*1000 - (Date.now() + caServerOffset);
+    if(remaining <= 0){ caHide(); return; }
+    caTimer = setTimeout(caHide, remaining);
+  }
+  if(a.closeMode === 'tap' && caWasDismissed(a.id)){ caHide(); return; }
+  document.getElementById('caCloseX').style.display = (a.closeMode === 'tap') ? 'block' : 'none';
+  if(caCurrentId !== a.id){
+    caCurrentId = a.id;
+    document.getElementById('caMsgText').textContent = a.message || '';
+    caStartSteps(a);
+  }
+  document.getElementById('classAlertOverlay').classList.add('open');
+}
+async function caSubmit(payload){
+  if(!caStudent || !caRaw || !caRaw.id) return;
+  const myId = caRaw.id;
+  const resp = { name: caStudent.name, at: Date.now() };
+  for(const k in payload) resp[k] = payload[k];
+  caJustSubmitted = true;
+  let won = false;
+  try{
+    const res = await db.ref('classAlert').transaction(function(cur){
+      if(!cur || cur.id !== myId || !cur.active || cur.response) return; // 이미 누가 먼저 답했거나 내려간 알림 → 중단
+      cur.response = resp;
+      cur.active = false;
+      return cur;
+    });
+    won = !!(res && res.committed);
+  }catch(e){ won = false; }
+  document.getElementById('caDoneText').textContent = won ? '🎉 제출 완료 🎉' : '앗, 다른 친구가 먼저 답했어요';
+  caShowStep('caStepDone');
+  document.getElementById('classAlertOverlay').classList.add('open');
+  setTimeout(function(){
+    caJustSubmitted = false;
+    if(!caRaw || !caRaw.active) caHide();
+  }, 1400);
+}
+document.getElementById('caYesBtn').addEventListener('click', ()=>{ caChoice = 'yes'; document.getElementById('caPickWho').textContent = '네! 번호를 눌러주세요'; caRenderNames(); caShowStep('caStepName'); });
+document.getElementById('caNoBtn').addEventListener('click', ()=>{ caChoice = 'no'; document.getElementById('caPickWho').textContent = '아니오! 번호를 눌러주세요'; caRenderNames(); caShowStep('caStepName'); });
+document.getElementById('caNameBackBtn').addEventListener('click', ()=>{ if(caRaw) caStartSteps(caRaw); });
+document.getElementById('caDrawBackBtn').addEventListener('click', ()=>{ caStudent = null; caShowStep('caStepName'); });
+document.getElementById('caDrawClearBtn').addEventListener('click', caResetCanvas);
+document.getElementById('caDrawSubmitBtn').addEventListener('click', ()=> caSubmit({ dataUrl: caCanvas.toDataURL('image/jpeg', 0.82) }));
+document.getElementById('caCloseX').addEventListener('click', ()=>{
+  if(caRaw && caRaw.id){ try{ sessionStorage.setItem('caDismissed', caRaw.id); }catch(e){} }
+  caHide();
+});
+function attachClassAlertListener(){
+  db.ref('.info/serverTimeOffset').on('value', (snap)=>{ caServerOffset = snap.val() || 0; if(caRaw) caApply(); });
+  db.ref('classAlert').on('value', (snap)=>{ caRaw = snap.val(); caApply(); });
+}
+
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos(), loadAttendanceWidget()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
@@ -1196,6 +1372,7 @@ if(initFirebase()){
     document.getElementById('suspendOverlay').style.display = suspended ? 'flex' : 'none';
     document.getElementById('app').style.display = suspended ? 'none' : '';
   });
+  attachClassAlertListener(); // 일시 정지 중에도 알림은 보여야 하므로 다른 로딩과 무관하게 바로 연결
   loadAll().then(()=> attachRealtimeListeners());
   setInterval(()=>{ loadMeal({silent:true}); loadQuiz(); }, 5*60*1000);
 }
