@@ -425,8 +425,7 @@
       <button class="ca-yn yes" id="caYesBtn">네</button><button class="ca-yn no" id="caNoBtn">아니오</button>
     </div>
     <div id="caStepName" style="display:none;">
-      <div class="ca-label" id="caPickWho">내 번호를 눌러주세요</div>
-      <div id="caNameGrid"></div>
+      <div id="caNameGrid" style="margin-top:22px;"></div>
       <div><button class="ca-small" id="caNameBackBtn">‹ 다시 선택</button></div>
     </div>
     <div id="caStepDraw" style="display:none;">
@@ -1309,8 +1308,8 @@ async function caSubmit(payload){
     if(!caRaw || !caRaw.active) caHide();
   }, 1400);
 }
-document.getElementById('caYesBtn').addEventListener('click', ()=>{ caChoice = 'yes'; document.getElementById('caPickWho').textContent = '네! 번호를 눌러주세요'; caRenderNames(); caShowStep('caStepName'); });
-document.getElementById('caNoBtn').addEventListener('click', ()=>{ caChoice = 'no'; document.getElementById('caPickWho').textContent = '아니오! 번호를 눌러주세요'; caRenderNames(); caShowStep('caStepName'); });
+document.getElementById('caYesBtn').addEventListener('click', ()=>{ caChoice = 'yes'; caRenderNames(); caShowStep('caStepName'); });
+document.getElementById('caNoBtn').addEventListener('click', ()=>{ caChoice = 'no'; caRenderNames(); caShowStep('caStepName'); });
 document.getElementById('caNameBackBtn').addEventListener('click', ()=>{ if(caRaw) caStartSteps(caRaw); });
 document.getElementById('caDrawBackBtn').addEventListener('click', ()=>{ caStudent = null; caShowStep('caStepName'); });
 document.getElementById('caDrawClearBtn').addEventListener('click', caResetCanvas);
