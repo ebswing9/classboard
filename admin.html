@@ -573,6 +573,15 @@
           <button class="btn danger" id="clearDdayBtn">문구 지우기</button>
           <span class="msg" id="ddayMsg"></span>
         </div>
+        <div class="section">
+          <h3>🎉 깜짝 D-Day</h3>
+          <p class="hint">대시보드에서 위 D-Day 문구를 누르면 <b>4초 동안만</b> 이 문구로 바뀌었다가 원래대로 돌아와요. 평소에는 보이지 않아요. 비워두면 눌러도 아무 일도 안 일어나요.</p>
+          <div class="field"><label>문구 (예: 겨울방학까지)</label><input type="text" id="ddaySurpriseLabelInput" placeholder="겨울방학까지"></div>
+          <div class="field"><label>기준 날짜</label><input type="date" id="ddaySurpriseDateInput"></div>
+          <button class="btn" id="saveDdaySurpriseBtn">저장</button>
+          <button class="btn danger" id="clearDdaySurpriseBtn">지우기</button>
+          <span class="msg" id="ddaySurpriseMsg"></span>
+        </div>
       </div>
 
       <div class="tab-panel" id="subtab-meal">
@@ -744,6 +753,7 @@ attachCalendarPicker('noticeDate', { markedDatesFn: getNoticeMarkedDates });
 attachCalendarPicker('overrideDate');
 attachCalendarPicker('quizAnswerDate', { markedDatesFn: getQuizMarkedDates });
 attachCalendarPicker('ddayDateInput');
+attachCalendarPicker('ddaySurpriseDateInput');
 attachCalendarPicker('attDate');
 async function getRoleMarkedDates(year, month){
   const prefix = year+'-'+String(month+1).padStart(2,'0');
@@ -2026,6 +2036,11 @@ async function loadSettingsForm(){
   const cfg = snap.val();
   document.getElementById('ddayLabelInput').value = (cfg && cfg.label) || '';
   document.getElementById('ddayDateInput').value = (cfg && cfg.date) || '';
+  const sSnap = await db.ref('config/ddaySurprise').once('value');
+  const sCfg = sSnap.val();
+  document.getElementById('ddaySurpriseLabelInput').value = (sCfg && sCfg.label) || '';
+  document.getElementById('ddaySurpriseDateInput').value = (sCfg && sCfg.date) || '';
+  if(datePickers['ddaySurpriseDateInput'] && sCfg && sCfg.date) datePickers['ddaySurpriseDateInput'].setValue(sCfg.date);
   const suspendSnap = await db.ref('config/dashboardSuspended').once('value');
   setDashboardSuspendBtn(!!suspendSnap.val());
 }
@@ -2057,6 +2072,23 @@ document.getElementById('saveDdayBtn').addEventListener('click', async ()=>{
   await db.ref('config/dday').set({label, date});
   msgEl.textContent = '저장됐어요 ✓';
   setTimeout(()=>msgEl.textContent='', 2000);
+});
+document.getElementById('saveDdaySurpriseBtn').addEventListener('click', async ()=>{
+  const label = document.getElementById('ddaySurpriseLabelInput').value.trim();
+  const date = document.getElementById('ddaySurpriseDateInput').value;
+  const msgEl = document.getElementById('ddaySurpriseMsg');
+  if(!label || !date){ msgEl.textContent = '문구와 날짜를 모두 입력해주세요.'; return; }
+  await db.ref('config/ddaySurprise').set({label, date});
+  msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=>msgEl.textContent='', 2000);
+});
+document.getElementById('clearDdaySurpriseBtn').addEventListener('click', async ()=>{
+  await db.ref('config/ddaySurprise').remove();
+  document.getElementById('ddaySurpriseLabelInput').value = '';
+  if(datePickers['ddaySurpriseDateInput']) datePickers['ddaySurpriseDateInput'].setValue(todayStr());
+  else document.getElementById('ddaySurpriseDateInput').value = '';
+  document.getElementById('ddaySurpriseMsg').textContent = '지웠어요 ✓';
+  setTimeout(()=>document.getElementById('ddaySurpriseMsg').textContent='', 2000);
 });
 document.getElementById('clearDdayBtn').addEventListener('click', async ()=>{
   await db.ref('config/dday').remove();

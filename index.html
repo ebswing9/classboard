@@ -122,7 +122,7 @@
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
   #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
-  #ddayWidget{ font-family:'Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
+  #ddayWidget{ cursor:pointer; font-family:'Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
 
@@ -1006,21 +1006,37 @@ document.getElementById('mealNextBtn').addEventListener('click', ()=>{ mealDate 
 document.getElementById('mealTodayBtn').addEventListener('click', ()=>{ mealDate = new Date(); loadMeal(); });
 
 /* ---------- D-Day ---------- */
+function ddayText(cfg){
+  const target = new Date(cfg.date+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diffDays = Math.round((target - now) / 86400000);
+  if(diffDays > 0) return cfg.label+' D-'+diffDays;
+  if(diffDays === 0) return cfg.label+' D-DAY';
+  return cfg.label+' D+'+Math.abs(diffDays);
+}
+let ddaySurpriseTimer = null;
 async function loadDday(){
   const snap = await db.ref('config/dday').once('value');
   const cfg = snap.val();
   const el = document.getElementById('ddayWidget');
   if(!cfg || !cfg.date || !cfg.label){ el.style.display = 'none'; return; }
-  const target = new Date(cfg.date+'T00:00:00');
-  const now = new Date(); now.setHours(0,0,0,0);
-  const diffDays = Math.round((target - now) / 86400000);
-  let text;
-  if(diffDays > 0) text = `${cfg.label} D-${diffDays}`;
-  else if(diffDays === 0) text = `${cfg.label} D-DAY`;
-  else text = `${cfg.label} D+${Math.abs(diffDays)}`;
-  el.textContent = '💕 ' + text;
+  if(ddaySurpriseTimer) return; // 깜짝 D-day를 보여주는 중이면 끝난 뒤 원래대로 돌아가면서 갱신됨
+  el.textContent = '💕 ' + ddayText(cfg);
   el.style.display = 'inline-block';
 }
+// D-day를 누르면 4초 동안만 "깜짝 D-day"(예: 방학까지)로 바뀌었다가 원래 D-day로 돌아옴
+document.getElementById('ddayWidget').addEventListener('click', async ()=>{
+  const el = document.getElementById('ddayWidget');
+  let surprise = null;
+  try{ surprise = (await db.ref('config/ddaySurprise').once('value')).val(); }catch(e){}
+  if(!surprise || !surprise.date || !surprise.label) return;
+  if(ddaySurpriseTimer) clearTimeout(ddaySurpriseTimer);
+  el.textContent = '🎉 ' + ddayText(surprise);
+  ddaySurpriseTimer = setTimeout(()=>{
+    ddaySurpriseTimer = null;
+    loadDday();
+  }, 4000);
+});
 
 /* ---------- 그려서 답안 제출 (작은 하단 패널, 배경 안 가림) ---------- */
 const drawOverlay = document.getElementById('drawOverlay');
