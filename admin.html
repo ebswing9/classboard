@@ -297,6 +297,7 @@
             <select id="caMode">
               <option value="none">응답 없음 (메시지만 보여주기)</option>
               <option value="yesno">네 / 아니오 선택 (가장 먼저 답한 1명)</option>
+              <option value="yesonly">"네"만 누르기 (가장 먼저 누른 1명)</option>
               <option value="draw">그려서 답 제출 (가장 먼저 제출한 1명)</option>
             </select>
             <p class="hint" style="margin-top:6px;">응답이 필요한 알림은 <b>첫 번째로 답한 1명</b>의 답이 도착하면 모든 화면에서 자동으로 닫혀요.</p>
@@ -2099,14 +2100,14 @@ async function renderClassAlertStatus(){
   const aSnap = await db.ref('classAlert').once('value');
   const a = aSnap.val();
   if(!a || !a.id){ box.innerHTML = '<p class="hint">보낸 알림이 없어요.</p>'; return; }
-  const modeLabel = { none:'응답 없음', yesno:'네/아니오', draw:'그려서 답 제출' }[a.mode] || '';
+  const modeLabel = { none:'응답 없음', yesno:'네/아니오', yesonly:'"네"만 누르기', draw:'그려서 답 제출' }[a.mode] || '';
   const closeLabel = a.closeMode === 'auto' ? (a.seconds+'초 후 자동 종료') : (a.closeMode === 'tap' ? '학생이 ✕로 닫기' : '내리기 전까지 계속');
   const state = a.response ? '✅ 답변 도착 (자동으로 닫힘)' : (a.active ? '🟢 표시 중 — 답변 기다리는 중' : '⚪ 내려간 알림');
   let html = `<p class="hint" style="font-weight:700;">${state} · ${modeLabel} · ${closeLabel}</p>`;
   html += `<div style="background:var(--bg); border-radius:12px; padding:12px 14px; white-space:pre-wrap; margin-bottom:12px;">${escapeHtml(a.message||'')}</div>`;
   if(a.response){
     const r = a.response;
-    if(a.mode === 'yesno'){
+    if(a.mode === 'yesno' || a.mode === 'yesonly'){
       html += `<p style="font-size:18px; font-weight:800; color:${r.answer==='yes'?'#3aa585':'#e0556f'};">${escapeHtml(r.name||'')} : ${r.answer==='yes' ? '네' : '아니오'}</p>`;
     } else if(a.mode === 'draw'){
       html += `<p style="font-weight:800;">${escapeHtml(r.name||'')} 의 답</p><img src="${r.dataUrl}" style="max-width:360px; width:100%; border:1.5px solid var(--border); border-radius:8px; background:#fff;">`;
