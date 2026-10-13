@@ -122,7 +122,7 @@
   #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
   #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
-  #ddayWidget{ cursor:pointer; font-family:'Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
+  #ddayWidget{ cursor:pointer; transition:opacity .22s ease, transform .22s ease; -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; font-family:'Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
 
@@ -151,6 +151,7 @@
   .todo-text .todo-sub{ font-size:60%; font-weight:500; color:var(--muted); }
   .cute-checkbox.todo .box{ border-color:var(--pink-deep); }
   .cute-checkbox.todo input:checked ~ .box{ background:var(--pink-deep); }
+  #ddayWidget.swap{ opacity:0; transform:scale(.88); -webkit-transform:scale(.88); }
   .quick-btn{
     cursor:pointer; border:none; color:var(--text); padding:12px 16px; border-radius:20px;
     font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:6px;
@@ -1024,18 +1025,30 @@ async function loadDday(){
   el.textContent = '💕 ' + ddayText(cfg);
   el.style.display = 'inline-block';
 }
-// D-day를 누르면 4초 동안만 "깜짝 D-day"(예: 방학까지)로 바뀌었다가 원래 D-day로 돌아옴
-document.getElementById('ddayWidget').addEventListener('click', async ()=>{
+// D-day를 누르면 3초 동안만 "깜짝 D-day"(예: 방학까지)로 바뀌었다가 원래 D-day로 돌아옴
+// (글자가 살짝 작아지며 사라졌다가 새 글자로 부드럽게 나타나는 효과)
+function ddaySwapText(text){
   const el = document.getElementById('ddayWidget');
+  el.classList.add('swap');
+  setTimeout(function(){
+    el.textContent = text;
+    el.classList.remove('swap');
+  }, 230);
+}
+document.getElementById('ddayWidget').addEventListener('click', async ()=>{
   let surprise = null;
   try{ surprise = (await db.ref('config/ddaySurprise').once('value')).val(); }catch(e){}
   if(!surprise || !surprise.date || !surprise.label) return;
+  const wasShowing = !!ddaySurpriseTimer;
   if(ddaySurpriseTimer) clearTimeout(ddaySurpriseTimer);
-  el.textContent = '🎉 ' + ddayText(surprise);
-  ddaySurpriseTimer = setTimeout(()=>{
+  if(!wasShowing) ddaySwapText('🎉 ' + ddayText(surprise));
+  ddaySurpriseTimer = setTimeout(async ()=>{
     ddaySurpriseTimer = null;
-    loadDday();
-  }, 4000);
+    const snap = await db.ref('config/dday').once('value');
+    const cfg = snap.val();
+    if(cfg && cfg.date && cfg.label) ddaySwapText('💕 ' + ddayText(cfg));
+    else document.getElementById('ddayWidget').style.display = 'none';
+  }, 3000);
 });
 
 /* ---------- 그려서 답안 제출 (작은 하단 패널, 배경 안 가림) ---------- */
