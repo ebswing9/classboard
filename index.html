@@ -748,16 +748,16 @@ async function renderAttendancePanel(){
         ${(rec && rec.status==='out') ? `<span class="att-time">${rec.time}</span>` : ''}
       </div>
       <div class="att-btns">
-        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present" ${attendanceLocked?'disabled':''}>출석</button>
-        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out" ${attendanceLocked?'disabled':''}>조퇴</button>
+        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present" ${isAttendanceLocked()?'disabled':''}>출석</button>
+        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out" ${isAttendanceLocked()?'disabled':''}>조퇴</button>
       </div>
     </div>`;
-  }).join('') + '</div>' + (attendanceLocked ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
+  }).join('') + '</div>' + (isAttendanceLocked() ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
   box.querySelectorAll('.att-cell').forEach(cell=>{
     const id = cell.dataset.id, name = cell.dataset.name;
     cell.querySelectorAll('.att-pill').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        if(attendanceLocked) return;
+        if(isAttendanceLocked()) return;
         const isActive = btn.classList.contains('on-present') || btn.classList.contains('on-out');
         if(isActive){
           await db.ref(`attendance/${todayStr()}/${id}`).remove();
@@ -960,7 +960,8 @@ function playCelebrationSound(){
 
 let attFullNow = false;
 let attClapAllowed = false;
-let attendanceLocked = false;
+let attendanceLockedValue = null; // 막아둔 날짜(YYYY-MM-DD). 오늘 날짜와 같을 때만 막힘 → 다음날 자동 해제
+function isAttendanceLocked(){ return attendanceLockedValue === todayStr(); }
 async function loadAttendanceWidget(){
   const widget = document.getElementById('attendanceWidget');
   const roster = await getRosterList();
@@ -1367,7 +1368,7 @@ function attachRealtimeListeners(){
   });
   // 관리자가 "학생 출결 버튼 막아두기"를 켜면, 이미 출결 패널이 열려있어도 즉시 버튼이 비활성화되도록 함
   db.ref('config/attendanceLocked').on('value', (snap)=>{
-    attendanceLocked = !!snap.val();
+    attendanceLockedValue = snap.val();
     if(openPanelType === 'attendance') renderAttendancePanel();
   });
 }

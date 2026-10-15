@@ -423,7 +423,7 @@
           <span>🔒 학생 출결 버튼 막아두기</span>
           <button class="publish-btn off" id="attendanceLockToggle">허용 중</button>
         </div>
-        <p class="hint" style="margin-top:-10px; margin-bottom:14px;">켜두면 대시보드에서 학생이 출석/조퇴 버튼을 눌러도 반응하지 않아요. (여기 관리자 페이지에서 체크/해제하는 건 항상 가능해요)</p>
+        <p class="hint" style="margin-top:-10px; margin-bottom:14px;">켜두면 <b>오늘 하루만</b> 대시보드에서 학생이 출석/조퇴 버튼을 눌러도 반응하지 않아요. 다음 날이 되면 자동으로 풀려요. (여기 관리자 페이지에서 체크/해제하는 건 항상 가능해요)</p>
         <div class="publish-row" style="margin-bottom:14px;">
           <span>🍀 오늘의 행운번호</span>
           <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
@@ -1230,12 +1230,13 @@ function setClapBtn(on){
 function setAttendanceLockBtn(locked){
   attendanceLocked = locked;
   const btn = document.getElementById('attendanceLockToggle');
-  btn.textContent = locked ? '막아둠' : '허용 중';
+  btn.textContent = locked ? '오늘만 막아둠' : '허용 중';
   btn.className = 'publish-btn ' + (locked ? 'off' : 'on');
 }
 document.getElementById('attendanceLockToggle').addEventListener('click', async ()=>{
   setAttendanceLockBtn(!attendanceLocked);
-  await db.ref('config/attendanceLocked').set(attendanceLocked);
+  // 막아둔 '날짜'를 저장함 → 날짜가 바뀌면 자동으로 풀림
+  await db.ref('config/attendanceLocked').set(attendanceLocked ? todayStr() : null);
 });
 document.querySelectorAll('#attSortTabs .filter-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -1253,7 +1254,7 @@ async function loadAttendanceTab(){
   const clapSnap = await db.ref('clapAllowed/'+date).once('value');
   setClapBtn(!!clapSnap.val());
   const lockSnap = await db.ref('config/attendanceLocked').once('value');
-  setAttendanceLockBtn(!!lockSnap.val());
+  setAttendanceLockBtn(lockSnap.val() === todayStr());
   let present=0, out=0, absentCount=0;
   roster.forEach(s=>{ const st = att[s.id] && att[s.id].status; if(st==='present') present++; else if(st==='out') out++; else if(st==='absent') absentCount++; });
   const unchecked = roster.length - present - out - absentCount;
