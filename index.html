@@ -272,7 +272,8 @@
   .gm-chip.c2{ background:var(--yellow); }
   .gm-section{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin:22px 0 10px; }
   .gm-section::before{ content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--pink-deep); margin-right:8px; }
-  .gm-pill{ border:none; color:var(--text); padding:10px 18px; margin:5px; border-radius:18px; font-family:'Jua',sans-serif; font-size:17px; cursor:pointer; box-shadow:0 4px 10px rgba(160,140,190,0.2); transition:transform .12s; }
+  #gameNameGrid{ text-align:center; }
+  .gm-pill{ border:none; color:var(--text); width:116px; padding:10px 6px; margin:5px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:18px; font-family:'Jua',sans-serif; font-size:17px; cursor:pointer; box-shadow:0 4px 10px rgba(160,140,190,0.2); transition:transform .12s; }
   .gm-pill:active{ transform:scale(.94); }
   .gm-pill.p0{ background:var(--pink); }
   .gm-pill.p1{ background:var(--sky); }
@@ -280,7 +281,7 @@
   .gm-pill.p3{ background:var(--yellow); }
   .gm-pill.p4{ background:var(--lav); }
   .gm-pill.done{ background:#eceaf1; color:var(--muted); opacity:.7; cursor:default; box-shadow:none; }
-  .gm-pill small{ font-size:11px; font-weight:800; color:var(--muted); margin-left:6px; }
+  .gm-pill small{ display:block; margin:0; line-height:1.1; font-size:11px; font-weight:800; color:var(--muted); }
   .gm-rank-wrap{ display:flex; flex-wrap:wrap; margin:0 -8px; }
   .gm-rank-card{ flex:1 1 300px; margin:8px; background:#fff; border-radius:24px; padding:16px 16px 10px; box-shadow:0 6px 18px rgba(160,140,190,0.18); }
   .gm-rank-head{ display:inline-block; font-family:'Jua',sans-serif; font-size:16px; color:var(--text); margin:0 0 12px 2px; padding:5px 16px; border-radius:999px; }
