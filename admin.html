@@ -491,8 +491,12 @@
           </label>
         </div>
         <div id="pointManualStudentList" style="max-height:220px; overflow-y:auto; border:1.5px solid var(--border); border-radius:12px; padding:6px 12px; margin-bottom:12px;">불러오는 중...</div>
-        <div class="field"><label>점수 (음수 입력 시 회수)</label>
-          <input type="number" id="pointManualAmount" value="1" step="1">
+        <div class="field"><label>점수</label>
+          <div style="margin-bottom:8px;">
+            <button type="button" class="btn" id="pointModeGive" style="margin-right:6px;">＋ 지급</button>
+            <button type="button" class="btn secondary" id="pointModeTake">－ 회수</button>
+          </div>
+          <input type="number" id="pointManualAmount" value="1" min="1" step="1" inputmode="numeric">
         </div>
         <div class="field"><label>사유</label>
           <input type="text" id="pointManualReason" placeholder="예: 발표 잘함, 친구 도와줌">
@@ -672,20 +676,26 @@
           <p class="hint">정산은 날짜마다 딱 한 번만 이루어져요. "지금 정산"을 누르면 오늘 분도 바로 지급되고, 이후 오늘 기록이 바뀌어도 다시 지급되지 않아요. 지급 내역은 포인트 탭의 학생 내역에서 확인/회수할 수 있어요.</p>
         </div>
         <div class="section">
-          <h3>🏆 오늘 랭킹</h3>
+          <div class="collapse-header" id="gameFold0Header"><h3 style="margin:0;">🏆 오늘 랭킹</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold0Body">
           <div id="gameDailyList"></div>
+          </div>
         </div>
         <div class="section">
-          <h3>🏅 전체 최고 기록</h3>
+          <div class="collapse-header" id="gameFold1Header"><h3 style="margin:0;">🏅 전체 최고 기록</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold1Body">
           <div id="gameBestList"></div>
+          </div>
         </div>
         <div class="section">
-          <h3>🎮 오늘 플레이 현황</h3>
+          <div class="collapse-header" id="gameFold2Header"><h3 style="margin:0;">🎮 오늘 플레이 현황</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold2Body">
           <p class="hint">횟수를 초기화하면 그 학생이 오늘 다시 플레이할 수 있어요.</p>
           <div id="gamePlaysList"></div>
           <div class="divider"></div>
           <button class="btn danger" id="gameResetAllBtn">랭킹 전체 초기화</button>
           <span class="msg" id="gameResetMsg"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -919,6 +929,13 @@ document.getElementById('overrideCollapseHeader').addEventListener('click', ()=>
 document.getElementById('quizEditorCollapseHeader').addEventListener('click', ()=>{
   document.getElementById('quizEditorCollapseHeader').classList.toggle('open');
   document.getElementById('quizEditorCollapseBody').classList.toggle('open');
+});
+
+[0,1,2].forEach(function(i){
+  document.getElementById('gameFold'+i+'Header').addEventListener('click', ()=>{
+    document.getElementById('gameFold'+i+'Header').classList.toggle('open');
+    document.getElementById('gameFold'+i+'Body').classList.toggle('open');
+  });
 });
 
 let initedOnce = false;
@@ -1603,9 +1620,19 @@ document.querySelectorAll('#pointSortTabs .filter-btn').forEach(btn=>{
     loadPointsTab();
   });
 });
+let pointModeTake = false;
+function setPointMode(take){
+  pointModeTake = take;
+  document.getElementById('pointModeGive').className = 'btn' + (take ? ' secondary' : '');
+  document.getElementById('pointModeTake').className = 'btn' + (take ? '' : ' secondary');
+  document.getElementById('pointManualApplyBtn').textContent = take ? '선택 학생에게서 회수' : '선택 학생에게 적용';
+}
+document.getElementById('pointModeGive').addEventListener('click', ()=> setPointMode(false));
+document.getElementById('pointModeTake').addEventListener('click', ()=> setPointMode(true));
 document.getElementById('pointManualApplyBtn').addEventListener('click', async ()=>{
   const ids = [...document.querySelectorAll('.point-student-check:checked')].map(cb=>cb.dataset.id);
-  const amount = parseInt(document.getElementById('pointManualAmount').value, 10);
+  let amount = Math.abs(parseInt(document.getElementById('pointManualAmount').value, 10));
+  if(pointModeTake) amount = -amount;
   const reason = document.getElementById('pointManualReason').value.trim();
   const msgEl = document.getElementById('pointManualMsg');
   if(!ids.length){ msgEl.textContent = '학생을 한 명 이상 선택해주세요.'; return; }
