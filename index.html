@@ -302,8 +302,6 @@
   .gm-btn{ border:none; background:#fff; color:var(--text); padding:10px 20px; margin:12px 5px 0; border-radius:16px; font-family:'Jua',sans-serif; font-size:16px; cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); }
   .gm-btn.primary{ background:var(--sky-deep); color:#fff; }
   .gm-btn.pink{ background:var(--pink); }
-  #gameRankPop{ display:none; position:absolute; top:0; right:0; bottom:0; left:0; background:linear-gradient(160deg, #ffffff 0%, #fff4f9 42%, #eef6ff 100%); border-radius:30px; padding:26px 30px; overflow-y:auto; z-index:3; }
-  #gameRankPop.open{ display:block; }
   #gameToast{ position:fixed; top:40%; left:50%; transform:translate(-50%,-50%) scale(.85); background:#fff; color:var(--text); font-family:'Jua',sans-serif; font-size:30px; padding:22px 44px; border-radius:30px; box-shadow:0 18px 44px rgba(74,68,88,0.3), 0 0 0 6px rgba(255,255,255,0.7); opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease; z-index:5200; white-space:nowrap; }
   #gameToast.show{ opacity:1; transform:translate(-50%,-50%) scale(1); }
   .gm-confetti{ position:fixed; top:0; left:0; width:10px; height:10px; z-index:5300; pointer-events:none; opacity:1; transition:transform 1.5s cubic-bezier(.15,.7,.3,1), opacity 1.5s ease-in; }
@@ -492,14 +490,8 @@
       <iframe id="gameFrame" title="펭귄 러너"></iframe>
       <div id="gameControls">
         <button class="gm-btn primary" id="gameAgainBtn" style="display:none;">다시 하기</button>
-        <button class="gm-btn pink" id="gameRankBtn">🏆 랭킹</button>
         <button class="gm-btn" id="gameBackBtn">이름 선택</button>
       </div>
-    </div>
-    <div id="gameRankPop">
-      <div class="gm-title" style="margin-bottom:10px;">🏆 랭킹</div>
-      <div id="gameRankPopArea"></div>
-      <div style="text-align:center;"><button class="gm-btn primary" id="gameRankPopClose">닫기</button></div>
     </div>
   </div>
 </div>
@@ -1511,7 +1503,6 @@ async function gameRenderPick(){
 }
 async function gameOpen(){
   document.getElementById('gameOverlay').classList.add('open');
-  document.getElementById('gameRankPop').classList.remove('open');
   gameShowStep('pick');
   document.getElementById('gameNameGrid').innerHTML = '';
   try{
@@ -1528,7 +1519,6 @@ async function gameStartFor(student, left){
   gameShowStep('play');            // 시작 전에는 이름 선택/닫기 가능 (아직 횟수를 쓰지 않았으니까)
   document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님   ( ' + (gameLimit - left + 1) + ' / ' + gameLimit + ' )';
   document.getElementById('gameAgainBtn').style.display = 'none';
-  document.getElementById('gameRankPop').classList.remove('open');
   const f = document.getElementById('gameFrame');
   f.onload = function(){
     try{ f.contentWindow.postMessage({ type:'init', hi: best }, '*'); f.contentWindow.focus(); }catch(e){}
@@ -1589,15 +1579,9 @@ document.getElementById('gameAgainBtn').addEventListener('click', ()=>{
 document.getElementById('gameBackBtn').addEventListener('click', async ()=>{
   document.getElementById('gameFrame').src = 'about:blank';
   gameStudent = null; gameStarted = false;
-  document.getElementById('gameRankPop').classList.remove('open');
   gameShowStep('pick');
   await gameRenderPick();
 });
-document.getElementById('gameRankBtn').addEventListener('click', async ()=>{
-  document.getElementById('gameRankPop').classList.add('open');
-  await gameRenderRank('gameRankPopArea');
-});
-document.getElementById('gameRankPopClose').addEventListener('click', ()=> document.getElementById('gameRankPop').classList.remove('open'));
 
 // 지난 날짜의 게임 상위 기록에 포인트를 지급 (날짜마다 딱 한 번만, 먼저 도착한 화면이 처리)
 async function settleGameRewards(includeToday){
