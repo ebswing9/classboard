@@ -584,6 +584,7 @@
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="general">일반</button>
         <button class="tab-btn" data-subtab="meal">급식</button>
+        <button class="tab-btn" data-subtab="game">게임</button>
       </div>
 
       <div class="tab-panel active" id="subtab-general">
@@ -639,6 +640,52 @@
           <button class="btn" id="saveNeisBtn">이 학교로 저장</button>
           <span class="msg" id="neisMsg"></span>
           <p class="hint" style="margin-top:14px;">⚠️ 특정 기기(전자칠판 등)에서만 급식이 안 보인다면, 그 기기의 인터넷/방화벽이 open.neis.go.kr 접속을 막고 있을 가능성이 높아요. "조회·종례" 탭의 <b>급식 미리 저장</b> 버튼을 매일 눌러주시면, 그 기기는 NEIS에 직접 접속하지 않고 저장된 내용만 읽어오기 때문에 이 문제를 피할 수 있어요.</p>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-game">
+        <div class="section">
+          <h3>🐧 펭귄 게임 설정</h3>
+          <div class="publish-row" style="margin-bottom:14px;">
+            <span>대시보드에 게임 버튼 보이기</span>
+            <button class="publish-btn off" id="gameEnabledToggle">꺼짐</button>
+          </div>
+          <p class="hint" style="margin-top:-6px;">켜면 대시보드 "출결" 패널의 🍀 옆에 🐧 버튼이 나타나요. 꺼두면 학생 화면에는 아무것도 안 보여요.</p>
+          <div class="field"><label>이름당 하루 플레이 횟수</label>
+            <input type="number" id="gameLimitInput" min="1" max="20" value="1">
+          </div>
+          <div class="field"><label>포인트 지급 방식</label>
+            <select id="gameRewardMode">
+              <option value="daily-top">매일 상위 기록자에게 지급 (다음 날 자동 정산)</option>
+              <option value="off">지급 안 함 (기록만 남김)</option>
+            </select>
+          </div>
+          <div class="field"><label>상위 몇 명에게? (동점이면 같이 지급)</label>
+            <input type="number" id="gameRewardTopN" min="1" max="10" value="1">
+          </div>
+          <div class="field"><label>지급 포인트</label>
+            <input type="number" id="gameRewardPoints" min="0" max="100" value="1">
+          </div>
+          <button class="btn" id="gameSaveBtn">저장</button>
+          <button class="btn secondary" id="gameSettleBtn">오늘 상위 기록 지금 정산</button>
+          <span class="msg" id="gameMsg"></span>
+          <p class="hint">정산은 날짜마다 딱 한 번만 이루어져요. "지금 정산"을 누르면 오늘 분도 바로 지급되고, 이후 오늘 기록이 바뀌어도 다시 지급되지 않아요. 지급 내역은 포인트 탭의 학생 내역에서 확인/회수할 수 있어요.</p>
+        </div>
+        <div class="section">
+          <h3>🏆 오늘 랭킹</h3>
+          <div id="gameDailyList"></div>
+        </div>
+        <div class="section">
+          <h3>🏅 전체 최고 기록</h3>
+          <div id="gameBestList"></div>
+        </div>
+        <div class="section">
+          <h3>🎮 오늘 플레이 현황</h3>
+          <p class="hint">횟수를 초기화하면 그 학생이 오늘 다시 플레이할 수 있어요.</p>
+          <div id="gamePlaysList"></div>
+          <div class="divider"></div>
+          <button class="btn danger" id="gameResetAllBtn">랭킹 전체 초기화</button>
+          <span class="msg" id="gameResetMsg"></span>
         </div>
       </div>
     </div>
@@ -890,6 +937,10 @@ async function initAdmin(){
   await loadRolesTab();
   bindRoleListeners();
   bindClassAlertListeners();
+  await loadGameSettings();
+  await renderGameAdmin();
+  bindGameListeners();
+  settleGameRewards(false);
   await loadWeeklyEditor();
   await loadOverrideEditor();
   document.getElementById('quizAnswerDate').value = todayStr();
@@ -2118,6 +2169,140 @@ async function renderClassAlertStatus(){
 }
 function bindClassAlertListeners(){
   db.ref('classAlert').on('value', ()=>{ if(initedOnce) renderClassAlertStatus(); });
+}
+
+/* ---- 펭귄 게임 ---- */
+// config/gameEnabled(true/false), config/gameDailyLimit, config/gameReward {mode, topN, points}
+// gamePlays/{날짜}/{학생id}=횟수, gameDaily/{날짜}/{학생id}={name,score}, gameBest/{학생id}={name,score,date}, gameRewarded/{날짜}
+let gameEnabledNow = false;
+function setGameEnabledBtn(on){
+  gameEnabledNow = on;
+  const btn = document.getElementById('gameEnabledToggle');
+  btn.textContent = on ? '켜짐' : '꺼짐';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+async function loadGameSettings(){
+  const [en, lim, rw] = await Promise.all([
+    db.ref('config/gameEnabled').once('value'),
+    db.ref('config/gameDailyLimit').once('value'),
+    db.ref('config/gameReward').once('value')
+  ]);
+  setGameEnabledBtn(en.val() === true);
+  document.getElementById('gameLimitInput').value = parseInt(lim.val(),10) || 1;
+  const cfg = rw.val() || { mode:'daily-top', topN:1, points:1 };
+  document.getElementById('gameRewardMode').value = cfg.mode || 'daily-top';
+  document.getElementById('gameRewardTopN').value = cfg.topN || 1;
+  document.getElementById('gameRewardPoints').value = (cfg.points === 0 || cfg.points) ? cfg.points : 1;
+}
+document.getElementById('gameEnabledToggle').addEventListener('click', async ()=>{
+  setGameEnabledBtn(!gameEnabledNow);
+  await db.ref('config/gameEnabled').set(gameEnabledNow);
+});
+document.getElementById('gameSaveBtn').addEventListener('click', async ()=>{
+  let limit = parseInt(document.getElementById('gameLimitInput').value, 10);
+  if(!(limit >= 1)) limit = 1;
+  let topN = parseInt(document.getElementById('gameRewardTopN').value, 10);
+  if(!(topN >= 1)) topN = 1;
+  let points = parseInt(document.getElementById('gameRewardPoints').value, 10);
+  if(!(points >= 0)) points = 0;
+  await db.ref('config/gameDailyLimit').set(limit);
+  await db.ref('config/gameReward').set({ mode: document.getElementById('gameRewardMode').value, topN: topN, points: points });
+  const msgEl = document.getElementById('gameMsg');
+  msgEl.textContent = '저장됐어요 ✓';
+  setTimeout(()=> msgEl.textContent = '', 2000);
+  renderGameAdmin();
+});
+// 지난 날짜(또는 includeToday면 오늘 포함)의 게임 상위 기록에 포인트 지급. 날짜마다 한 번만(gameRewarded 표시).
+async function settleGameRewards(includeToday){
+  try{
+    const cfg = (await db.ref('config/gameReward').once('value')).val() || { mode:'daily-top', topN:1, points:1 };
+    if(cfg.mode !== 'daily-top') return 0;
+    const daily = (await db.ref('gameDaily').once('value')).val() || {};
+    const today = todayStr();
+    const dates = Object.keys(daily).filter(d=> d < today || (includeToday && d === today)).sort();
+    let settled = 0;
+    for(let i=0;i<dates.length;i++){
+      const d = dates[i];
+      const claim = await db.ref('gameRewarded/'+d).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
+      if(!claim.committed) continue;
+      const rows = Object.keys(daily[d]).map(id=> ({ id:id, name:daily[d][id].name, score:daily[d][id].score })).filter(r=> r.score > 0).sort((a,b)=> b.score - a.score);
+      if(!rows.length) continue;
+      const n = Math.max(1, parseInt(cfg.topN,10) || 1), pts = parseInt(cfg.points,10) || 0;
+      const cutoff = rows[Math.min(n, rows.length) - 1].score;
+      const winners = rows.filter(r=> r.score >= cutoff);
+      if(pts !== 0){
+        for(let k=0;k<winners.length;k++){
+          await awardPoints(winners[k].id, pts);
+          await db.ref('pointLog/'+winners[k].id).push({ delta: pts, reason: '🐧 펭귄 게임 ' + d + ' 상위 기록', at: Date.now() });
+        }
+      }
+      await db.ref('gameRewarded/'+d).update({ winners: winners.map(w=> w.name) });
+      settled++;
+    }
+    return settled;
+  }catch(e){ return 0; }
+}
+document.getElementById('gameSettleBtn').addEventListener('click', async ()=>{
+  const msgEl = document.getElementById('gameMsg');
+  const cfgMode = document.getElementById('gameRewardMode').value;
+  if(cfgMode !== 'daily-top'){ msgEl.textContent = '지급 방식이 "지급 안 함"이에요.'; return; }
+  const n = await settleGameRewards(true);
+  msgEl.textContent = n ? ('정산했어요 ✓ ('+n+'일치)') : '정산할 새 기록이 없어요.';
+  setTimeout(()=> msgEl.textContent = '', 3000);
+});
+async function renderGameAdmin(){
+  const today = todayStr();
+  const [dailySnap, bestSnap, playsSnap, limSnap, roster, rewardedSnap] = await Promise.all([
+    db.ref('gameDaily/'+today).once('value'),
+    db.ref('gameBest').once('value'),
+    db.ref('gamePlays/'+today).once('value'),
+    db.ref('config/gameDailyLimit').once('value'),
+    getRosterList(),
+    db.ref('gameRewarded/'+today).once('value')
+  ]);
+  const daily = dailySnap.val() || {}, best = bestSnap.val() || {}, plays = playsSnap.val() || {};
+  const limit = parseInt(limSnap.val(),10) || 1;
+  const row = (rank, name, score, delAttr)=>`
+    <div class="roster-row">
+      <span class="name">${rank}위 · ${escapeHtml(name||'')}</span>
+      <span style="font-weight:700; margin-right:8px;">${score}점</span>
+      <button class="btn danger" ${delAttr} style="margin:0;">삭제</button>
+    </div>`;
+  const dRows = Object.keys(daily).map(id=>({id:id, name:daily[id].name, score:daily[id].score})).sort((a,b)=> b.score - a.score).slice(0,10);
+  document.getElementById('gameDailyList').innerHTML = (rewardedSnap.val() ? '<p class="hint">✅ 오늘 분은 이미 정산됐어요.</p>' : '') +
+    (dRows.length ? dRows.map((r,i)=> row(i+1, r.name, r.score, 'data-del-daily="'+r.id+'"')).join('') : '<p class="hint">오늘 기록이 아직 없어요.</p>');
+  const bRows = Object.keys(best).map(id=>({id:id, name:best[id].name, score:best[id].score})).sort((a,b)=> b.score - a.score).slice(0,10);
+  document.getElementById('gameBestList').innerHTML = bRows.length ? bRows.map((r,i)=> row(i+1, r.name, r.score, 'data-del-best="'+r.id+'"')).join('') : '<p class="hint">기록이 아직 없어요.</p>';
+  document.getElementById('gamePlaysList').innerHTML = roster.length ? roster.map(s=>`
+    <div class="roster-row">
+      <span class="name">${escapeHtml(s.name)}</span>
+      <span style="font-weight:700; margin-right:8px; color:${(plays[s.id]||0)>=limit?'#e0556f':'var(--muted)'};">${plays[s.id]||0} / ${limit}</span>
+      <button class="btn secondary" data-reset-plays="${s.id}" style="margin:0;">초기화</button>
+    </div>`).join('') : '<p class="hint">등록된 학생이 없어요.</p>';
+  document.querySelectorAll('[data-del-daily]').forEach(b=> b.addEventListener('click', async ()=>{
+    if(!confirm('오늘 랭킹에서 이 기록을 삭제할까요?')) return;
+    await db.ref('gameDaily/'+today+'/'+b.dataset.delDaily).remove(); renderGameAdmin();
+  }));
+  document.querySelectorAll('[data-del-best]').forEach(b=> b.addEventListener('click', async ()=>{
+    if(!confirm('전체 최고 기록에서 이 기록을 삭제할까요?')) return;
+    await db.ref('gameBest/'+b.dataset.delBest).remove(); renderGameAdmin();
+  }));
+  document.querySelectorAll('[data-reset-plays]').forEach(b=> b.addEventListener('click', async ()=>{
+    await db.ref('gamePlays/'+today+'/'+b.dataset.resetPlays).remove(); renderGameAdmin();
+  }));
+}
+document.getElementById('gameResetAllBtn').addEventListener('click', async ()=>{
+  if(!confirm('오늘/전체 랭킹과 플레이 횟수, 정산 기록을 모두 지울까요?\n(이미 지급된 포인트는 그대로 남아요)')) return;
+  await Promise.all([ db.ref('gameDaily').remove(), db.ref('gameBest').remove(), db.ref('gamePlays').remove(), db.ref('gameRewarded').remove() ]);
+  const m = document.getElementById('gameResetMsg');
+  m.textContent = '초기화했어요 ✓';
+  setTimeout(()=> m.textContent = '', 2500);
+  renderGameAdmin();
+});
+function bindGameListeners(){
+  db.ref('gameDaily/'+todayStr()).on('value', ()=>{ if(initedOnce) renderGameAdmin(); });
+  db.ref('gameBest').on('value', ()=>{ if(initedOnce) renderGameAdmin(); });
+  db.ref('gamePlays/'+todayStr()).on('value', ()=>{ if(initedOnce) renderGameAdmin(); });
 }
 
 /* ---- 설정: 비밀번호 변경 / D-Day ---- */

@@ -254,6 +254,35 @@
   @-webkit-keyframes caBounce{ 0%,100%{-webkit-transform:translateY(0);} 50%{-webkit-transform:translateY(-6px);} }
   @keyframes caBounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
 
+
+  /* 펭귄 게임 */
+  #gameIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #gameIconBtn:hover{ transform:scale(1.08); }
+  #gameIconBtn:active{ transform:scale(0.92); }
+  #gameOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:16px; }
+  #gameOverlay.open{ display:flex; }
+  .gm-box{ position:relative; background:#fff; border-radius:26px; padding:24px 26px 22px; width:100%; max-width:780px; max-height:94vh; overflow-y:auto; box-shadow:0 20px 50px rgba(74,68,88,0.35); }
+  .gm-x{ position:absolute; top:14px; right:16px; border:none; background:var(--line); width:32px; height:32px; border-radius:50%; font-size:14px; cursor:pointer; color:var(--text); }
+  .gm-title{ font-family:'Jua',sans-serif; font-size:24px; color:var(--text); }
+  .gm-sub{ font-size:13px; color:var(--muted); font-weight:600; margin-top:4px; }
+  .gm-label{ font-family:'Jua',sans-serif; font-size:15px; color:var(--muted); margin:18px 0 8px; }
+  .gm-pill{ border:none; background:linear-gradient(145deg, #e4f3fd, var(--sky)); color:var(--text); padding:8px 14px; margin:4px; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 8px rgba(121,179,236,0.25); }
+  .gm-pill.done{ background:var(--line); color:var(--muted); opacity:.55; cursor:default; box-shadow:none; }
+  .gm-pill small{ font-size:11px; font-weight:700; color:var(--muted); margin-left:4px; }
+  .gm-tabs{ margin-bottom:8px; }
+  .gm-tab{ border:none; background:var(--line); color:var(--text); padding:6px 14px; margin-right:6px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; }
+  .gm-tab.on{ background:var(--sky-deep); color:#fff; }
+  .gm-rank-row{ display:flex; align-items:center; padding:7px 10px; border-radius:12px; background:var(--line); margin-bottom:6px; font-weight:700; }
+  .gm-rank-no{ width:34px; font-family:'Jua',sans-serif; color:var(--pink-deep); }
+  .gm-rank-name{ flex:1; }
+  .gm-rank-score{ font-family:'Jua',sans-serif; color:var(--text); }
+  .gm-empty{ color:var(--muted); font-size:13px; font-weight:600; padding:6px 2px; }
+  #gameFrame{ width:100%; height:370px; border:0; border-radius:18px; background:#fff; display:block; }
+  .gm-playhead{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin-bottom:10px; padding-right:40px; }
+  #gameResult{ margin-top:12px; font-family:'Jua',sans-serif; font-size:20px; color:var(--text); text-align:center; min-height:6px; }
+  .gm-btn{ border:none; background:var(--line); color:var(--text); padding:9px 18px; margin:10px 5px 0; border-radius:14px; font-size:14px; font-weight:800; cursor:pointer; }
+  .gm-btn.primary{ background:var(--sky-deep); color:#fff; }
+
   /* 포인트 축하 토스트 */
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
@@ -334,6 +363,7 @@
           <div class="panel-header-title">
             <h2 id="panelTitle"></h2>
             <button id="luckyDrawIconBtn" title="오늘의 행운번호" style="display:none;">🍀</button>
+            <button id="gameIconBtn" title="펭귄 게임">🐧</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -412,6 +442,30 @@
 
     <div id="drawStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료 🎉</div>
+    </div>
+  </div>
+</div>
+
+<div id="gameOverlay">
+  <div class="gm-box">
+    <button class="gm-x" id="gameCloseBtn">✕</button>
+    <div id="gameStepPick">
+      <div class="gm-title">🐧 펭귄 러너</div>
+      <div class="gm-sub" id="gameNote"></div>
+      <div class="gm-label">플레이할 사람</div>
+      <div id="gameNameGrid"></div>
+      <div class="gm-label">랭킹</div>
+      <div class="gm-tabs"><button class="gm-tab on" id="gmTabToday">오늘</button><button class="gm-tab" id="gmTabAll">전체 최고</button></div>
+      <div id="gameRankList"></div>
+    </div>
+    <div id="gameStepPlay" style="display:none;">
+      <div class="gm-playhead" id="gamePlayHead"></div>
+      <iframe id="gameFrame" title="펭귄 러너"></iframe>
+      <div id="gameResult"></div>
+      <div style="text-align:center;">
+        <button class="gm-btn primary" id="gameAgainBtn" style="display:none;">다시 하기</button>
+        <button class="gm-btn" id="gameBackBtn" style="display:none;">랭킹 보기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -576,6 +630,7 @@ function closePanel(){
   panelRequestId++; // 닫는 시점에 아직 진행 중이던 이전 렌더링 요청은 무효화
   document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('luckyDrawIconBtn').style.display = 'none';
+  updateGameIcon();
 }
 document.getElementById('panelCloseBtn').addEventListener('click', closePanel);
 quizCardEl.addEventListener('click', (e)=>{
@@ -610,6 +665,7 @@ async function openPanel(type){
     document.getElementById('luckyDrawIconBtn').style.display = 'none';
     await renderNoticePanel('closing');
   }
+  updateGameIcon();
   checkOverflowFallback();
 }
 document.getElementById('attendTile').addEventListener('click', ()=> openPanel('attendance'));
@@ -1325,6 +1381,180 @@ function attachClassAlertListener(){
   db.ref('classAlert').on('value', (snap)=>{ caRaw = snap.val(); caApply(); });
 }
 
+/* ---------- 펭귄 게임 (game.html을 창으로 띄움) ----------
+   - 하루 플레이 횟수: gamePlays/{날짜}/{학생id} (게임을 실제로 시작하는 순간 +1)
+   - 점수: gameDaily/{날짜}/{학생id}, gameBest/{학생id} (더 높을 때만 갱신)
+   - 일일 상위 포인트: gameRewarded/{날짜} 표시로 한 번만 정산 (아래 settleGameRewards) */
+let gameEnabled = false;
+let gameLimit = 1;
+let gameRewardCfg = { mode:'daily-top', topN:1, points:1 };
+let gameStudent = null, gameRemaining = 0, gameStarted = false, gameDenied = false, gameSubmitted = false;
+let gameRankTab = 'today';
+function updateGameIcon(){
+  document.getElementById('gameIconBtn').style.display = (gameEnabled && openPanelType === 'attendance') ? 'flex' : 'none';
+}
+function gameShowStep(name){
+  document.getElementById('gameStepPick').style.display = name === 'pick' ? 'block' : 'none';
+  document.getElementById('gameStepPlay').style.display = name === 'play' ? 'block' : 'none';
+}
+function gameCloseAll(){
+  document.getElementById('gameOverlay').classList.remove('open');
+  document.getElementById('gameFrame').src = 'about:blank';   // 소리/게임 멈춤
+  gameStudent = null; gameStarted = false;
+}
+async function gameRenderRank(){
+  const list = document.getElementById('gameRankList');
+  let rows = [];
+  if(gameRankTab === 'today'){
+    const snap = await db.ref('gameDaily/'+todayStr()).once('value');
+    const v = snap.val() || {};
+    rows = Object.keys(v).map(id=> v[id]);
+  } else {
+    const snap = await db.ref('gameBest').once('value');
+    const v = snap.val() || {};
+    rows = Object.keys(v).map(id=> v[id]);
+  }
+  rows = rows.filter(r=> r && r.score > 0).sort((a,b)=> b.score - a.score).slice(0,5);
+  list.innerHTML = rows.length ? rows.map((r,i)=>`
+    <div class="gm-rank-row"><span class="gm-rank-no">${i+1}위</span><span class="gm-rank-name">${escapeHtml(r.name||'')}</span><span class="gm-rank-score">${r.score}점</span></div>`).join('')
+    : '<div class="gm-empty">아직 기록이 없어요</div>';
+  document.getElementById('gmTabToday').className = 'gm-tab' + (gameRankTab === 'today' ? ' on' : '');
+  document.getElementById('gmTabAll').className = 'gm-tab' + (gameRankTab === 'all' ? ' on' : '');
+}
+async function gameRenderPick(){
+  const [roster, playsSnap] = await Promise.all([getRosterList(), db.ref('gamePlays/'+todayStr()).once('value')]);
+  const plays = playsSnap.val() || {};
+  let note = '하루 ' + gameLimit + '번까지 플레이할 수 있어요';
+  if(gameRewardCfg.mode === 'daily-top') note += ' · 오늘 ' + (gameRewardCfg.topN > 1 ? '상위 '+gameRewardCfg.topN+'명' : '1등') + '에게 포인트 +' + gameRewardCfg.points;
+  document.getElementById('gameNote').textContent = note;
+  const grid = document.getElementById('gameNameGrid');
+  grid.innerHTML = roster.length ? roster.map(s=>{
+    const left = gameLimit - (plays[s.id] || 0);
+    return left > 0
+      ? `<button class="gm-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-left="${left}">${escapeHtml(s.name)}${gameLimit > 1 ? '<small>'+left+'번</small>' : ''}</button>`
+      : `<button class="gm-pill done" disabled>${escapeHtml(s.name)}</button>`;
+  }).join('') : '<div class="gm-empty">등록된 학생이 없어요</div>';
+  grid.querySelectorAll('.gm-pill:not(.done)').forEach(btn=>{
+    btn.addEventListener('click', ()=> gameStartFor({ id: btn.dataset.id, name: btn.dataset.name }, parseInt(btn.dataset.left,10)));
+  });
+  await gameRenderRank();
+}
+async function gameOpen(){
+  document.getElementById('gameOverlay').classList.add('open');
+  gameShowStep('pick');
+  document.getElementById('gameNameGrid').innerHTML = '';
+  try{
+    const r = await db.ref('config/gameReward').once('value');
+    if(r.val()) gameRewardCfg = r.val();
+  }catch(e){}
+  await gameRenderPick();
+}
+async function gameStartFor(student, left){
+  gameStudent = student; gameRemaining = left;
+  gameStarted = false; gameDenied = false; gameSubmitted = false;
+  let best = 0;
+  try{ const b = (await db.ref('gameBest/'+student.id).once('value')).val(); if(b && b.score) best = b.score; }catch(e){}
+  gameShowStep('play');
+  document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님 · 남은 기회 ' + left + '번 (화면을 누르면 시작!)';
+  document.getElementById('gameResult').textContent = '';
+  document.getElementById('gameAgainBtn').style.display = 'none';
+  document.getElementById('gameBackBtn').style.display = 'none';
+  const f = document.getElementById('gameFrame');
+  f.onload = function(){
+    try{ f.contentWindow.postMessage({ type:'init', hi: best }, '*'); f.contentWindow.focus(); }catch(e){}
+  };
+  f.src = 'game.html?embed=1&t=' + Date.now();
+}
+async function gameOnStart(){
+  if(gameStarted || !gameStudent) return;
+  gameStarted = true;
+  const res = await db.ref('gamePlays/'+todayStr()+'/'+gameStudent.id).transaction(function(cur){
+    cur = cur || 0;
+    if(cur >= gameLimit) return;          // 이미 횟수를 다 씀(다른 기기에서 플레이했을 수 있음)
+    return cur + 1;
+  });
+  if(!res.committed){
+    gameDenied = true;
+    document.getElementById('gameFrame').src = 'about:blank';
+    document.getElementById('gameResult').textContent = '오늘 기회를 이미 다 썼어요';
+    document.getElementById('gameBackBtn').style.display = 'inline-block';
+  }
+}
+async function gameOnOver(rawScore){
+  if(!gameStarted || gameDenied || gameSubmitted || !gameStudent) return;
+  const score = Math.floor(Number(rawScore));
+  if(!(score >= 0) || score > 1000000) return;
+  gameSubmitted = true;
+  const id = gameStudent.id, name = gameStudent.name, today = todayStr();
+  let newBest = false;
+  await db.ref('gameDaily/'+today+'/'+id).transaction(function(cur){
+    return (!cur || score > cur.score) ? { name: name, score: score, at: Date.now() } : cur;
+  });
+  await db.ref('gameBest/'+id).transaction(function(cur){
+    if(!cur || score > cur.score){ newBest = true; return { name: name, score: score, date: today }; }
+    return cur;
+  });
+  const snap = await db.ref('gameDaily/'+today).once('value');
+  const v = snap.val() || {};
+  const sorted = Object.keys(v).map(k=> v[k]).sort((a,b)=> b.score - a.score);
+  const myRank = sorted.findIndex(r=> r.name === name && r.score >= score) + 1;
+  let msg = score + '점!';
+  if(myRank > 0) msg += ' 오늘 ' + myRank + '위';
+  if(newBest) msg += ' · 최고 기록 갱신 🎉';
+  document.getElementById('gameResult').textContent = msg;
+  gameRemaining = gameRemaining - 1;
+  document.getElementById('gameAgainBtn').style.display = gameRemaining > 0 ? 'inline-block' : 'none';
+  document.getElementById('gameBackBtn').style.display = 'inline-block';
+}
+window.addEventListener('message', function(e){
+  const f = document.getElementById('gameFrame');
+  if(!f.contentWindow || e.source !== f.contentWindow) return;
+  const d = e.data || {};
+  if(d.type === 'penguin-start') gameOnStart();
+  else if(d.type === 'penguin-over') gameOnOver(d.score);
+});
+document.getElementById('gameIconBtn').addEventListener('click', gameOpen);
+document.getElementById('gameCloseBtn').addEventListener('click', gameCloseAll);
+document.getElementById('gameAgainBtn').addEventListener('click', ()=>{
+  if(gameStudent && gameRemaining > 0) gameStartFor(gameStudent, gameRemaining);
+});
+document.getElementById('gameBackBtn').addEventListener('click', async ()=>{
+  document.getElementById('gameFrame').src = 'about:blank';
+  gameStudent = null; gameStarted = false;
+  gameShowStep('pick');
+  await gameRenderPick();
+});
+document.getElementById('gmTabToday').addEventListener('click', ()=>{ gameRankTab = 'today'; gameRenderRank(); });
+document.getElementById('gmTabAll').addEventListener('click', ()=>{ gameRankTab = 'all'; gameRenderRank(); });
+
+// 지난 날짜의 게임 상위 기록에 포인트를 지급 (날짜마다 딱 한 번만, 먼저 도착한 화면이 처리)
+async function settleGameRewards(includeToday){
+  try{
+    const cfg = (await db.ref('config/gameReward').once('value')).val() || { mode:'daily-top', topN:1, points:1 };
+    if(cfg.mode !== 'daily-top') return;
+    const daily = (await db.ref('gameDaily').once('value')).val() || {};
+    const today = todayStr();
+    const dates = Object.keys(daily).filter(d=> d < today || (includeToday && d === today)).sort();
+    for(let i=0;i<dates.length;i++){
+      const d = dates[i];
+      const claim = await db.ref('gameRewarded/'+d).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
+      if(!claim.committed) continue;
+      const rows = Object.keys(daily[d]).map(id=> ({ id:id, name:daily[d][id].name, score:daily[d][id].score })).filter(r=> r.score > 0).sort((a,b)=> b.score - a.score);
+      if(!rows.length) continue;
+      const n = Math.max(1, parseInt(cfg.topN,10) || 1), pts = parseInt(cfg.points,10) || 0;
+      const cutoff = rows[Math.min(n, rows.length) - 1].score;
+      const winners = rows.filter(r=> r.score >= cutoff);
+      if(pts !== 0){
+        for(let k=0;k<winners.length;k++){
+          await awardPoints(winners[k].id, pts);
+          await db.ref('pointLog/'+winners[k].id).push({ delta: pts, reason: '🐧 펭귄 게임 ' + d + ' 상위 기록', at: Date.now() });
+        }
+      }
+      await db.ref('gameRewarded/'+d).update({ winners: winners.map(w=> w.name) });
+    }
+  }catch(e){}
+}
+
 async function loadAll(){
   await Promise.all([loadTimetable(), loadQuiz(), loadDday(), loadMeal(), loadTodos(), loadAttendanceWidget()]);
   if(openPanelType === 'attendance') await renderAttendancePanel();
@@ -1347,6 +1577,9 @@ function attachRealtimeListeners(){
     if(openPanelType === 'attendance') await renderAttendancePanel();
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
+  db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
+  db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
+  db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
   // 역할이 하나라도 등록돼 있을 때만 "📋 역할" 버튼을 보여줌
   db.ref('roles').on('value', async (snap)=>{
     rolesExist = !!(snap.val() && Object.keys(snap.val()).length);
@@ -1383,7 +1616,7 @@ if(initFirebase()){
     document.getElementById('app').style.display = suspended ? 'none' : '';
   });
   attachClassAlertListener(); // 일시 정지 중에도 알림은 보여야 하므로 다른 로딩과 무관하게 바로 연결
-  loadAll().then(()=> attachRealtimeListeners());
+  loadAll().then(()=>{ attachRealtimeListeners(); settleGameRewards(false); });
   setInterval(()=>{ loadMeal({silent:true}); loadQuiz(); }, 5*60*1000);
 }
 // PWA 오프라인 캐싱(서비스워커)을 완전히 그만 쓰기로 함 - 기기마다 옛날 버전이 남아있는
