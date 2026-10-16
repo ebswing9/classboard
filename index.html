@@ -261,27 +261,36 @@
   #gameIconBtn:active{ transform:scale(0.92); }
   #gameOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:16px; }
   #gameOverlay.open{ display:flex; }
-  .gm-box{ position:relative; background:#fff; border-radius:26px; padding:24px 26px 22px; width:100%; max-width:780px; max-height:94vh; overflow-y:auto; box-shadow:0 20px 50px rgba(74,68,88,0.35); }
-  .gm-x{ position:absolute; top:14px; right:16px; border:none; background:var(--line); width:32px; height:32px; border-radius:50%; font-size:14px; cursor:pointer; color:var(--text); }
+  .gm-box{ position:relative; background:#fff; border-radius:26px; padding:24px 28px 24px; width:100%; max-width:980px; max-height:96vh; overflow-y:auto; box-shadow:0 20px 50px rgba(74,68,88,0.35); }
+  .gm-x{ position:absolute; top:14px; right:16px; border:none; background:var(--line); width:32px; height:32px; border-radius:50%; font-size:14px; cursor:pointer; color:var(--text); z-index:2; }
   .gm-title{ font-family:'Jua',sans-serif; font-size:24px; color:var(--text); }
   .gm-sub{ font-size:13px; color:var(--muted); font-weight:600; margin-top:4px; }
   .gm-label{ font-family:'Jua',sans-serif; font-size:15px; color:var(--muted); margin:18px 0 8px; }
   .gm-pill{ border:none; background:linear-gradient(145deg, #e4f3fd, var(--sky)); color:var(--text); padding:8px 14px; margin:4px; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 8px rgba(121,179,236,0.25); }
   .gm-pill.done{ background:var(--line); color:var(--muted); opacity:.55; cursor:default; box-shadow:none; }
   .gm-pill small{ font-size:11px; font-weight:700; color:var(--muted); margin-left:4px; }
-  .gm-tabs{ margin-bottom:8px; }
-  .gm-tab{ border:none; background:var(--line); color:var(--text); padding:6px 14px; margin-right:6px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; }
-  .gm-tab.on{ background:var(--sky-deep); color:#fff; }
-  .gm-rank-row{ display:flex; align-items:center; padding:7px 10px; border-radius:12px; background:var(--line); margin-bottom:6px; font-weight:700; }
-  .gm-rank-no{ width:34px; font-family:'Jua',sans-serif; color:var(--pink-deep); }
-  .gm-rank-name{ flex:1; }
-  .gm-rank-score{ font-family:'Jua',sans-serif; color:var(--text); }
-  .gm-empty{ color:var(--muted); font-size:13px; font-weight:600; padding:6px 2px; }
-  #gameFrame{ width:100%; height:370px; border:0; border-radius:18px; background:#fff; display:block; }
-  .gm-playhead{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin-bottom:10px; padding-right:40px; }
-  #gameResult{ margin-top:12px; font-family:'Jua',sans-serif; font-size:20px; color:var(--text); text-align:center; min-height:6px; }
+  .gm-rank-wrap{ display:flex; flex-wrap:wrap; margin:0 -8px; }
+  .gm-rank-card{ flex:1 1 300px; margin:8px; background:linear-gradient(170deg,#ffffff 0%, #f6faff 100%); border-radius:20px; padding:14px 14px 10px; box-shadow:0 4px 14px rgba(121,179,236,0.2); border:1.5px solid #e6f1fb; }
+  .gm-rank-head{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin:0 4px 10px; }
+  .gm-rank-row{ display:flex; align-items:center; padding:8px 10px; border-radius:14px; background:#fff; margin-bottom:7px; box-shadow:0 2px 6px rgba(74,68,88,0.06); }
+  .gm-rank-badge{ width:30px; height:30px; min-width:30px; border-radius:50%; margin-right:12px; text-align:center; line-height:30px; font-family:'Jua',sans-serif; font-size:15px; color:#fff; background:#c9d6e6; }
+  .gm-rank-badge.r1{ background:#f3b63f; box-shadow:0 0 0 3px #fff0c4; }
+  .gm-rank-badge.r2{ background:#a9b8cb; }
+  .gm-rank-badge.r3{ background:#e5a577; }
+  .gm-rank-name{ flex:1; font-weight:800; font-size:15px; color:var(--text); }
+  .gm-rank-score{ font-family:'Jua',sans-serif; font-size:16px; color:var(--sky-deep); }
+  .gm-rank-row.top{ background:linear-gradient(90deg,#fff8e1,#ffffff); }
+  .gm-empty{ color:var(--muted); font-size:13px; font-weight:600; padding:10px 6px 14px; text-align:center; }
+  #gameFrame{ width:100%; height:500px; border:0; border-radius:18px; background:#fff; display:block; }
+  .gm-playhead{ display:flex; align-items:center; margin-bottom:10px; padding-right:40px; }
+  .gm-playhead .gm-who{ flex:1; font-family:'Jua',sans-serif; font-size:19px; color:var(--text); margin-left:12px; }
   .gm-btn{ border:none; background:var(--line); color:var(--text); padding:9px 18px; margin:10px 5px 0; border-radius:14px; font-size:14px; font-weight:800; cursor:pointer; }
   .gm-btn.primary{ background:var(--sky-deep); color:#fff; }
+  .gm-btn.small{ margin:0; padding:7px 14px; }
+  #gameRankPop{ display:none; position:absolute; top:0; right:0; bottom:0; left:0; background:rgba(255,255,255,0.97); border-radius:26px; padding:24px 28px; overflow-y:auto; z-index:3; }
+  #gameRankPop.open{ display:block; }
+  #gameToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--sky-deep), var(--pink-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:18px; padding:14px 30px; border-radius:20px; box-shadow:0 12px 28px rgba(74,68,88,0.35); opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease; z-index:5200; white-space:nowrap; }
+  #gameToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* 포인트 축하 토스트 */
   #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
@@ -455,20 +464,27 @@
       <div class="gm-label">플레이할 사람</div>
       <div id="gameNameGrid"></div>
       <div class="gm-label">랭킹</div>
-      <div class="gm-tabs"><button class="gm-tab on" id="gmTabToday">오늘</button><button class="gm-tab" id="gmTabAll">전체 최고</button></div>
-      <div id="gameRankList"></div>
+      <div id="gameRankArea"></div>
     </div>
     <div id="gameStepPlay" style="display:none;">
-      <div class="gm-playhead" id="gamePlayHead"></div>
+      <div class="gm-playhead">
+        <button class="gm-btn small" id="gameBackBtn">‹ 이름 선택</button>
+        <div class="gm-who" id="gamePlayHead"></div>
+      </div>
       <iframe id="gameFrame" title="펭귄 러너"></iframe>
-      <div id="gameResult"></div>
       <div style="text-align:center;">
         <button class="gm-btn primary" id="gameAgainBtn" style="display:none;">다시 하기</button>
-        <button class="gm-btn" id="gameBackBtn" style="display:none;">랭킹 보기</button>
+        <button class="gm-btn" id="gameRankBtn">🏆 랭킹</button>
       </div>
+    </div>
+    <div id="gameRankPop">
+      <div class="gm-title" style="margin-bottom:6px;">🏆 랭킹</div>
+      <div id="gameRankPopArea"></div>
+      <div style="text-align:center;"><button class="gm-btn primary" id="gameRankPopClose">닫기</button></div>
     </div>
   </div>
 </div>
+<div id="gameToast"></div>
 
 <div id="classAlertOverlay">
   <div class="ca-box">
@@ -1402,24 +1418,25 @@ function gameCloseAll(){
   document.getElementById('gameFrame').src = 'about:blank';   // 소리/게임 멈춤
   gameStudent = null; gameStarted = false;
 }
-async function gameRenderRank(){
-  const list = document.getElementById('gameRankList');
-  let rows = [];
-  if(gameRankTab === 'today'){
-    const snap = await db.ref('gameDaily/'+todayStr()).once('value');
-    const v = snap.val() || {};
-    rows = Object.keys(v).map(id=> v[id]);
-  } else {
-    const snap = await db.ref('gameBest').once('value');
-    const v = snap.val() || {};
-    rows = Object.keys(v).map(id=> v[id]);
-  }
+function gameRankCard(title, rows){
   rows = rows.filter(r=> r && r.score > 0).sort((a,b)=> b.score - a.score).slice(0,5);
-  list.innerHTML = rows.length ? rows.map((r,i)=>`
-    <div class="gm-rank-row"><span class="gm-rank-no">${i+1}위</span><span class="gm-rank-name">${escapeHtml(r.name||'')}</span><span class="gm-rank-score">${r.score}점</span></div>`).join('')
-    : '<div class="gm-empty">아직 기록이 없어요</div>';
-  document.getElementById('gmTabToday').className = 'gm-tab' + (gameRankTab === 'today' ? ' on' : '');
-  document.getElementById('gmTabAll').className = 'gm-tab' + (gameRankTab === 'all' ? ' on' : '');
+  return '<div class="gm-rank-card"><div class="gm-rank-head">' + title + '</div>' + (rows.length ? rows.map((r,i)=>
+    '<div class="gm-rank-row' + (i === 0 ? ' top' : '') + '"><span class="gm-rank-badge r' + (i+1) + '">' + (i+1) + '</span><span class="gm-rank-name">' + escapeHtml(r.name||'') + '</span><span class="gm-rank-score">' + r.score + '점</span></div>').join('')
+    : '<div class="gm-empty">아직 기록이 없어요</div>') + '</div>';
+}
+async function gameRenderRank(targetId){
+  const [dSnap, bSnap] = await Promise.all([db.ref('gameDaily/'+todayStr()).once('value'), db.ref('gameBest').once('value')]);
+  const d = dSnap.val() || {}, b = bSnap.val() || {};
+  document.getElementById(targetId).innerHTML = '<div class="gm-rank-wrap">' +
+    gameRankCard('오늘의 랭킹', Object.keys(d).map(k=> d[k])) +
+    gameRankCard('전체 최고 기록', Object.keys(b).map(k=> b[k])) + '</div>';
+}
+function gameToast(msg){
+  const t = document.getElementById('gameToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(gameToast._t);
+  gameToast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
 }
 async function gameRenderPick(){
   const [roster, playsSnap] = await Promise.all([getRosterList(), db.ref('gamePlays/'+todayStr()).once('value')]);
@@ -1437,10 +1454,11 @@ async function gameRenderPick(){
   grid.querySelectorAll('.gm-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=> gameStartFor({ id: btn.dataset.id, name: btn.dataset.name }, parseInt(btn.dataset.left,10)));
   });
-  await gameRenderRank();
+  await gameRenderRank('gameRankArea');
 }
 async function gameOpen(){
   document.getElementById('gameOverlay').classList.add('open');
+  document.getElementById('gameRankPop').classList.remove('open');
   gameShowStep('pick');
   document.getElementById('gameNameGrid').innerHTML = '';
   try{
@@ -1455,10 +1473,9 @@ async function gameStartFor(student, left){
   let best = 0;
   try{ const b = (await db.ref('gameBest/'+student.id).once('value')).val(); if(b && b.score) best = b.score; }catch(e){}
   gameShowStep('play');
-  document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님 · 남은 기회 ' + left + '번 (화면을 누르면 시작!)';
-  document.getElementById('gameResult').textContent = '';
+  document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님  (' + (gameLimit - left + 1) + ' / ' + gameLimit + ')';
   document.getElementById('gameAgainBtn').style.display = 'none';
-  document.getElementById('gameBackBtn').style.display = 'none';
+  document.getElementById('gameRankPop').classList.remove('open');
   const f = document.getElementById('gameFrame');
   f.onload = function(){
     try{ f.contentWindow.postMessage({ type:'init', hi: best }, '*'); f.contentWindow.focus(); }catch(e){}
@@ -1476,8 +1493,7 @@ async function gameOnStart(){
   if(!res.committed){
     gameDenied = true;
     document.getElementById('gameFrame').src = 'about:blank';
-    document.getElementById('gameResult').textContent = '오늘 기회를 이미 다 썼어요';
-    document.getElementById('gameBackBtn').style.display = 'inline-block';
+    gameToast('오늘 기회를 이미 다 썼어요');
   }
 }
 async function gameOnOver(rawScore){
@@ -1494,17 +1510,9 @@ async function gameOnOver(rawScore){
     if(!cur || score > cur.score){ newBest = true; return { name: name, score: score, date: today }; }
     return cur;
   });
-  const snap = await db.ref('gameDaily/'+today).once('value');
-  const v = snap.val() || {};
-  const sorted = Object.keys(v).map(k=> v[k]).sort((a,b)=> b.score - a.score);
-  const myRank = sorted.findIndex(r=> r.name === name && r.score >= score) + 1;
-  let msg = score + '점!';
-  if(myRank > 0) msg += ' 오늘 ' + myRank + '위';
-  if(newBest) msg += ' · 최고 기록 갱신 🎉';
-  document.getElementById('gameResult').textContent = msg;
+  if(newBest) gameToast('🎉 최고 기록을 갱신했어요!');
   gameRemaining = gameRemaining - 1;
   document.getElementById('gameAgainBtn').style.display = gameRemaining > 0 ? 'inline-block' : 'none';
-  document.getElementById('gameBackBtn').style.display = 'inline-block';
 }
 window.addEventListener('message', function(e){
   const f = document.getElementById('gameFrame');
@@ -1521,11 +1529,15 @@ document.getElementById('gameAgainBtn').addEventListener('click', ()=>{
 document.getElementById('gameBackBtn').addEventListener('click', async ()=>{
   document.getElementById('gameFrame').src = 'about:blank';
   gameStudent = null; gameStarted = false;
+  document.getElementById('gameRankPop').classList.remove('open');
   gameShowStep('pick');
   await gameRenderPick();
 });
-document.getElementById('gmTabToday').addEventListener('click', ()=>{ gameRankTab = 'today'; gameRenderRank(); });
-document.getElementById('gmTabAll').addEventListener('click', ()=>{ gameRankTab = 'all'; gameRenderRank(); });
+document.getElementById('gameRankBtn').addEventListener('click', async ()=>{
+  document.getElementById('gameRankPop').classList.add('open');
+  await gameRenderRank('gameRankPopArea');
+});
+document.getElementById('gameRankPopClose').addEventListener('click', ()=> document.getElementById('gameRankPop').classList.remove('open'));
 
 // 지난 날짜의 게임 상위 기록에 포인트를 지급 (날짜마다 딱 한 번만, 먼저 도착한 화면이 처리)
 async function settleGameRewards(includeToday){

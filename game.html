@@ -11,6 +11,7 @@
 html,body{height:100%;margin:0}
 body{background:linear-gradient(var(--sky1),var(--sky2));color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 canvas{width:94vw;max-width:720px;height:auto;display:block}
+html.embed #c{max-width:900px}
 p{margin:0;font-size:13px;color:var(--muted);text-align:center}
 #ctl{position:fixed;top:10px;right:10px;display:flex;z-index:5}
 #ctl button+button{margin-left:6px}
@@ -68,7 +69,7 @@ if(window.CanvasRenderingContext2D&&!CanvasRenderingContext2D.prototype.roundRec
 }
 // 대시보드 안에 창으로 띄워졌을 때(embed=1)의 동작: 시작/종료를 부모 화면(대시보드)에 알려줌
 const EMBED=location.search.indexOf('embed=1')>=0;
-if(EMBED)document.documentElement.setAttribute('data-theme','light');
+if(EMBED){document.documentElement.setAttribute('data-theme','light');document.documentElement.className='embed'}
 let startSent=false;
 function toParent(msg){try{parent.postMessage(msg,'*')}catch(e){}}
 addEventListener('message',e=>{if(e.data&&e.data.type==='init'&&typeof e.data.hi==='number'){hi=e.data.hi}});
