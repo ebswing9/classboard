@@ -293,7 +293,7 @@ function loop(){
   const ink=css('--ink'),line=css('--line');
   x.clearRect(0,0,W,H);
   if(st==='play'){
-    frame++;dist+=speed;runPh+=0.2+speed*0.012;score+=speed/30;speed=Math.min(10.5,5+score/330);
+    frame++;dist+=speed;runPh+=0.2+speed*0.012;score+=speed/30;speed=Math.min(14,5+score/300);
     jumpBuf--;cat.vy+=GR;cat.y-=cat.vy;
     if(cat.y<=0){cat.y=0;cat.vy=0;if(jumpBuf>0){cat.vy=JV;jumpBuf=0;sfx('jump')}}
     if(--spawnIn<=0){
