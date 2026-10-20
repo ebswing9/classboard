@@ -1530,6 +1530,7 @@ async function gameStartFor(student, left){
 async function gameOnStart(){
   if(gameStarted || !gameStudent) return;
   gameStarted = true;
+  gameStartAt = Date.now();
   gameSetControls(false);          // 플레이 중에는 게임만 보여줌
   const res = await db.ref('gamePlays/'+todayStr()+'/'+gameStudent.id).transaction(function(cur){
     cur = cur || 0;
@@ -1561,6 +1562,7 @@ async function gameOnOver(rawScore){
   await db.ref('gameBest/'+id).transaction(function(cur){
     return (!cur || score > cur.score) ? { name: name, score: score, date: today } : cur;
   });
+  try{ await db.ref('gameLog/'+today).push({ id: id, name: name, score: score, start: gameStartAt || Date.now(), at: Date.now() }); }catch(e){}
   gameRemaining = gameRemaining - 1;
   document.getElementById('gameAgainBtn').style.display = gameRemaining > 0 ? 'inline-block' : 'none';
   gameSetControls(true);           // 한 판이 끝났으니 다시 버튼들을 보여줌
