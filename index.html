@@ -296,6 +296,7 @@
   .gm-rank-score{ font-family:'Jua',sans-serif; font-size:16px; color:var(--text); }
   .gm-rank-row.top{ background:var(--yellow); }
   .gm-empty{ color:var(--muted); font-size:13px; font-weight:700; padding:14px 6px 18px; text-align:center; }
+  #gameOverlay{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   #gameFrame{ width:100%; height:310px; border:0; border-radius:20px; background:#fff; display:block; box-shadow:0 4px 14px rgba(160,140,190,0.18); }
   .gm-playhead{ text-align:center; margin-bottom:12px; }
   .gm-who{ display:inline-block; font-family:'Jua',sans-serif; font-size:19px; color:var(--text); background:var(--sky); padding:6px 20px; border-radius:999px; }
@@ -491,7 +492,7 @@
       <iframe id="gameFrame" title="펭귄 러너"></iframe>
       <div id="gameControls">
         <button class="gm-btn primary" id="gameAgainBtn" style="display:none;">다시 하기</button>
-        <button class="gm-btn" id="gameBackBtn">이름 선택</button>
+        <button class="gm-btn" id="gameBackBtn">‹ 뒤로 가기</button>
       </div>
     </div>
   </div>
@@ -1517,7 +1518,7 @@ async function gameStartFor(student, left){
   gameStarted = false; gameDenied = false; gameSubmitted = false;
   let best = 0;
   try{ const b = (await db.ref('gameBest/'+student.id).once('value')).val(); if(b && b.score) best = b.score; }catch(e){}
-  gameShowStep('play');            // 시작 전에는 이름 선택/닫기 가능 (아직 횟수를 쓰지 않았으니까)
+  gameShowStep('play');
   document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님   ( ' + (gameLimit - left + 1) + ' / ' + gameLimit + ' )';
   document.getElementById('gameAgainBtn').style.display = 'none';
   const f = document.getElementById('gameFrame');

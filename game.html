@@ -10,6 +10,7 @@
 :root[data-theme="dark"]{--bg:#2f2b4d;--ink:#f0e3f7;--line:#cdb4de;--muted:#a898bd;--sky1:#4d4c7e;--sky2:#7c5a88;color-scheme:dark}
 html,body{height:100%;margin:0}
 body{background:linear-gradient(var(--sky1),var(--sky2));color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+html,body,canvas{-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 canvas{width:94vw;max-width:540px;height:auto;display:block}
 html.embed #c{max-width:540px}
 p{margin:0;font-size:13px;color:var(--muted);text-align:center}
@@ -57,9 +58,10 @@ p{margin:0;font-size:13px;color:var(--muted);text-align:center}
 </style>
 </head>
 <body>
-<canvas id="c" width="600" height="200"></canvas>
+<canvas id="c" draggable="false" width="600" height="200"></canvas>
 <div id="ctl"><button id="bm" class="on" aria-label="music"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12" fill="none"/><circle cx="7" cy="18" r="2.4" fill="currentColor"/><circle cx="17" cy="16" r="2.4" fill="currentColor"/><path class="sl" d="M4 21L20 3" fill="none"/></svg></button><button id="mu" class="on" aria-label="sound"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h3.5L12 19V5L7.5 9H4z" fill="currentColor" stroke-width="1.5"/><path class="w" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none"/><path class="sl" d="M16 9l5 6M21 9l-5 6" fill="none"/></svg></button><button id="bp" aria-label="pause"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect class="ps" x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect class="ps" x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><path class="pl" d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></button></div>
 <div id="qm" hidden><div class="card"><div class="qh"><canvas id="qi" width="32" height="32"></canvas><h3 id="qq"></h3></div><div id="qo"></div><div id="qr"></div><div id="qp"><i></i></div></div></div>
+<script>document.addEventListener('contextmenu',function(e){e.preventDefault()});document.addEventListener('dragstart',function(e){e.preventDefault()});</script>
 <script>
 // 구형 브라우저용: roundRect가 없으면 직접 만들어 줌
 if(window.CanvasRenderingContext2D&&!CanvasRenderingContext2D.prototype.roundRect){
