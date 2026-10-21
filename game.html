@@ -46,7 +46,7 @@ p{margin:0;font-size:13px;color:var(--muted);text-align:center}
 #qo button.ok{background:#d6f5e0;--o:#58b583}
 #qo button.no{background:#ffdde6;--o:#e6798f}
 .k{flex:none;margin-right:8px;width:22px;height:22px;line-height:22px;text-align:center;font-style:normal;font-size:13px;font-weight:bold;color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)}
-.k0{background:#ffb3cf}.k1{background:#9ccdf2}.k2{background:#9fdcb4}.k3{background:#c8b6f0}
+.k4{background:#ffd98a}.k0{background:#ffb3cf}.k1{background:#9ccdf2}.k2{background:#9fdcb4}.k3{background:#c8b6f0}
 #qr{margin:20px 0 0;text-align:center}
 #qr:empty{display:none}
 .tag{display:inline-block;padding:6px 14px;background:#fff3b0;color:#8a6d1c;font-weight:bold;box-shadow:0 -3px 0 0 #e0c15a,0 3px 0 0 #e0c15a,-3px 0 0 0 #e0c15a,3px 0 0 0 #e0c15a}
@@ -78,7 +78,7 @@ function toParent(msg){try{parent.postMessage(msg,'*')}catch(e){}}
 addEventListener('message',e=>{if(e.data&&e.data.type==='init'&&typeof e.data.hi==='number'){hi=e.data.hi}});
 const c=document.getElementById('c'),x=c.getContext('2d');
 const W=600,H=200,G=165,GR=0.65,JV=-11.5;
-let st='ready',cat,obs,speed,score,hi=0,frame,spawnIn,items,jIdx,got,gotAt,swapAt,lastR,wordIdx,jamo,banner,jTimer,quizAt,countEnd,runPh=0,dist=0,jumpBuf=0;
+let lastSpecial=-9999,healAt=0,fx=[],lives=3,grace=0,loseAt=0,runSc=0,tightNext=0,lastCuke=0,st='ready',cat,obs,speed,score,hi=0,frame,spawnIn,items,jIdx,got,gotAt,swapAt,lastR,wordIdx,jamo,banner,jTimer,quizAt,countEnd,runPh=0,dist=0,jumpBuf=0;
 const FF='ui-monospace,Menlo,Consolas,"Malgun Gothic","Apple SD Gothic Neo",sans-serif';
 const WORDS=['도안','중학','학생','공부','펭귄'];
 const CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ',JUNG='ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ',JONG=' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
@@ -91,30 +91,64 @@ const QUIZ=[
 ["우리 학교의 교목은?", "느티나무", "소나무", "은행나무", "벚나무"],
 ["우리 학교의 교화는?", "라일락", "장미", "무궁화", "개나리"],
 ["종업식 날짜는?", "1월 5일", "1월 3일", "1월 8일", "1월 9일"]];
-let qOrder=[];
-function nextQ(){if(!qOrder.length)qOrder=QUIZ.map((_,i)=>i).sort(()=>Math.random()-.5);return QUIZ[qOrder.pop()]}
+/* 특별 글자블록(금색)을 먹으면, 먹은 글자에 맞는 국어 문법 퀴즈가 나옴 — 자음: 소리 나는 자리/방법/세기, 모음: 혀·입술 모양 등 */
+const G_PLACE=['입술소리','잇몸소리','센입천장소리','여린입천장소리','목청소리'];
+const G_PLACE_OF={'ㅂ':0,'ㅃ':0,'ㅍ':0,'ㅁ':0,'ㄷ':1,'ㄸ':1,'ㅌ':1,'ㅅ':1,'ㅆ':1,'ㄴ':1,'ㄹ':1,'ㅈ':2,'ㅉ':2,'ㅊ':2,'ㄱ':3,'ㄲ':3,'ㅋ':3,'ㅇ':3,'ㅎ':4};
+const G_MANNER=['파열음','마찰음','파찰음','비음','유음'];
+const G_MANNER_OF={'ㅂ':0,'ㅃ':0,'ㅍ':0,'ㄷ':0,'ㄸ':0,'ㅌ':0,'ㄱ':0,'ㄲ':0,'ㅋ':0,'ㅅ':1,'ㅆ':1,'ㅎ':1,'ㅈ':2,'ㅉ':2,'ㅊ':2,'ㅁ':3,'ㄴ':3,'ㅇ':3,'ㄹ':4};
+const G_STR=['예사소리','된소리','거센소리'];
+const G_STR_OF={'ㄱ':0,'ㄷ':0,'ㅂ':0,'ㅅ':0,'ㅈ':0,'ㄲ':1,'ㄸ':1,'ㅃ':1,'ㅆ':1,'ㅉ':1,'ㅋ':2,'ㅌ':2,'ㅍ':2,'ㅊ':2};
+/* 단모음: [혀의 위치(0전설/1후설), 혀의 높이(0고/1중/2저), 입술(0평순/1원순)] */
+const G_VOW={'ㅣ':[0,0,0],'ㅔ':[0,1,0],'ㅐ':[0,2,0],'ㅟ':[0,0,1],'ㅚ':[0,1,1],'ㅡ':[1,0,0],'ㅓ':[1,1,0],'ㅏ':[1,2,0],'ㅜ':[1,0,1],'ㅗ':[1,1,1]};
+/* 단모음 블록에서 '단모음/이중모음 구별' 문제가 나올 확률 (0.15 = 15%) — 나머지는 혀의 높이/위치·입술 문제 */
+const G_VOW_TYPE_RATE=0.15;
+const G_HIGH=['고모음','중모음','저모음'];
+const G_DIPH={'ㅑ':'ㅏ','ㅕ':'ㅓ','ㅛ':'ㅗ','ㅠ':'ㅜ'};
+function gPick(arr,n,not){const r=arr.filter(v=>v!==not).sort(()=>Math.random()-.5);return r.slice(0,n)}
+function makeGQ(ch){
+  let q;
+  if(ch in G_PLACE_OF||ch in G_MANNER_OF){
+    const t=[];if(ch in G_PLACE_OF)t.push('p');if(ch in G_MANNER_OF)t.push('m');
+    const k=t[Math.floor(Math.random()*t.length)];
+    if(k==='p'){const c=G_PLACE_OF[ch];q=["'"+ch+"'은 무슨 소리일까요?",G_PLACE[c]].concat(G_PLACE.filter((_,i)=>i!==c));q.fixed=G_PLACE}
+    else if(k==='m'){const c=G_MANNER_OF[ch];q=["'"+ch+"'은 소리 내는 방법에 따라 나누면?",G_MANNER[c]].concat(G_MANNER.filter((_,i)=>i!==c));q.fixed=G_MANNER}
+    else{const c=G_STR_OF[ch];q=["'"+ch+"'은 소리의 세기에 따라 나누면?",G_STR[c]].concat(G_STR.filter((_,i)=>i!==c));q.fixed=G_STR}
+  }else if(ch in G_VOW){
+    const v=G_VOW[ch];
+    if(Math.random()<G_VOW_TYPE_RATE){q=["'"+ch+"'은 단모음일까요, 이중모음일까요?",'단모음','이중모음'];q.fixed=['단모음','이중모음']}
+    else if(Math.random()<0.5){q=["'"+ch+"'을 소리 낼 때 혀의 높이는?",G_HIGH[v[1]]].concat(G_HIGH.filter((_,i)=>i!==v[1]));q.fixed=G_HIGH}
+    else{const nm=(a,b)=>(a?'후설':'전설')+' · '+(b?'원순':'평순'),right=nm(v[0],v[2]);
+      q=["'"+ch+"'을 소리 낼 때 혀의 위치와 입술 모양은?",right].concat(['전설 · 평순','전설 · 원순','후설 · 평순','후설 · 원순'].filter(s=>s!==right))}
+  }else if(ch in G_DIPH){
+    q=["'"+ch+"'은 단모음일까요, 이중모음일까요?",'이중모음','단모음'];q.fixed=['단모음','이중모음']
+  }else q=nextQ(QUIZ);
+  q.ch=ch;return q;
+}
+function nextQ(b){if(!b.ord||!b.ord.length)b.ord=b.map((_,i)=>i).sort(()=>Math.random()-.5);return b[b.ord.pop()]}
+let qSpecial=false;
 const qcard=document.querySelector('.card');
 let qDone=false,qTimer=0;
 function qResume(){
   clearTimeout(qTimer);
   if(st!=='quiz')return;
-  qm.hidden=true;obs=[];items=[];spawnIn=240;jTimer=90;quizAt=score+800;countEnd=Date.now()+3000;st='count';
+  qm.hidden=true;obs=[];items=[];spawnIn=240;jTimer=90;if(!qSpecial)quizAt=runSc+800;countEnd=Date.now()+3000;st='count';
 }
 qcard.onclick=()=>{if(qDone)qResume()};
-function startQuiz(){
+function startQuiz(bank,reward,pre){
+  bank=bank||QUIZ;reward=reward||350;qSpecial=!!pre;
   st='quiz';qDone=false;qcard.classList.remove('done');
-  const q=nextQ();
-  qq.textContent=q[0];qr.textContent='';qo.innerHTML='';
-  paintQIcon();
-  q.slice(1).map((t,i)=>({t,ok:i===0})).sort(()=>Math.random()-.5).forEach((o,n)=>{
+  const q=pre||nextQ(bank);
+  qq.textContent=(qSpecial?'[국어] ':'')+q[0];qr.textContent='';qo.innerHTML='';
+  paintQIcon(qSpecial?q.ch:false);
+  (q.fixed?q.slice(1).map((t,i)=>({t,ok:i===0})).sort((a,b)=>q.fixed.indexOf(a.t)-q.fixed.indexOf(b.t)):q.slice(1).map((t,i)=>({t,ok:i===0})).sort(()=>Math.random()-.5)).forEach((o,n)=>{
     const b=document.createElement('button');b.dataset.t=o.t;
-    const k=document.createElement('i');k.className='k k'+n;k.textContent='ABCD'[n];
+    const k=document.createElement('i');k.className='k k'+n;k.textContent='ABCDE'[n];
     const sp=document.createElement('span');sp.textContent=o.t;
     b.append(k,sp);
     b.onclick=e=>{
       e.stopPropagation();if(qDone)return;qDone=true;
       [...qo.children].forEach(c=>{c.disabled=true});
-      if(o.ok){sfx('right');score+=50;b.classList.add('ok');qr.innerHTML='<span class="tag">★ +50</span>'}
+      if(o.ok){sfx('right');score+=reward;b.classList.add('ok');qr.innerHTML='<span class="tag">★ +'+reward+'</span>'}
       else{sfx('wrong');b.classList.add('no');[...qo.children].find(c=>c.dataset.t===q[1]).classList.add('ok')}
       qcard.style.setProperty('--d',(o.ok?1.4:2)+'s');
       qcard.classList.add('done');
@@ -157,6 +191,7 @@ function startMusic(){
 function sfx(n){
   if(n==='jump')tone(320,.14,'square',.04,0,640);
   else if(n==='got'){tone(880,.08,'square',.04);tone(1320,.12,'square',.04,.07)}
+  else if(n==='lose')tone(200,.2,'sawtooth',.05,0,110);
   else if(n==='miss')tone(260,.1,'triangle',.06,0,200);
   else if(n==='done')[523,659,784,1047].forEach((f,i)=>tone(f,.14,'square',.045,i*.09));
   else if(n==='qhit'){tone(660,.1,'triangle',.07);tone(990,.18,'triangle',.07,.09)}
@@ -167,6 +202,31 @@ function sfx(n){
   else if(n==='go')tone(1050,.18,'square',.045);
 }
 function pill(x0,y0,w,h,col){x.fillStyle=col;x.beginPath();x.roundRect(x0,y0,w,h,h/2);x.fill()}
+const cEl=document.getElementById('c');
+function shakeC(){let n=0;(function s(){if(n++>8){cEl.style.webkitTransform='';cEl.style.transform='';return}const t='translate('+(Math.random()*10-5)+'px,'+(Math.random()*6-3)+'px)';cEl.style.webkitTransform=t;cEl.style.transform=t;setTimeout(s,35)})()}
+function heartPath(cx,cy,s){x.beginPath();x.moveTo(cx,cy+s*0.9);
+  x.bezierCurveTo(cx-s*1.6,cy-s*0.1,cx-s*0.8,cy-s*1.3,cx,cy-s*0.4);
+  x.bezierCurveTo(cx+s*0.8,cy-s*1.3,cx+s*1.6,cy-s*0.1,cx,cy+s*0.9);x.closePath()}
+function drawHearts(ink){
+  const now=performance.now(),blink=now-loseAt<600&&Math.floor((now-loseAt)/90)%2===0;
+  x.save();x.font='16px ui-monospace,Menlo,monospace';
+  const left=W-10-x.measureText('HI 00000  00000').width-14;x.restore();
+  for(let k=0;k<3;k++){
+    const cx=left-14-(2-k)*26,cy=19;let s=8;
+    if(k===lives-1&&now-healAt<450)s=8+4*Math.sin((now-healAt)/450*Math.PI);
+    x.save();heartPath(cx,cy,s);
+    if(k<lives){x.fillStyle='#ff6f91';x.fill();x.lineWidth=1.5;x.strokeStyle='#d8456a';x.stroke()}
+    else{x.globalAlpha=blink&&k===lives?1:0.4;x.lineWidth=2;x.strokeStyle=blink&&k===lives?'#ff3b63':ink;x.stroke()}
+    x.restore();
+  }
+  // 떠오르는 효과들
+  fx=fx.filter(f=>f.t<40);
+  fx.forEach(f=>{f.t++;const a=1-f.t/40;x.save();x.globalAlpha=a;
+    if(f.k==='txt'){x.font='bold 18px '+FF;x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=4;x.strokeStyle='#ffffff';x.strokeText(f.s,70,G-60-f.t*0.8);x.fillStyle=f.c;x.fillText(f.s,70,G-60-f.t*0.8)}
+    else{const cx=left-14-(2-Math.max(0,lives-1))*26;heartPath(cx,19-f.t*0.6,8+f.t*0.2);x.fillStyle='#ff9db3';x.fill()}
+    x.restore()});
+  if(now-loseAt<350){x.save();x.globalAlpha=0.28*(1-(now-loseAt)/350);x.fillStyle='#ff3b63';x.fillRect(0,0,W,H);x.restore()}
+}
 function drawGot(ink){
   const now=performance.now(),cell=22,dark=ink==='#f0e3f7';
   x.font='11px '+FF;const lw=Math.ceil(x.measureText('목표').width);
@@ -202,7 +262,7 @@ function drawBanner(ink){
 }
 function setWord(){jamo=jm(WORDS[wordIdx]);got=jamo.map(()=>false);gotAt=[]}
 if(!EMBED){try{hi=+localStorage.getItem('catHi')||0}catch(e){}}
-function reset(){swapAt=0;dist=0;wordIdx=0;setWord();items=[];banner=null;jTimer=90;quizAt=1000;cat={y:0,vy:0};obs=[];speed=5;score=0;frame=0;spawnIn=60}
+function reset(){lastSpecial=-9999;healAt=0;fx=[];lives=3;grace=0;loseAt=0;runSc=0;tightNext=0;lastCuke=0;swapAt=0;dist=0;wordIdx=0;setWord();items=[];banner=null;jTimer=90;quizAt=1000;cat={y:0,vy:0};obs=[];speed=6;score=0;frame=0;spawnIn=60}
 reset();
 function jump(){
   if(st==='quiz'||st==='count'||st==='pause')return;
@@ -260,21 +320,23 @@ function pxBlockC(g,cx,cy,f,o,sh){
   g.fillStyle='#fff';g.fillRect(X+6,Y+5,6,2);g.fillRect(X+5,Y+7,2,4);
 }
 function pxBlock(cx,cy,f,o,sh){pxBlockC(x,cx,cy,f,o,sh)}
-function paintQIcon(){
+function paintQIcon(sp){
   const g=document.getElementById('qi').getContext('2d');
   g.clearRect(0,0,32,32);g.imageSmoothingEnabled=false;
-  pxBlockC(g,16,16,'#c8b6f0','#7690b3','#a995dd');
-  g.font='bold 17px '+FF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=3;g.strokeStyle='#8f78cc';g.strokeText('Q',16,17);g.fillStyle='#ffffff';g.fillText('Q',16,17);
+  pxBlockC(g,16,16,sp?'#ffe49a':'#c8b6f0','#7690b3',sp?'#f2c95c':'#a995dd');
+  g.font='bold 17px '+FF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=3;g.strokeStyle=sp?'#d49a1c':'#8f78cc';g.strokeText(sp?sp:'Q',16,17);g.fillStyle='#ffffff';g.fillText(sp?sp:'Q',16,17);
 }
 function drawBird(o,ink){spr2(GUL[Math.floor(frame/10)%2],GULP,o.x,o.y,'#3b4380',3)}
 function drawItem(i){
   const cx=Math.round(i.x/2)*2,cy=Math.round((i.y+Math.sin(i.t/10)*4)/2)*2;
+  if(i.missed)x.globalAlpha=.3;
   if(i.quiz)pxBlock(cx,cy,'#c8b6f0','#7690b3','#a995dd');
+  else if(i.special)pxBlock(cx,cy,'#ffe49a','#c9962b','#f2c95c');
   else pxBlock(cx,cy,'#f4f8fd','#7690b3','#d3e2f5');
   x.font='bold 17px '+FF;x.textAlign='center';x.textBaseline='middle';
-  if(i.quiz){x.lineJoin='round';x.lineWidth=3;x.strokeStyle='#8f78cc';x.strokeText(i.ch,cx,cy+1)}
-  x.fillStyle=i.quiz?'#ffffff':'#5d7396';x.fillText(i.ch,cx,cy+1);
-  x.textBaseline='alphabetic';
+  if(i.quiz||i.special){x.lineJoin='round';x.lineWidth=3;x.strokeStyle=i.special?'#d49a1c':'#8f78cc';x.strokeText(i.ch,cx,cy+1)}
+  x.fillStyle=(i.quiz||i.special)?'#ffffff':'#5d7396';x.fillText(i.ch,cx,cy+1);
+  x.textBaseline='alphabetic';x.globalAlpha=1;
 }
 const SNOW=["....WWW....", "...WWWWW...", "...WDWDW...", "...WWWWW...", "....WWs....", "...KKKKK...", "..WWWWWKW..", "..WWWDWKW..", "..WWWWWWW..", "..WWWDWWs..", "...sssss..."],BALL=["..WWWWW..", ".WWWWWWW.", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWss", ".WWWWssss", "..Wssss..", "...sss..."],SNP={W:'#ffffff',s:'#d3e2f5',D:'#3d4a63',R:'#ffb48a',P:'#ffb3cf',K:'#ffc9e0',T:'#a9805a'};
 const ALLJ=CHO+'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣㅔㅐㅚㅟ';
@@ -295,30 +357,34 @@ function loop(){
   const ink=css('--ink'),line=css('--line');
   x.clearRect(0,0,W,H);
   if(st==='play'){
-    frame++;dist+=speed;runPh+=0.2+speed*0.012;score+=speed/30;speed=Math.min(14,5+score/300);
+    frame++;dist+=speed;runPh+=0.2+speed*0.012;score+=speed/30;runSc+=speed/30;speed=Math.min(17,6+runSc/270);
     jumpBuf--;cat.vy+=GR;cat.y-=cat.vy;
     if(cat.y<=0){cat.y=0;cat.vy=0;if(jumpBuf>0){cat.vy=JV;jumpBuf=0;sfx('jump')}}
     if(--spawnIn<=0){
-      if(score>80&&Math.random()<0.3)obs.push({x:W,w:33,h:21,y:G-(Math.random()<0.5?26:95),bird:1});else{const n=Math.random()<0.3?2:1;for(let i=0;i<n;i++){const v=Math.random()<0.5?0:1,h=v?33:26;obs.push({x:W+i*32,w:v?21:26,h:h,y:G-h,v:v})}}
-      spawnIn=Math.max(35,(60+Math.random()*60)*(5/speed)+25);
+      const forced=tightNext;tightNext=0;
+      if(!forced&&runSc>80&&Math.random()<0.3){obs.push({x:W,w:33,h:21,y:G-(Math.random()<0.5?26:95),bird:1});lastCuke=0}else{const n=Math.random()<0.3?2:1;for(let i=0;i<n;i++){const v=Math.random()<0.5?0:1,h=v?33:26;obs.push({x:W+i*32,w:v?21:26,h:h,y:G-h,v:v})}lastCuke=1}
+      /* 최고속도 도달 후: 가끔 오이 바로 뒤에 오이가 붙어 나옴 (한 번의 점프로 둘 다 넘을 수 있는 간격) */
+      if(speed>=16.99&&!forced&&lastCuke&&Math.random()<0.35){tightNext=1;spawnIn=16+Math.random()*7}
+      else spawnIn=Math.max(35,(60+Math.random()*60)*(5/speed)+25);
     }
     obs.forEach(o=>o.x-=speed+(o.bird?1.5:0));
     obs=obs.filter(o=>o.x>-30);
     items.forEach(i=>{i.x-=speed;i.t++});
     if(banner){banner.t++;if(banner.t>110)banner=null}
-    if(!items.length&&--jTimer<=0){const qz=score>=quizAt;items.push({x:W+30,y:G-(qz?85+Math.random()*30:70+Math.random()*45),t:0,ch:qz?'Q':pickJ(),quiz:qz});if(qz)quizAt=score+800;spawnIn=Math.max(spawnIn,45)}
-    const ab={x:50,y:G-cat.y-36,w:36,h:34};let hitQ=false;
+    if(!items.length&&--jTimer<=0){const qz=runSc>=quizAt,sp=!qz&&runSc>120&&frame-lastSpecial>1200&&Math.random()<0.14;if(sp)lastSpecial=frame;items.push({x:W+30,y:G-(qz||sp?85+Math.random()*30:70+Math.random()*45),t:0,ch:qz?'Q':sp?ALLJ[Math.floor(Math.random()*ALLJ.length)]:pickJ(),quiz:qz,special:sp});if(qz)quizAt=runSc+800}
+    const ab={x:50,y:G-cat.y-36,w:36,h:34};let hitQ=false,hitS='';
     items=items.filter(i=>{
       const cy=i.y+Math.sin(i.t/10)*4,dx=i.x-Math.max(ab.x,Math.min(i.x,ab.x+ab.w)),dy=cy-Math.max(ab.y,Math.min(cy,ab.y+ab.h));
-      if(dx*dx+dy*dy<225){if(i.quiz){hitQ=true;sfx('qhit');return false}jTimer=50;{const gi=jamo.findIndex((c,n)=>c===i.ch&&!got[n]);if(gi>=0){got[gi]=true;gotAt[gi]=performance.now();score+=10;sfx('got')}else sfx('miss')}
-        if(got.every(Boolean)&&!swapAt){score+=100;banner={w:WORDS[wordIdx],pts:100,t:0};swapAt=performance.now()+700;sfx('done')}
+      if(dx*dx+dy*dy<225){if(i.quiz){hitQ=true;sfx('qhit');return false}if(i.special){hitS=i.ch;sfx('qhit');return false}jTimer=50;if(lives<3){lives++;healAt=performance.now();fx.push({k:'heal',t:0})}{const gi=jamo.findIndex((c,n)=>c===i.ch&&!got[n]);if(gi>=0){got[gi]=true;gotAt[gi]=performance.now();score+=30;sfx('got')}else{score+=15;sfx('miss')}}
+        if(got.every(Boolean)&&!swapAt){score+=200;banner={w:WORDS[wordIdx],pts:200,t:0};swapAt=performance.now()+700;sfx('done')}
         return false}
+      if(!i.quiz&&!i.special&&!i.missed&&i.x<ab.x-18){i.missed=true;if(grace>0){grace--;fx.push({k:'txt',t:0,s:'봐줬어요!',c:'#ffb02e'})}else{lives--;loseAt=performance.now();sfx('lose');shakeC();fx.push({k:'txt',t:0,s:'MISS!',c:'#ff4d6d'})}}
       if(i.x<-30){jTimer=50;return false}
       return true;
     });
-    if(hitQ)startQuiz();
+    if(hitQ)startQuiz();else if(hitS)startQuiz(null,300,makeGQ(hitS));
     if(swapAt&&performance.now()>=swapAt){swapAt=0;wordIdx=(wordIdx+1)%WORDS.length;setWord()}
-    if(st==='play'&&hit()){st='over';sfx('over');if(score>hi){hi=score;if(!EMBED){try{localStorage.setItem('catHi',Math.floor(hi))}catch(e){}}}if(EMBED)toParent({type:'penguin-over',score:Math.floor(score)})}
+    if(st==='play'&&(lives<=0||hit())){st='over';sfx('over');if(score>hi){hi=score;if(!EMBED){try{localStorage.setItem('catHi',Math.floor(hi))}catch(e){}}}if(EMBED)toParent({type:'penguin-over',score:Math.floor(score)})}
   }
   for(let i=0;i<4;i++){
     const cx=Math.round((((i*190-dist*0.12*(1+i%2*0.5))%(W+120)+W+120)%(W+120)-60)/3)*3,cy=Math.round((24+(i*41)%64)/3)*3;
@@ -333,7 +399,7 @@ function loop(){
   x.fillText('HI '+String(Math.floor(hi)).padStart(5,'0')+'  '+String(Math.floor(score)).padStart(5,'0'),W-10,24);
   x.textAlign='left';x.fillStyle=ink;x.font='12px '+FF;
   
-  drawGot(ink);drawBanner(ink);
+  drawGot(ink);drawHearts(ink);drawBanner(ink);
   x.font='16px '+FF;x.textAlign='center';if(st==='ready'){x.font='bold 22px '+FF;x.globalAlpha=0.6+0.4*Math.sin(Date.now()/400);x.fillText('START',W/2,84);x.globalAlpha=1};
   if(st==='over'){
     const dk=ink==='#f0e3f7';
