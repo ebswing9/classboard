@@ -75,6 +75,8 @@ const EMBED=location.search.indexOf('embed=1')>=0;
 if(EMBED){document.documentElement.setAttribute('data-theme','light');document.documentElement.className='embed'}
 let startSent=false;
 function toParent(msg){try{parent.postMessage(msg,'*')}catch(e){}}
+const GAME_VER='05';
+window.addEventListener('load',function(){var v=document.createElement('div');v.textContent=GAME_VER;v.style.cssText='position:fixed;right:6px;bottom:3px;font-size:10px;color:#a08fb8;opacity:.5;pointer-events:none;-webkit-user-select:none;user-select:none';document.body.appendChild(v)});
 addEventListener('message',e=>{if(e.data&&e.data.type==='init'&&typeof e.data.hi==='number'){hi=e.data.hi}});
 const c=document.getElementById('c'),x=c.getContext('2d');
 const W=600,H=200,G=165,GR=0.65,JV=-11.5;
