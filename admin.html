@@ -218,6 +218,7 @@
         <button class="tab-btn active" data-subtab="write">작성</button>
         <button class="tab-btn" data-subtab="history">지난 기록</button>
         <button class="tab-btn" data-subtab="alert">교실 알림</button>
+        <button class="tab-btn" data-subtab="survey">설문</button>
       </div>
 
       <div class="tab-panel active" id="subtab-write">
@@ -283,6 +284,25 @@
           <h3>지난 조회·종례 기록</h3>
           <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
           <div id="historyList">불러오는 중...</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-survey">
+        <div class="section">
+          <h3>📝 설문 (그려서 제출)</h3>
+          <p class="hint">설문을 열면 대시보드 출결 창의 위쪽에 📝 버튼이 나타나요. 학생은 이름을 고르고 그림/글씨로 답을 한 번만 낼 수 있어요.</p>
+          <div class="field"><label>설문 제목(질문)</label>
+            <input type="text" id="svTitleInput" placeholder="예: 먹고 싶은 간식은?">
+          </div>
+          <button class="btn" id="svStartBtn">새 설문 시작</button>
+          <button class="publish-btn off" id="svToggleBtn" style="margin-left:8px;">설문 없음</button>
+          <span class="msg" id="svMsg"></span>
+        </div>
+        <div class="section">
+          <h3>제출된 답 <span class="sub" id="svCount"></span></h3>
+          <div id="svAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
+          <div class="divider"></div>
+          <button class="btn danger" id="svClearAllBtn">제출된 답 전부 지우기</button>
         </div>
       </div>
 
@@ -945,6 +965,77 @@ document.getElementById('quizEditorCollapseHeader').addEventListener('click', ()
   });
 });
 
+/* ---- 설문 ---- */
+let svCfgAdmin = null, svAnswersRef = null, svAnswersRefId = null;
+function svRenderCfg(){
+  const t = document.getElementById('svToggleBtn');
+  if(!svCfgAdmin || !svCfgAdmin.id){ t.textContent = '설문 없음'; t.className = 'publish-btn off'; }
+  else if(svCfgAdmin.open){ t.textContent = '열려 있음 (누르면 닫기)'; t.className = 'publish-btn on'; }
+  else { t.textContent = '닫힘 (누르면 열기)'; t.className = 'publish-btn off'; }
+  if(svCfgAdmin && svCfgAdmin.title && !document.getElementById('svTitleInput').value) document.getElementById('svTitleInput').value = svCfgAdmin.title;
+}
+async function svRenderAnswers(){
+  const box = document.getElementById('svAnswerGrid');
+  if(!(svCfgAdmin && svCfgAdmin.id)){ box.innerHTML = '<p class="hint">진행 중인 설문이 없어요.</p>'; document.getElementById('svCount').textContent = ''; return; }
+  const id = svCfgAdmin.id;
+  const val = (await db.ref('surveyAnswers/'+id).once('value')).val() || {};
+  const entries = Object.keys(val).map(k=>({id:k, ...val[k]})).sort((x,y)=> (x.name||'').localeCompare(y.name||'','ko'));
+  document.getElementById('svCount').textContent = '(' + entries.length + '명 제출 · ' + escapeHtml(svCfgAdmin.title || '') + ')';
+  if(!entries.length){ box.innerHTML = '<p class="hint">아직 제출한 학생이 없어요.</p>'; return; }
+  box.innerHTML = entries.map(e=>{
+    const time = e.submittedAt ? new Date(e.submittedAt).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';
+    return `<div style="background:#fff; border-radius:16px; padding:10px; box-shadow:var(--shadow);">
+      <img src="${e.dataUrl}" style="width:100%; border-radius:10px; border:1px solid var(--border); background:#fff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+        <span style="font-weight:700; font-size:13px;">${escapeHtml(e.name||'')}</span>
+        <span style="font-size:11px; color:var(--muted);">${time}</span>
+      </div>
+      <button class="del-link" data-svreset="${e.id}" style="margin-top:6px;">↺ 초기화</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-svreset]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await db.ref('surveyAnswers/'+id+'/'+btn.dataset.svreset).remove();
+      svRenderAnswers();
+    });
+  });
+}
+function bindSurveyListeners(){
+  db.ref('config/survey').on('value', (snap)=>{
+    svCfgAdmin = snap.val();
+    svRenderCfg();
+    const id = svCfgAdmin && svCfgAdmin.id;
+    if(svAnswersRef && svAnswersRefId !== id){ svAnswersRef.off(); svAnswersRef = null; }
+    if(id && !svAnswersRef){
+      svAnswersRefId = id;
+      svAnswersRef = db.ref('surveyAnswers/'+id);
+      svAnswersRef.on('value', ()=> svRenderAnswers());
+    }
+    svRenderAnswers();
+  });
+}
+document.getElementById('svStartBtn').addEventListener('click', async ()=>{
+  const title = document.getElementById('svTitleInput').value.trim();
+  const msg = document.getElementById('svMsg');
+  if(!title){ msg.textContent = '설문 제목을 입력해주세요.'; return; }
+  if(svCfgAdmin && svCfgAdmin.id){
+    if(!confirm('진행 중이던 설문의 제출 답은 지워져요. 새 설문을 시작할까요?')) return;
+    await db.ref('surveyAnswers/'+svCfgAdmin.id).remove();
+  }
+  await db.ref('config/survey').set({ id: String(Date.now()), title: title, open: true });
+  msg.textContent = '설문을 열었어요 ✓';
+  setTimeout(()=> msg.textContent = '', 2200);
+});
+document.getElementById('svToggleBtn').addEventListener('click', async ()=>{
+  if(!(svCfgAdmin && svCfgAdmin.id)) return;
+  await db.ref('config/survey/open').set(!svCfgAdmin.open);
+});
+document.getElementById('svClearAllBtn').addEventListener('click', async ()=>{
+  if(!(svCfgAdmin && svCfgAdmin.id)) return;
+  if(!confirm('이 설문에 제출된 답을 전부 지울까요?')) return;
+  await db.ref('surveyAnswers/'+svCfgAdmin.id).remove();
+});
+
 let initedOnce = false;
 async function initAdmin(){
   if(initedOnce) return; initedOnce = true;
@@ -964,6 +1055,7 @@ async function initAdmin(){
   await loadGameSettings();
   await renderGameAdmin();
   bindGameListeners();
+  bindSurveyListeners();
   settleGameRewards(false);
   await loadWeeklyEditor();
   await loadOverrideEditor();

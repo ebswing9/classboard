@@ -210,8 +210,8 @@
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
 
   /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
-  #drawOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
-  #drawOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
+  #drawOverlay, #surveyOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
+  #drawOverlay.open, #surveyOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
   .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); transition:width .2s ease; }
   .draw-box.wide{ width:min(92vw, 480px); }
   .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--sky-deep); margin:0 0 8px; text-align:center; }
@@ -222,7 +222,7 @@
   .name-pill.done{ background:var(--line); color:var(--muted); cursor:default; opacity:.55; }
   .name-pill.done:hover{ background:var(--line); color:var(--muted); }
   .name-pill .pill-hearts{ font-size:9.5px; letter-spacing:-1px; }
-  #drawCanvas{ width:100%; height:70px; border-radius:10px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
+  #drawCanvas, #svCanvas{ width:100%; height:70px; border-radius:10px; background:#fff; border:2px solid var(--line); touch-action:none; display:block; }
   .draw-actions{ display:flex; align-items:center; gap:5px; margin-top:8px; }
   .draw-btn{ border:none; background:var(--line); color:var(--text); padding:7px 10px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; }
   .draw-btn.primary{ background:var(--sky-deep); color:#fff; flex:1; padding:8px 10px; font-size:12px; }
@@ -257,6 +257,9 @@
 
   /* 펭귄 게임 */
   #gameIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #surveyIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #surveyIconBtn:hover{ transform:scale(1.08); }
+  #surveyIconBtn:active{ transform:scale(0.92); }
   #gameIconBtn:hover{ transform:scale(1.08); }
   #gameIconBtn:active{ transform:scale(0.92); }
   #gameOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:16px; }
@@ -270,6 +273,13 @@
   .gm-chip{ display:inline-block; padding:4px 12px; margin:0 6px 4px 0; border-radius:999px; font-size:12.5px; font-weight:800; color:var(--text); }
   .gm-chip.c1{ background:var(--mint); }
   .gm-chip.c2{ background:var(--yellow); }
+  .gm-tabs{ text-align:center; margin:20px 0 6px; }
+  .gm-tab{ border:none; background:#fff; color:var(--muted); font-family:'Jua',sans-serif; font-size:16px; padding:8px 26px; margin:0 4px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .gm-tab.on{ background:var(--pink); color:var(--text); }
+  .gm-box{ scrollbar-width:thin; scrollbar-color:#f3c3d6 transparent; }
+  .gm-box::-webkit-scrollbar{ width:8px; }
+  .gm-box::-webkit-scrollbar-track{ background:transparent; margin:22px 0; }
+  .gm-box::-webkit-scrollbar-thumb{ background:#f3c3d6; border-radius:8px; }
   .gm-section{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin:22px 0 10px; }
   .gm-section::before{ content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--pink-deep); margin-right:8px; }
   #gameNameGrid{ text-align:center; }
@@ -389,6 +399,7 @@
             <h2 id="panelTitle"></h2>
             <button id="luckyDrawIconBtn" title="오늘의 행운번호" style="display:none;">🍀</button>
             <button id="gameIconBtn" title="펭귄 게임">🐧</button>
+            <button id="surveyIconBtn" title="설문">📝</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -471,6 +482,31 @@
   </div>
 </div>
 
+<div id="surveyOverlay">
+  <div class="draw-box">
+    <button class="close-x" id="closeSurveyOverlay">✕</button>
+
+    <div id="svStepName">
+      <h2 id="svTitleLabel">📝 설문</h2>
+      <div class="name-grid" id="svNameGrid"></div>
+    </div>
+
+    <div id="svStepCanvas" style="display:none;">
+      <h2 id="svForLabel"></h2>
+      <canvas id="svCanvas" width="520" height="220"></canvas>
+      <div class="draw-actions">
+        <button class="draw-btn" id="svBackBtn">‹ 다른사람</button>
+        <button class="draw-btn primary" id="svSubmitBtn">제출</button>
+        <button class="draw-btn" id="svClearBtn">지우기</button>
+      </div>
+    </div>
+
+    <div id="svStepDone" style="display:none;">
+      <div class="draw-done">🎉 제출 완료 🎉</div>
+    </div>
+  </div>
+</div>
+
 <div id="gameOverlay">
   <div class="gm-box">
     <button class="gm-x" id="gameCloseBtn">✕</button>
@@ -482,10 +518,12 @@
           <div class="gm-chips" id="gameNote"></div>
         </div>
       </div>
-      <div class="gm-section">플레이할 사람</div>
+      <div class="gm-tabs">
+        <button class="gm-tab on" id="gameTabName">🐧 플레이</button>
+        <button class="gm-tab" id="gameTabRank">🏆 랭킹</button>
+      </div>
       <div id="gameNameGrid"></div>
-      <div class="gm-section">랭킹</div>
-      <div id="gameRankArea"></div>
+      <div id="gameRankArea" style="display:none;"></div>
     </div>
     <div id="gameStepPlay" style="display:none;">
       <div class="gm-playhead"><span class="gm-who" id="gamePlayHead"></span></div>
@@ -1277,6 +1315,97 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
   setTimeout(()=>{ drawOverlay.classList.remove('open'); }, 1300);
 });
 
+
+/* ---------- 설문 (그려서 제출, 1인 1회) ----------
+   config/survey = { id, title, open }   답: surveyAnswers/{id}/{학생id} = { name, dataUrl, submittedAt } */
+let svCfg = null, svStudent = null, svDrawing = false;
+const svOverlay = document.getElementById('surveyOverlay');
+const svCanvas = document.getElementById('svCanvas');
+const svCtx = svCanvas.getContext('2d');
+function updateSurveyIcon(){
+  const on = !!(svCfg && svCfg.open && svCfg.id && openPanelType === 'attendance');
+  document.getElementById('surveyIconBtn').style.display = on ? 'flex' : 'none';
+}
+function svResetCanvas(){
+  svCtx.fillStyle = '#ffffff';
+  svCtx.fillRect(0,0,svCanvas.width,svCanvas.height);
+  svCtx.lineCap = 'round'; svCtx.lineJoin = 'round'; svCtx.lineWidth = 4; svCtx.strokeStyle = '#4a4458';
+}
+function svPos(e){
+  const rect = svCanvas.getBoundingClientRect();
+  return { x: (e.clientX - rect.left) * (svCanvas.width / rect.width), y: (e.clientY - rect.top) * (svCanvas.height / rect.height) };
+}
+svCanvas.addEventListener('pointerdown', (e)=>{
+  svDrawing = true;
+  svCanvas.setPointerCapture(e.pointerId);
+  const p = svPos(e);
+  svCtx.beginPath(); svCtx.moveTo(p.x, p.y);
+});
+svCanvas.addEventListener('pointermove', (e)=>{
+  if(!svDrawing) return;
+  const p = svPos(e);
+  svCtx.lineTo(p.x, p.y); svCtx.stroke();
+});
+function svStop(){ svDrawing = false; }
+svCanvas.addEventListener('pointerup', svStop);
+svCanvas.addEventListener('pointerleave', svStop);
+
+async function openSurveyOverlay(){
+  if(!(svCfg && svCfg.open && svCfg.id)) return;
+  const roster = await getRosterList();
+  const answered = (await db.ref('surveyAnswers/'+svCfg.id).once('value')).val() || {};
+  document.getElementById('svTitleLabel').textContent = '📝 ' + (svCfg.title || '설문');
+  const grid = document.getElementById('svNameGrid');
+  grid.innerHTML = roster.length ? roster.map(s=> answered[s.id]
+    ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
+    : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`
+  ).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
+  grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      svStudent = { id: btn.dataset.id, name: btn.dataset.name };
+      document.getElementById('svForLabel').textContent = '✏️ ' + svStudent.name + '님 · ' + (svCfg.title || '설문');
+      document.getElementById('svStepName').style.display = 'none';
+      document.getElementById('svStepCanvas').style.display = 'block';
+      svOverlay.querySelector('.draw-box').classList.remove('wide');
+      svResetCanvas();
+    });
+  });
+  document.getElementById('svStepName').style.display = 'block';
+  document.getElementById('svStepCanvas').style.display = 'none';
+  document.getElementById('svStepDone').style.display = 'none';
+  svOverlay.querySelector('.draw-box').classList.add('wide');
+  svOverlay.classList.add('open');
+}
+document.getElementById('surveyIconBtn').addEventListener('click', openSurveyOverlay);
+document.getElementById('closeSurveyOverlay').addEventListener('click', ()=> svOverlay.classList.remove('open'));
+document.getElementById('svBackBtn').addEventListener('click', ()=>{
+  document.getElementById('svStepCanvas').style.display = 'none';
+  document.getElementById('svStepName').style.display = 'block';
+  svOverlay.querySelector('.draw-box').classList.add('wide');
+});
+document.getElementById('svClearBtn').addEventListener('click', svResetCanvas);
+document.getElementById('svSubmitBtn').addEventListener('click', async ()=>{
+  if(!svStudent || !(svCfg && svCfg.open && svCfg.id)) return;
+  const dataUrl = svCanvas.toDataURL('image/jpeg', 0.82);
+  const me = svStudent;
+  // 한 번만 제출: 이미 있으면 덮어쓰지 않음 (선생님이 초기화하면 다시 제출 가능)
+  const res = await db.ref('surveyAnswers/'+svCfg.id+'/'+me.id).transaction(function(cur){
+    return cur ? undefined : { name: me.name, dataUrl: dataUrl, submittedAt: Date.now() };
+  });
+  document.getElementById('svStepCanvas').style.display = 'none';
+  const done = document.getElementById('svStepDone');
+  done.firstElementChild.textContent = res.committed ? '🎉 제출 완료 🎉' : '이미 제출했어요';
+  done.style.display = 'block';
+  setTimeout(()=>{ svOverlay.classList.remove('open'); }, 1300);
+});
+function svAttachListener(){
+  db.ref('config/survey').on('value', (snap)=>{
+    svCfg = snap.val();
+    updateSurveyIcon();
+    if(!(svCfg && svCfg.open)) svOverlay.classList.remove('open');
+  });
+}
+
 /* ---------- 교실 알림 (관리자가 보내면 화면 전체에 표시) ----------
    classAlert = {id, message, mode, closeMode, seconds, createdAt, active, response}
    응답이 필요한 알림은 "가장 먼저 답한 1명"의 답이 도착하면 모든 화면에서 자동으로 닫힘.
@@ -1421,6 +1550,7 @@ let gameStudent = null, gameRemaining = 0, gameStarted = false, gameDenied = fal
 let gameRankTab = 'today';
 function updateGameIcon(){
   document.getElementById('gameIconBtn').style.display = (gameEnabled && openPanelType === 'attendance') ? 'flex' : 'none';
+  updateSurveyIcon();
 }
 function gameShowStep(name){
   document.getElementById('gameStepPick').style.display = name === 'pick' ? 'block' : 'none';
@@ -1506,6 +1636,7 @@ async function gameRenderPick(){
 async function gameOpen(){
   document.getElementById('gameOverlay').classList.add('open');
   gameShowStep('pick');
+  gameSetTab('name');
   document.getElementById('gameNameGrid').innerHTML = '';
   try{
     const r = await db.ref('config/gameReward').once('value');
@@ -1575,6 +1706,14 @@ window.addEventListener('message', function(e){
   if(d.type === 'penguin-start') gameOnStart();
   else if(d.type === 'penguin-over') gameOnOver(d.score);
 });
+function gameSetTab(name){
+  document.getElementById('gameNameGrid').style.display = name === 'name' ? 'block' : 'none';
+  document.getElementById('gameRankArea').style.display = name === 'rank' ? 'block' : 'none';
+  document.getElementById('gameTabName').className = 'gm-tab' + (name === 'name' ? ' on' : '');
+  document.getElementById('gameTabRank').className = 'gm-tab' + (name === 'rank' ? ' on' : '');
+}
+document.getElementById('gameTabName').addEventListener('click', ()=> gameSetTab('name'));
+document.getElementById('gameTabRank').addEventListener('click', ()=> gameSetTab('rank'));
 document.getElementById('gameIconBtn').addEventListener('click', gameOpen);
 document.getElementById('gameCloseBtn').addEventListener('click', gameCloseAll);
 document.getElementById('gameAgainBtn').addEventListener('click', ()=>{
@@ -1584,6 +1723,7 @@ document.getElementById('gameBackBtn').addEventListener('click', async ()=>{
   document.getElementById('gameFrame').src = 'about:blank';
   gameStudent = null; gameStarted = false;
   gameShowStep('pick');
+  gameSetTab('name');
   await gameRenderPick();
 });
 
@@ -1637,6 +1777,7 @@ function attachRealtimeListeners(){
     if(openPanelType === 'attendance') await renderAttendancePanel();
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
+  svAttachListener();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
