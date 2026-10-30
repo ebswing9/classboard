@@ -219,6 +219,7 @@
         <button class="tab-btn" data-subtab="history">지난 기록</button>
         <button class="tab-btn" data-subtab="alert">교실 알림</button>
         <button class="tab-btn" data-subtab="survey">설문</button>
+        <button class="tab-btn" data-subtab="vote">투표</button>
       </div>
 
       <div class="tab-panel active" id="subtab-write">
@@ -303,6 +304,28 @@
           <div id="svAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
           <div class="divider"></div>
           <button class="btn danger" id="svClearAllBtn">제출된 답 전부 지우기</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-vote">
+        <div class="section">
+          <h3>✅ 투표 (항목 선택)</h3>
+          <p class="hint">투표를 열면 대시보드 출결 창에 ✅ 버튼이 나타나요. 학생은 이름을 고르고 항목 하나를 선택해 한 번만 투표할 수 있어요. 결과는 이 페이지에서만 보여요.</p>
+          <div class="field"><label>투표 제목</label>
+            <input type="text" id="vtTitleInput" placeholder="예: 체육대회 종목 정하기">
+          </div>
+          <div class="field"><label>항목 (한 줄에 하나씩, 2~12개)</label>
+            <textarea id="vtOptionsInput" rows="5" placeholder="피구&#10;발야구&#10;줄다리기"></textarea>
+          </div>
+          <button class="btn" id="vtStartBtn">새 투표 시작</button>
+          <button class="publish-btn off" id="vtToggleBtn" style="margin-left:8px;">투표 없음</button>
+          <span class="msg" id="vtMsg"></span>
+        </div>
+        <div class="section">
+          <h3>투표 결과 <span class="sub" id="vtCount"></span></h3>
+          <div id="vtResult"></div>
+          <div class="divider"></div>
+          <button class="btn secondary" id="vtResetBtn">투표 모두 초기화 (항목 유지, 다시 투표)</button>
         </div>
       </div>
 
@@ -1036,6 +1059,80 @@ document.getElementById('svClearAllBtn').addEventListener('click', async ()=>{
   await db.ref('surveyAnswers/'+svCfgAdmin.id).remove();
 });
 
+/* ---- 투표 ---- */
+let vtCfgAdmin = null, vtAnswersRef = null, vtAnswersRefId = null;
+function vtRenderCfg(){
+  const t = document.getElementById('vtToggleBtn');
+  if(!vtCfgAdmin || !vtCfgAdmin.id){ t.textContent = '투표 없음'; t.className = 'publish-btn off'; }
+  else if(vtCfgAdmin.open){ t.textContent = '열려 있음 (누르면 닫기)'; t.className = 'publish-btn on'; }
+  else { t.textContent = '닫힘 (누르면 열기)'; t.className = 'publish-btn off'; }
+  if(vtCfgAdmin && vtCfgAdmin.title && !document.getElementById('vtTitleInput').value) document.getElementById('vtTitleInput').value = vtCfgAdmin.title;
+  if(vtCfgAdmin && vtCfgAdmin.options && !document.getElementById('vtOptionsInput').value) document.getElementById('vtOptionsInput').value = vtCfgAdmin.options.join('\n');
+}
+async function vtRenderResult(){
+  const box = document.getElementById('vtResult');
+  if(!(vtCfgAdmin && vtCfgAdmin.id && vtCfgAdmin.options)){ box.innerHTML = '<p class="hint">진행 중인 투표가 없어요.</p>'; document.getElementById('vtCount').textContent = ''; return; }
+  const id = vtCfgAdmin.id, opts = vtCfgAdmin.options;
+  const val = (await db.ref('voteAnswers/'+id).once('value')).val() || {};
+  const voters = Object.keys(val).map(k=>({id:k, ...val[k]}));
+  document.getElementById('vtCount').textContent = '(' + voters.length + '명 투표 · ' + escapeHtml(vtCfgAdmin.title || '') + ')';
+  const max = Math.max(1, ...opts.map((_,i)=> voters.filter(v=> v.choice === i).length));
+  box.innerHTML = opts.map((o,i)=>{
+    const vs = voters.filter(v=> v.choice === i).sort((x,y)=> (x.name||'').localeCompare(y.name||'','ko'));
+    return `<div style="background:#fff; border-radius:14px; padding:10px 12px; margin-bottom:10px; box-shadow:var(--shadow);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-weight:700; font-size:14px;">${i+1}. ${escapeHtml(o)}</span>
+        <span style="font-weight:800; font-size:15px;">${vs.length}표</span>
+      </div>
+      <div style="height:10px; border-radius:6px; background:var(--line); overflow:hidden;"><div style="height:100%; width:${Math.round(vs.length/max*100)}%; background:var(--sky-deep); border-radius:6px;"></div></div>
+      <div style="margin-top:8px;">${vs.length ? vs.map(v=> `<span style="display:inline-block; background:var(--sky); border-radius:10px; padding:3px 8px; margin:0 5px 5px 0; font-size:12px; font-weight:700;">${escapeHtml(v.name||'')} <button class="del-link" data-vtreset="${v.id}" title="이 학생 투표 초기화" style="margin-left:3px;">↺</button></span>`).join('') : '<span class="hint">아직 없어요</span>'}</div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-vtreset]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await db.ref('voteAnswers/'+id+'/'+btn.dataset.vtreset).remove();
+      vtRenderResult();
+    });
+  });
+}
+function bindVoteListeners(){
+  db.ref('config/vote').on('value', (snap)=>{
+    vtCfgAdmin = snap.val();
+    vtRenderCfg();
+    const id = vtCfgAdmin && vtCfgAdmin.id;
+    if(vtAnswersRef && vtAnswersRefId !== id){ vtAnswersRef.off(); vtAnswersRef = null; }
+    if(id && !vtAnswersRef){
+      vtAnswersRefId = id;
+      vtAnswersRef = db.ref('voteAnswers/'+id);
+      vtAnswersRef.on('value', ()=> vtRenderResult());
+    }
+    vtRenderResult();
+  });
+}
+document.getElementById('vtStartBtn').addEventListener('click', async ()=>{
+  const title = document.getElementById('vtTitleInput').value.trim();
+  const options = document.getElementById('vtOptionsInput').value.split('\n').map(x=> x.trim()).filter(Boolean).slice(0,12);
+  const msg = document.getElementById('vtMsg');
+  if(!title){ msg.textContent = '투표 제목을 입력해주세요.'; return; }
+  if(options.length < 2){ msg.textContent = '항목을 2개 이상 입력해주세요.'; return; }
+  if(vtCfgAdmin && vtCfgAdmin.id){
+    if(!confirm('진행 중이던 투표의 결과는 지워져요. 새 투표를 시작할까요?')) return;
+    await db.ref('voteAnswers/'+vtCfgAdmin.id).remove();
+  }
+  await db.ref('config/vote').set({ id: String(Date.now()), title: title, options: options, open: true });
+  msg.textContent = '투표를 열었어요 ✓';
+  setTimeout(()=> msg.textContent = '', 2200);
+});
+document.getElementById('vtToggleBtn').addEventListener('click', async ()=>{
+  if(!(vtCfgAdmin && vtCfgAdmin.id)) return;
+  await db.ref('config/vote/open').set(!vtCfgAdmin.open);
+});
+document.getElementById('vtResetBtn').addEventListener('click', async ()=>{
+  if(!(vtCfgAdmin && vtCfgAdmin.id)) return;
+  if(!confirm('이 투표의 결과를 모두 지우고 다시 투표받을까요? (항목은 그대로 유지돼요)')) return;
+  await db.ref('voteAnswers/'+vtCfgAdmin.id).remove();
+});
+
 let initedOnce = false;
 async function initAdmin(){
   if(initedOnce) return; initedOnce = true;
@@ -1056,6 +1153,7 @@ async function initAdmin(){
   await renderGameAdmin();
   bindGameListeners();
   bindSurveyListeners();
+  bindVoteListeners();
   settleGameRewards(false);
   await loadWeeklyEditor();
   await loadOverrideEditor();

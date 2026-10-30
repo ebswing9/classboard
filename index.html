@@ -198,6 +198,7 @@
   #quizCard.squished .quiz-icon{ font-size:22px; }
   #quizCard.squished .quiz-submit-btn{ font-size:12px; padding:8px 12px; white-space:normal; }
   .quiz-icon{ font-size:30px; }
+  .quiz-question, .quiz-hint, .quiz-choices{ word-break:keep-all; overflow-wrap:break-word; word-wrap:break-word; }
   .quiz-question{ font-size:28px; font-size:clamp(22px, 2.8vw, 34px); font-weight:800; line-height:1.4; max-height:100%; overflow-y:auto; white-space:pre-line; margin-bottom:8px; }
   .quiz-hint{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.5; white-space:pre-line; margin-top:-6px; margin-bottom:4px; max-width:420px; }
   .quiz-image{ max-width:min(100%, 320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
@@ -210,8 +211,8 @@
   #configErrorBanner{ position:fixed; top:0; left:0; right:0; background:#e0556f; color:#fff; padding:16px 22px; font-size:15px; font-weight:700; z-index:999; display:none; }
 
   /* 그리기 답안 제출 - 화면 하단 중앙에 작게, 배경 안 가림 */
-  #drawOverlay, #surveyOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
-  #drawOverlay.open, #surveyOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
+  #drawOverlay, #surveyOverlay, #voteOverlay{ position:fixed; left:50%; bottom:26px; z-index:200; opacity:0; visibility:hidden; transform:translateX(-50%) translateY(14px); transition:opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
+  #drawOverlay.open, #surveyOverlay.open, #voteOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
   .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); transition:width .2s ease; }
   .draw-box.wide{ width:min(92vw, 480px); }
   .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--sky-deep); margin:0 0 8px; text-align:center; }
@@ -257,9 +258,15 @@
 
   /* 펭귄 게임 */
   #gameIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn:hover{ transform:scale(1.08); }
-  #surveyIconBtn:active{ transform:scale(0.92); }
+  #surveyIconBtn, #voteIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #surveyIconBtn:hover, #voteIconBtn:hover{ transform:scale(1.08); }
+  #surveyIconBtn:active, #voteIconBtn:active{ transform:scale(0.92); }
+  .vt-opts{ text-align:center; max-height:50vh; overflow-y:auto; }
+  .vt-opt{ display:block; width:100%; box-sizing:border-box; border:2px solid var(--line); background:#fff; color:var(--text); padding:9px 12px; margin:0 0 6px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; text-align:left; word-break:keep-all; }
+  .vt-opt:hover{ border-color:var(--sky-deep); }
+  .vt-opt.on{ background:var(--sky); border-color:var(--sky-deep); }
+  .vt-opt .vt-no{ display:inline-block; width:20px; height:20px; line-height:20px; margin-right:8px; border-radius:50%; background:var(--line); text-align:center; font-size:11px; }
+  .vt-opt.on .vt-no{ background:var(--sky-deep); color:#fff; }
   #gameIconBtn:hover{ transform:scale(1.08); }
   #gameIconBtn:active{ transform:scale(0.92); }
   #gameOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:16px; }
@@ -400,6 +407,7 @@
             <button id="luckyDrawIconBtn" title="오늘의 행운번호" style="display:none;">🍀</button>
             <button id="gameIconBtn" title="펭귄 게임">🐧</button>
             <button id="surveyIconBtn" title="설문">📝</button>
+            <button id="voteIconBtn" title="투표">✅</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -478,6 +486,30 @@
 
     <div id="drawStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료 🎉</div>
+    </div>
+  </div>
+</div>
+
+<div id="voteOverlay">
+  <div class="draw-box">
+    <button class="close-x" id="closeVoteOverlay">✕</button>
+
+    <div id="vtStepName">
+      <h2 id="vtTitleLabel">투표</h2>
+      <div class="name-grid" id="vtNameGrid"></div>
+    </div>
+
+    <div id="vtStepPick" style="display:none;">
+      <h2 id="vtForLabel"></h2>
+      <div class="vt-opts" id="vtOpts"></div>
+      <div class="draw-actions">
+        <button class="draw-btn" id="vtBackBtn">‹ 다른사람</button>
+        <button class="draw-btn primary" id="vtSubmitBtn">투표하기</button>
+      </div>
+    </div>
+
+    <div id="vtStepDone" style="display:none;">
+      <div class="draw-done">🎉 투표 완료 🎉</div>
     </div>
   </div>
 </div>
@@ -1406,6 +1438,77 @@ function svAttachListener(){
   });
 }
 
+
+/* ---------- 투표 (선생님이 항목을 미리 입력, 학생은 이름 고르고 선택, 1인 1표) ----------
+   config/vote = { id, title, options:[...], open }   표: voteAnswers/{id}/{학생id} = { name, choice(번호), at } */
+let vtCfg = null, vtStudent = null, vtChoice = -1;
+const vtOverlay = document.getElementById('voteOverlay');
+function updateVoteIcon(){
+  const on = !!(vtCfg && vtCfg.open && vtCfg.id && vtCfg.options && openPanelType === 'attendance');
+  document.getElementById('voteIconBtn').style.display = on ? 'flex' : 'none';
+}
+async function openVoteOverlay(){
+  if(!(vtCfg && vtCfg.open && vtCfg.id)) return;
+  const roster = await getRosterList();
+  const voted = (await db.ref('voteAnswers/'+vtCfg.id).once('value')).val() || {};
+  document.getElementById('vtTitleLabel').textContent = '✅ ' + (vtCfg.title || '투표');
+  const grid = document.getElementById('vtNameGrid');
+  grid.innerHTML = roster.length ? roster.map(s=> voted[s.id]
+    ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
+    : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`
+  ).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
+  grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      vtStudent = { id: btn.dataset.id, name: btn.dataset.name };
+      vtChoice = -1;
+      document.getElementById('vtForLabel').textContent = vtStudent.name + '님 · ' + (vtCfg.title || '투표');
+      const box = document.getElementById('vtOpts');
+      box.innerHTML = (vtCfg.options || []).map((o,i)=> `<button class="vt-opt" data-i="${i}"><span class="vt-no">${i+1}</span>${escapeHtml(o)}</button>`).join('');
+      box.querySelectorAll('.vt-opt').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          vtChoice = parseInt(b.dataset.i, 10);
+          box.querySelectorAll('.vt-opt').forEach(x=> x.classList.toggle('on', x === b));
+        });
+      });
+      document.getElementById('vtStepName').style.display = 'none';
+      document.getElementById('vtStepPick').style.display = 'block';
+      vtOverlay.querySelector('.draw-box').classList.remove('wide');
+    });
+  });
+  document.getElementById('vtStepName').style.display = 'block';
+  document.getElementById('vtStepPick').style.display = 'none';
+  document.getElementById('vtStepDone').style.display = 'none';
+  vtOverlay.querySelector('.draw-box').classList.add('wide');
+  vtOverlay.classList.add('open');
+}
+document.getElementById('voteIconBtn').addEventListener('click', openVoteOverlay);
+document.getElementById('closeVoteOverlay').addEventListener('click', ()=> vtOverlay.classList.remove('open'));
+document.getElementById('vtBackBtn').addEventListener('click', ()=>{
+  document.getElementById('vtStepPick').style.display = 'none';
+  document.getElementById('vtStepName').style.display = 'block';
+  vtOverlay.querySelector('.draw-box').classList.add('wide');
+});
+document.getElementById('vtSubmitBtn').addEventListener('click', async ()=>{
+  if(!vtStudent || vtChoice < 0 || !(vtCfg && vtCfg.open && vtCfg.id)) return;
+  const me = vtStudent, choice = vtChoice;
+  // 한 번만 투표: 이미 있으면 덮어쓰지 않음 (선생님이 초기화하면 다시 투표 가능)
+  const res = await db.ref('voteAnswers/'+vtCfg.id+'/'+me.id).transaction(function(cur){
+    return cur ? undefined : { name: me.name, choice: choice, at: Date.now() };
+  });
+  document.getElementById('vtStepPick').style.display = 'none';
+  const done = document.getElementById('vtStepDone');
+  done.firstElementChild.textContent = res.committed ? '🎉 투표 완료 🎉' : '이미 투표했어요';
+  done.style.display = 'block';
+  setTimeout(()=>{ vtOverlay.classList.remove('open'); }, 1300);
+});
+function vtAttachListener(){
+  db.ref('config/vote').on('value', (snap)=>{
+    vtCfg = snap.val();
+    updateVoteIcon();
+    if(!(vtCfg && vtCfg.open)) vtOverlay.classList.remove('open');
+  });
+}
+
 /* ---------- 교실 알림 (관리자가 보내면 화면 전체에 표시) ----------
    classAlert = {id, message, mode, closeMode, seconds, createdAt, active, response}
    응답이 필요한 알림은 "가장 먼저 답한 1명"의 답이 도착하면 모든 화면에서 자동으로 닫힘.
@@ -1551,6 +1654,7 @@ let gameRankTab = 'today';
 function updateGameIcon(){
   document.getElementById('gameIconBtn').style.display = (gameEnabled && openPanelType === 'attendance') ? 'flex' : 'none';
   updateSurveyIcon();
+  updateVoteIcon();
 }
 function gameShowStep(name){
   document.getElementById('gameStepPick').style.display = name === 'pick' ? 'block' : 'none';
@@ -1778,6 +1882,7 @@ function attachRealtimeListeners(){
   });
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
   svAttachListener();
+  vtAttachListener();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
