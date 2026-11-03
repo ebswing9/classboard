@@ -190,10 +190,10 @@
   .quiz-question, .quiz-hint, .quiz-image, .quiz-choices{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
   .quiz-submit-btn{ transition: font-size .3s ease, padding .3s ease, transform .12s ease, filter .15s ease; }
   #quizCard.squished{ cursor:pointer; }
-  #quizCard.squished .quiz-question,
   #quizCard.squished .quiz-hint,
   #quizCard.squished .quiz-image,
   #quizCard.squished .quiz-choices{ opacity:0; max-height:0; margin:0; }
+  #quizCard.squished .quiz-question{ font-size:13px; font-weight:700; line-height:1.45; max-height:260px; margin:0; overflow-y:auto; }
   #quizCard.squished::before{ display:none; }
   #quizCard.squished .quiz-icon{ font-size:22px; }
   #quizCard.squished .quiz-submit-btn{ font-size:12px; padding:8px 12px; white-space:normal; }
