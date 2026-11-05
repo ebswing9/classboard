@@ -20,6 +20,9 @@
 <script src="firebase.js"></script>
 
 <style>
+  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 눈누 CDN에서 불러옴. 둘 다 안 되면 주아체로 대체 */
+  @font-face{ font-family:'MapleStory'; src:url('fonts/MaplestoryOTFBold.woff') format('woff'), url('fonts/MaplestoryOTFBold.otf') format('opentype'), url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/MaplestoryOTFBold.woff') format('woff'); font-weight:normal; font-style:normal; font-display:swap; }
+
   :root{
     --bg1:#fdf3f6; --bg2:#eef1fd; --bg3:#fbf6e9;
     --card:#ffffff;
@@ -50,7 +53,7 @@
   #app{ height:calc(var(--vh, 1vh) * 100); padding:22px; display:flex; }
   #board{ flex:1; display:flex; flex-direction:column; gap:18px; min-height:0; }
 
-  .headfont{ font-family:'Jua',sans-serif; font-weight:400; }
+  .headfont{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; }
   .icon-svg{ display:inline-flex; vertical-align:-0.15em; }
   .icon-svg svg{ display:block; }
   .label{ font-size:19px; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -67,7 +70,7 @@
   #sidePanelInner{ width:392px; height:100%; display:flex; flex-direction:column; min-height:0; }
   .panel-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-shrink:0; }
   .panel-header-title{ display:flex; align-items:center; gap:8px; min-width:0; }
-  .panel-header h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
+  .panel-header h2{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:22px; margin:0; color:var(--pink-deep); }
   .panel-close{ background:var(--line); border:none; width:32px; height:32px; border-radius:50%; color:var(--text); font-size:15px; cursor:pointer; flex-shrink:0; }
   #panelBody{ flex:1; overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch; }
 
@@ -119,10 +122,10 @@
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
   #quizCard{ flex:0 1 520px; min-width:300px; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
 
-  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  #clockTime{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
   #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
-  #ddayWidget{ cursor:pointer; transition:opacity .22s ease, transform .22s ease; -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; font-family:'Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
+  #ddayWidget{ cursor:pointer; transition:opacity .22s ease, transform .22s ease; -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; font-family:'MapleStory','Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
 
   #quickBtnRow{ display:flex; gap:10px; margin-top:22px; }
 
@@ -130,7 +133,7 @@
   #attendanceWidget{ width:100%; max-width:360px; margin-top:20px; }
   .att-rate-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
   .att-rate-label{ font-size:14px; color:var(--mint-deep); display:flex; align-items:center; gap:5px; }
-  .att-rate-percent{ font-family:'Jua',sans-serif; font-weight:400; font-size:17px; color:var(--mint-deep); }
+  .att-rate-percent{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:17px; color:var(--mint-deep); }
   .att-rate-bar-track{ width:100%; height:16px; background:var(--line); border-radius:20px; box-shadow:inset 0 1px 4px rgba(160,140,190,0.2); position:relative; }
   .att-rate-bar-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg, var(--mint-deep), var(--sky-deep)); transition:width .6s cubic-bezier(.4,0,.2,1); position:relative; min-width:16px; }
   .att-rate-bar-fill::after{ content:"🐣"; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:15px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
@@ -180,11 +183,11 @@
 
   #todayPeriodList{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
   .period-chip{ flex:1; min-height:0; border-radius:14px; padding:4px 12px; display:flex; align-items:center; justify-content:center; gap:9px; font-weight:700; font-size:16px; min-width:0; overflow:hidden; }
-  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Jua',sans-serif; color:var(--text); flex-shrink:0; }
+  .p-badge{ width:24px; height:24px; min-width:24px; border-radius:50%; background:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'MapleStory','Jua',sans-serif; color:var(--text); flex-shrink:0; }
   .p-subject{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .tt-empty{ color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
 
-  #quizCard::before{ content:"?"; position:absolute; font-family:'Jua',sans-serif; font-size:220px; color:rgba(121,179,236,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
+  #quizCard::before{ content:"?"; position:absolute; font-family:'MapleStory','Jua',sans-serif; font-size:220px; color:rgba(121,179,236,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; user-select:none; }
   .quiz-inner{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:6px 10px; }
   .quiz-icon{ transition: font-size .32s ease; }
   .quiz-question, .quiz-hint, .quiz-image, .quiz-choices{ transition: opacity .25s ease, max-height .32s ease, margin .32s ease; max-height:600px; opacity:1; overflow:hidden; }
@@ -204,7 +207,7 @@
   .quiz-image{ max-width:min(100%, 320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
   .quiz-choices{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; margin:0 auto; }
   .quiz-choice{ background:rgba(255,255,255,0.85); border-radius:14px; padding:12px 18px; font-size:16px; font-weight:700; text-align:left; display:flex; align-items:center; gap:10px; box-shadow:0 2px 6px rgba(74,68,88,0.06); }
-  .quiz-choice .qc-num{ width:20px; height:20px; min-width:20px; border-radius:50%; background:var(--sky-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; font-family:'Jua',sans-serif; }
+  .quiz-choice .qc-num{ width:20px; height:20px; min-width:20px; border-radius:50%; background:var(--sky-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; font-family:'MapleStory','Jua',sans-serif; }
   .quiz-submit-btn{ position:relative; margin-top:4px; border:none; background:var(--sky-deep); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(121,179,236,0.3); }
   .quiz-submit-btn:hover{ filter:brightness(1.06); }
 
@@ -215,7 +218,7 @@
   #drawOverlay.open, #surveyOverlay.open, #voteOverlay.open{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .22s ease, transform .22s ease, visibility 0s; }
   .draw-box{ width:220px; background:#fff; border-radius:18px; padding:12px 14px; box-shadow:0 12px 32px rgba(74,68,88,0.28); position:relative; border:1px solid rgba(255,255,255,0.6); transition:width .2s ease; }
   .draw-box.wide{ width:min(92vw, 480px); }
-  .draw-box h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:13px; color:var(--sky-deep); margin:0 0 8px; text-align:center; }
+  .draw-box h2{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:13px; color:var(--sky-deep); margin:0 0 8px; text-align:center; }
   .close-x{ position:absolute; top:6px; right:6px; background:var(--line); border:none; width:20px; height:20px; border-radius:50%; color:var(--text); font-size:10px; cursor:pointer; }
   .name-grid{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:60vh; overflow-y:auto; }
   .name-pill{ border:none; background:var(--sky); color:var(--text); padding:6px 10px; border-radius:12px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; }
@@ -227,7 +230,7 @@
   .draw-actions{ display:flex; align-items:center; gap:5px; margin-top:8px; }
   .draw-btn{ border:none; background:var(--line); color:var(--text); padding:7px 10px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; }
   .draw-btn.primary{ background:var(--sky-deep); color:#fff; flex:1; padding:8px 10px; font-size:12px; }
-  .draw-done{ text-align:center; font-size:14px; font-weight:800; padding:10px 0; font-family:'Jua',sans-serif; color:var(--mint-deep); }
+  .draw-done{ text-align:center; font-size:14px; font-weight:800; padding:10px 0; font-family:'MapleStory','Jua',sans-serif; color:var(--mint-deep); }
 
 
   /* 교실 알림 (화면 전체) */
@@ -236,18 +239,18 @@
   .ca-box{ position:relative; background:linear-gradient(160deg,#ffffff 0%, #fdf4fa 55%, #eef3ff 100%); border-radius:36px; padding:26px 34px 30px; width:100%; max-width:900px; max-height:94vh; overflow-y:auto; text-align:center; box-shadow:0 24px 60px rgba(90,76,140,0.38), 0 0 0 6px rgba(255,255,255,0.65); -webkit-animation:caPop .45s cubic-bezier(.2,1.3,.4,1); animation:caPop .45s cubic-bezier(.2,1.3,.4,1); }
   .ca-x{ position:absolute; top:12px; right:14px; border:none; background:var(--line); width:30px; height:30px; border-radius:50%; font-size:14px; cursor:pointer; display:none; color:var(--text); }
   .ca-icon{ width:48px; height:48px; margin:0 auto 14px; border-radius:50%; background:linear-gradient(145deg, var(--pink), var(--lav)); display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 4px 10px rgba(155,127,234,0.3); -webkit-animation:caBounce 1.6s ease-in-out infinite; animation:caBounce 1.6s ease-in-out infinite; }
-  .ca-msg{ font-family:'Jua',sans-serif; font-size:56px; line-height:1.4; color:var(--text); white-space:pre-wrap; word-break:keep-all; background:#fff; border:2px solid #efe6f6; border-radius:28px; padding:36px 32px; box-shadow:0 6px 18px rgba(120,108,160,0.14); }
-  .ca-label{ font-family:'Jua',sans-serif; font-size:16px; color:var(--muted); margin:20px 0 8px; letter-spacing:0.5px; }
+  .ca-msg{ font-family:'MapleStory','Jua',sans-serif; font-size:56px; line-height:1.4; color:var(--text); white-space:pre-wrap; word-break:keep-all; background:#fff; border:2px solid #efe6f6; border-radius:28px; padding:36px 32px; box-shadow:0 6px 18px rgba(120,108,160,0.14); }
+  .ca-label{ font-family:'MapleStory','Jua',sans-serif; font-size:16px; color:var(--muted); margin:20px 0 8px; letter-spacing:0.5px; }
   .ca-pill{ border:none; background:linear-gradient(145deg, #e4f3fd, var(--sky)); color:var(--text); padding:8px 14px; margin:4px; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 8px rgba(121,179,236,0.25); transition:transform .12s; }
   .ca-pill:active{ transform:scale(.94); }
-  .ca-yn{ border:none; color:#fff; padding:11px 36px; margin:18px 8px 2px; border-radius:18px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; box-shadow:0 6px 14px rgba(74,68,88,0.2); transition:transform .12s; }
+  .ca-yn{ border:none; color:#fff; padding:11px 36px; margin:18px 8px 2px; border-radius:18px; font-family:'MapleStory','Jua',sans-serif; font-size:22px; cursor:pointer; box-shadow:0 6px 14px rgba(74,68,88,0.2); transition:transform .12s; }
   .ca-yn:active{ transform:scale(.95); }
   .ca-yn.yes{ background:linear-gradient(145deg, #7fdcc0, var(--mint-deep)); }
   .ca-yn.no{ background:linear-gradient(145deg, #f5a9b9, #e98a9c); }
   .ca-small{ border:none; background:var(--line); color:var(--text); padding:8px 14px; margin:8px 4px 0; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; }
   .ca-small.primary{ background:linear-gradient(145deg, #b7a0f5, var(--lav-deep)); color:#fff; box-shadow:0 6px 14px rgba(155,127,234,0.35); }
   #caCanvas{ width:100%; max-width:560px; height:auto; border-radius:18px; background:#fff; border:3px dashed #d9cff5; touch-action:none; display:block; margin:0 auto; }
-  .ca-done{ font-family:'Jua',sans-serif; font-size:24px; color:var(--mint-deep); padding:24px 0 6px; }
+  .ca-done{ font-family:'MapleStory','Jua',sans-serif; font-size:24px; color:var(--mint-deep); padding:24px 0 6px; }
   @-webkit-keyframes caFade{ from{opacity:0;} to{opacity:1;} }
   @keyframes caFade{ from{opacity:0;} to{opacity:1;} }
   @-webkit-keyframes caPop{ from{opacity:0; -webkit-transform:scale(.85) translateY(20px);} to{opacity:1; -webkit-transform:scale(1) translateY(0);} }
@@ -275,22 +278,22 @@
   .gm-x{ position:absolute; top:16px; right:18px; border:none; background:#fff; width:34px; height:34px; border-radius:50%; font-size:14px; cursor:pointer; color:var(--text); z-index:2; box-shadow:0 2px 6px rgba(160,140,190,0.25); }
   .gm-hero{ display:flex; align-items:center; margin-bottom:6px; }
   .gm-hero-icon{ width:58px; height:58px; min-width:58px; border-radius:50%; background:linear-gradient(145deg, var(--sky), var(--pink)); font-size:30px; text-align:center; line-height:58px; margin-right:16px; box-shadow:0 6px 14px rgba(247,143,179,0.25); }
-  .gm-title{ font-family:'Jua',sans-serif; font-size:30px; color:var(--text); line-height:1.1; }
+  .gm-title{ font-family:'MapleStory','Jua',sans-serif; font-size:30px; color:var(--text); line-height:1.1; }
   .gm-chips{ margin-top:8px; }
   .gm-chip{ display:inline-block; padding:4px 12px; margin:0 6px 4px 0; border-radius:999px; font-size:12.5px; font-weight:800; color:var(--text); }
   .gm-chip.c1{ background:var(--mint); }
   .gm-chip.c2{ background:var(--yellow); }
   .gm-tabs{ text-align:center; margin:20px 0 6px; }
-  .gm-tab{ border:none; background:#fff; color:var(--muted); font-family:'Jua',sans-serif; font-size:16px; padding:8px 26px; margin:0 4px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .gm-tab{ border:none; background:#fff; color:var(--muted); font-family:'MapleStory','Jua',sans-serif; font-size:16px; padding:8px 26px; margin:0 4px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
   .gm-tab.on{ background:var(--pink); color:var(--text); }
   .gm-box{ scrollbar-width:thin; scrollbar-color:#f3c3d6 transparent; }
   .gm-box::-webkit-scrollbar{ width:8px; }
   .gm-box::-webkit-scrollbar-track{ background:transparent; margin:22px 0; }
   .gm-box::-webkit-scrollbar-thumb{ background:#f3c3d6; border-radius:8px; }
-  .gm-section{ font-family:'Jua',sans-serif; font-size:17px; color:var(--text); margin:22px 0 10px; }
+  .gm-section{ font-family:'MapleStory','Jua',sans-serif; font-size:17px; color:var(--text); margin:22px 0 10px; }
   .gm-section::before{ content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--pink-deep); margin-right:8px; }
   #gameNameGrid{ text-align:center; }
-  .gm-pill{ vertical-align:top; height:64px; box-sizing:border-box; border:none; color:var(--text); width:116px; padding:10px 6px; margin:5px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:18px; font-family:'Jua',sans-serif; font-size:17px; cursor:pointer; box-shadow:0 4px 10px rgba(160,140,190,0.2); transition:transform .12s; }
+  .gm-pill{ vertical-align:top; height:64px; box-sizing:border-box; border:none; color:var(--text); width:116px; padding:10px 6px; margin:5px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:18px; font-family:'MapleStory','Jua',sans-serif; font-size:17px; cursor:pointer; box-shadow:0 4px 10px rgba(160,140,190,0.2); transition:transform .12s; }
   .gm-pill:active{ transform:scale(.94); }
   .gm-pill.p0{ background:var(--pink); }
   .gm-pill.p1{ background:var(--sky); }
@@ -301,35 +304,35 @@
   .gm-pill small{ display:block; margin:0; line-height:1.1; font-size:11px; font-weight:800; color:var(--muted); }
   .gm-rank-wrap{ display:flex; flex-wrap:wrap; margin:0 -8px; }
   .gm-rank-card{ flex:1 1 300px; margin:8px; background:#fff; border-radius:24px; padding:16px 16px 10px; box-shadow:0 6px 18px rgba(160,140,190,0.18); }
-  .gm-rank-head{ display:inline-block; font-family:'Jua',sans-serif; font-size:16px; color:var(--text); margin:0 0 12px 2px; padding:5px 16px; border-radius:999px; }
+  .gm-rank-head{ display:inline-block; font-family:'MapleStory','Jua',sans-serif; font-size:16px; color:var(--text); margin:0 0 12px 2px; padding:5px 16px; border-radius:999px; }
   .gm-rank-head.h0{ background:var(--pink); }
   .gm-rank-head.h1{ background:var(--sky); }
   .gm-rank-row{ display:flex; align-items:center; padding:8px 12px; border-radius:16px; background:#faf8fc; margin-bottom:7px; }
-  .gm-rank-badge{ width:30px; height:30px; min-width:30px; border-radius:50%; margin-right:12px; text-align:center; line-height:30px; font-family:'Jua',sans-serif; font-size:15px; color:var(--text); background:var(--lav); }
+  .gm-rank-badge{ width:30px; height:30px; min-width:30px; border-radius:50%; margin-right:12px; text-align:center; line-height:30px; font-family:'MapleStory','Jua',sans-serif; font-size:15px; color:var(--text); background:var(--lav); }
   .gm-rank-badge.r1{ background:var(--yellow-deep); color:#fff; }
   .gm-rank-badge.r2{ background:var(--sky-deep); color:#fff; }
   .gm-rank-badge.r3{ background:var(--pink-deep); color:#fff; }
   .gm-rank-name{ flex:1; font-weight:800; font-size:15px; color:var(--text); }
-  .gm-rank-score{ font-family:'Jua',sans-serif; font-size:16px; color:var(--text); }
+  .gm-rank-score{ font-family:'MapleStory','Jua',sans-serif; font-size:16px; color:var(--text); }
   .gm-rank-row.top{ background:var(--yellow); }
   .gm-empty{ color:var(--muted); font-size:13px; font-weight:700; padding:14px 6px 18px; text-align:center; }
   #gameOverlay{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   #gameFrame{ width:100%; height:310px; border:0; border-radius:20px; background:#fff; display:block; box-shadow:0 4px 14px rgba(160,140,190,0.18); }
   .gm-playhead{ text-align:center; margin-bottom:12px; }
-  .gm-who{ display:inline-block; font-family:'Jua',sans-serif; font-size:19px; color:var(--text); background:var(--sky); padding:6px 20px; border-radius:999px; }
+  .gm-who{ display:inline-block; font-family:'MapleStory','Jua',sans-serif; font-size:19px; color:var(--text); background:var(--sky); padding:6px 20px; border-radius:999px; }
   #gameControls{ text-align:center; }
-  .gm-btn{ border:none; background:#fff; color:var(--text); padding:10px 20px; margin:12px 5px 0; border-radius:16px; font-family:'Jua',sans-serif; font-size:16px; cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); }
+  .gm-btn{ border:none; background:#fff; color:var(--text); padding:10px 20px; margin:12px 5px 0; border-radius:16px; font-family:'MapleStory','Jua',sans-serif; font-size:16px; cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); }
   .gm-btn.primary{ background:var(--sky-deep); color:#fff; }
   .gm-btn.pink{ background:var(--pink); }
-  #gameToast{ position:fixed; top:40%; left:50%; transform:translate(-50%,-50%) scale(.85); background:#fff; color:var(--text); font-family:'Jua',sans-serif; font-size:30px; padding:22px 44px; border-radius:30px; box-shadow:0 18px 44px rgba(74,68,88,0.3), 0 0 0 6px rgba(255,255,255,0.7); opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease; z-index:5200; white-space:nowrap; }
+  #gameToast{ position:fixed; top:40%; left:50%; transform:translate(-50%,-50%) scale(.85); background:#fff; color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:30px; padding:22px 44px; border-radius:30px; box-shadow:0 18px 44px rgba(74,68,88,0.3), 0 0 0 6px rgba(255,255,255,0.7); opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease; z-index:5200; white-space:nowrap; }
   #gameToast.show{ opacity:1; transform:translate(-50%,-50%) scale(1); }
   .gm-confetti{ position:fixed; top:0; left:0; width:10px; height:10px; z-index:5300; pointer-events:none; opacity:1; transition:transform 1.5s cubic-bezier(.15,.7,.3,1), opacity 1.5s ease-in; }
 
   /* 포인트 축하 토스트 */
-  #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
+  #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
   #suspendOverlay .emoji{ font-size:56px; margin-bottom:16px; }
-  #suspendOverlay .msg{ font-family:'Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
+  #suspendOverlay .msg{ font-family:'MapleStory','Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
   #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
@@ -340,13 +343,13 @@
   #luckyDrawOverlay.open{ opacity:1; visibility:visible; transition:opacity .2s ease, visibility 0s; }
   .lucky-modal{ width:min(88vw, 360px); background:linear-gradient(160deg, #fff, var(--yellow) 220%); border-radius:24px; padding:28px 24px; text-align:center; box-shadow:0 20px 48px rgba(74,68,88,0.3); position:relative; }
   .lucky-modal .close-x{ position:absolute; top:10px; right:10px; }
-  .lucky-modal h2{ font-family:'Jua',sans-serif; font-weight:400; font-size:16px; color:var(--pink-deep); margin:0 0 16px; }
+  .lucky-modal h2{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:16px; color:var(--pink-deep); margin:0 0 16px; }
   .lucky-modal .lucky-emoji{ font-size:46px; transition:transform .1s ease; }
   .lucky-modal .lucky-emoji.spinning{ animation: luckySpin .12s linear infinite; }
   @keyframes luckySpin{ 0%{transform:rotate(0deg) scale(1);} 50%{transform:rotate(180deg) scale(1.15);} 100%{transform:rotate(360deg) scale(1);} }
-  .lucky-modal .lucky-draw-btn{ margin-top:16px; border:none; background:var(--pink-deep); color:#fff; padding:11px 22px; border-radius:16px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Jua',sans-serif; }
+  .lucky-modal .lucky-draw-btn{ margin-top:16px; border:none; background:var(--pink-deep); color:#fff; padding:11px 22px; border-radius:16px; font-size:14px; font-weight:700; cursor:pointer; font-family:'MapleStory','Jua',sans-serif; }
   .lucky-modal .lucky-draw-btn:disabled{ background:var(--muted); cursor:default; opacity:.6; }
-  .lucky-modal .lucky-draw-result{ font-family:'Jua',sans-serif; font-size:16px; color:var(--text); margin-top:14px; line-height:1.6; }
+  .lucky-modal .lucky-draw-result{ font-family:'MapleStory','Jua',sans-serif; font-size:16px; color:var(--text); margin-top:14px; line-height:1.6; }
   .lucky-modal .lucky-draw-result b{ color:var(--pink-deep); font-size:20px; }
   .lucky-modal .lucky-draw-hint{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:10px; }
 

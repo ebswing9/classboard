@@ -19,6 +19,9 @@
 <script src="firebase.js"></script>
 
 <style>
+  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 눈누 CDN에서 불러옴. 둘 다 안 되면 주아체로 대체 */
+  @font-face{ font-family:'MapleStory'; src:url('fonts/MaplestoryOTFBold.woff') format('woff'), url('fonts/MaplestoryOTFBold.otf') format('opentype'), url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/MaplestoryOTFBold.woff') format('woff'); font-weight:normal; font-style:normal; font-display:swap; }
+
   :root{
     --bg:#fff8fc; --card:#ffffff;
     --primary:#ffcdea; --primary-text:#c2489f; --primary-dark:#ffbadf;
@@ -33,7 +36,7 @@
   *{box-sizing:border-box;}
   body{ margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
   header{ background:linear-gradient(120deg, #ffe1f3, #ffd1ea); color:var(--primary-text); padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
-  header h1{ font-family:'Jua',sans-serif; font-weight:400; font-size:18px; margin:0; }
+  header h1{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:18px; margin:0; }
   #configErrorBanner{ background:#f088a0; color:#fff; padding:14px 20px; font-size:14px; font-weight:700; display:none; }
   header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
   #logoutBtn{ background:rgba(255,255,255,0.55); border:none; color:var(--primary-text); padding:7px 14px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; }
@@ -212,11 +215,10 @@
       <button class="tab-btn" data-tab="settings">설정</button>
     </div>
 
-    <!-- ===== 조회·종례 (하위 탭: 작성 / 지난 기록) ===== -->
+    <!-- ===== 조회·종례 (하위 탭: 작성 / 교실 알림 / 설문 / 투표) ===== -->
     <div class="tab-panel active" id="tab-notice">
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="write">작성</button>
-        <button class="tab-btn" data-subtab="history">지난 기록</button>
         <button class="tab-btn" data-subtab="alert">교실 알림</button>
         <button class="tab-btn" data-subtab="survey">설문</button>
         <button class="tab-btn" data-subtab="vote">투표</button>
@@ -255,6 +257,11 @@
           <span class="msg" id="noticeMsg"></span>
         </div>
         <div class="section">
+          <h3>최근 내용 불러오기 <span class="sub">(최근 5개)</span></h3>
+          <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요.</p>
+          <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
+        </div>
+        <div class="section">
           <h3>🍱 급식 미리 저장 <span class="sub" id="mealCacheDateSub"></span></h3>
           <p class="hint">전자칠판에서 급식이 "불러오는 중"에 멈추는 경우가 있어서, NEIS에서 미리 받아와 저장해두는 기능이에요. 위 <b>조회·종례 날짜</b> 기준으로 저장돼요. 조회·종례 쓰실 때 같이 한 번 눌러주세요.</p>
           <button class="btn" id="fetchMealBtn">NEIS에서 급식 불러와 저장</button>
@@ -273,20 +280,8 @@
           <button class="btn" id="saveTodosBtn">할 일 저장</button>
           <span class="msg" id="todosMsg"></span>
         </div>
-        <div class="section">
-          <h3>최근 내용 불러오기</h3>
-          <p class="hint">탭하면 그 날짜 내용이 위 입력칸에 채워져요.</p>
-          <div class="chip-row" id="recentNoticeChips">불러오는 중...</div>
-        </div>
       </div>
 
-      <div class="tab-panel" id="subtab-history">
-        <div class="section">
-          <h3>지난 조회·종례 기록</h3>
-          <p class="hint">탭하면 내용이 펼쳐져요. 수정하려면 "이 날짜 수정하기"를 누르세요.</p>
-          <div id="historyList">불러오는 중...</div>
-        </div>
-      </div>
 
       <div class="tab-panel" id="subtab-survey">
         <div class="section">
@@ -368,6 +363,11 @@
 
     <!-- ===== 퀴즈 ===== -->
     <div class="tab-panel" id="tab-quiz">
+      <div class="tabs subtabs">
+        <button class="tab-btn active" data-subtab="quizmain">퀴즈</button>
+        <button class="tab-btn" data-subtab="game">게임</button>
+      </div>
+      <div class="tab-panel active" id="subtab-quizmain">
       <div class="section">
         <div class="collapse-header" id="quizEditorCollapseHeader">
           <h3 style="margin:0;">📝 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
@@ -423,6 +423,66 @@
           <button class="filter-btn" data-sort="name">이름 순서대로</button>
         </div>
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
+      </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-game">
+        <div class="section">
+          <h3>🐧 펭귄 게임 설정</h3>
+          <div class="publish-row" style="margin-bottom:14px;">
+            <span>대시보드에 게임 버튼 보이기</span>
+            <button class="publish-btn off" id="gameEnabledToggle">꺼짐</button>
+          </div>
+          <p class="hint" style="margin-top:-6px;">켜면 대시보드 "출결" 패널의 🍀 옆에 🐧 버튼이 나타나요. 꺼두면 학생 화면에는 아무것도 안 보여요.</p>
+          <div class="field"><label>이름당 하루 플레이 횟수</label>
+            <input type="number" id="gameLimitInput" min="1" max="20" value="1">
+          </div>
+          <div class="field"><label>포인트 지급 방식</label>
+            <select id="gameRewardMode">
+              <option value="daily-top">매일 상위 기록자에게 지급 (다음 날 자동 정산)</option>
+              <option value="off">지급 안 함 (기록만 남김)</option>
+            </select>
+          </div>
+          <div class="field"><label>상위 몇 명에게? (동점이면 같이 지급)</label>
+            <input type="number" id="gameRewardTopN" min="1" max="10" value="1">
+          </div>
+          <div class="field"><label>지급 포인트</label>
+            <input type="number" id="gameRewardPoints" min="0" max="100" value="1">
+          </div>
+          <button class="btn" id="gameSaveBtn">저장</button>
+          <button class="btn secondary" id="gameSettleBtn">오늘 상위 기록 지금 정산</button>
+          <span class="msg" id="gameMsg"></span>
+          <p class="hint">정산은 날짜마다 딱 한 번만 이루어져요. "지금 정산"을 누르면 오늘 분도 바로 지급되고, 이후 오늘 기록이 바뀌어도 다시 지급되지 않아요. 지급 내역은 포인트 탭의 학생 내역에서 확인/회수할 수 있어요.</p>
+        </div>
+        <div class="section">
+          <div class="collapse-header" id="gameFold0Header"><h3 style="margin:0;">🏆 오늘 랭킹</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold0Body">
+          <div id="gameDailyList"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="collapse-header" id="gameFold1Header"><h3 style="margin:0;">🏅 전체 최고 기록</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold1Body">
+          <div id="gameBestList"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="collapse-header" id="gameFold3Header"><h3 style="margin:0;">⏱️ 오늘 플레이 시각</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold3Body">
+          <p class="hint">한 판마다 시작한 시각과 끝난 시각이에요(시간순). 관리자 페이지에서만 보여요.</p>
+          <div id="gameTimeList"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="collapse-header" id="gameFold2Header"><h3 style="margin:0;">🎮 오늘 플레이 현황</h3><span class="chev">▾</span></div>
+          <div class="collapse-body" id="gameFold2Body">
+          <p class="hint">횟수를 초기화하면 그 학생이 오늘 다시 플레이할 수 있어요.</p>
+          <div id="gamePlaysList"></div>
+          <div class="divider"></div>
+          <button class="btn danger" id="gameResetAllBtn">랭킹 전체 초기화</button>
+          <span class="msg" id="gameResetMsg"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -631,7 +691,6 @@
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="general">일반</button>
         <button class="tab-btn" data-subtab="meal">급식</button>
-        <button class="tab-btn" data-subtab="game">게임</button>
       </div>
 
       <div class="tab-panel active" id="subtab-general">
@@ -690,64 +749,6 @@
         </div>
       </div>
 
-      <div class="tab-panel" id="subtab-game">
-        <div class="section">
-          <h3>🐧 펭귄 게임 설정</h3>
-          <div class="publish-row" style="margin-bottom:14px;">
-            <span>대시보드에 게임 버튼 보이기</span>
-            <button class="publish-btn off" id="gameEnabledToggle">꺼짐</button>
-          </div>
-          <p class="hint" style="margin-top:-6px;">켜면 대시보드 "출결" 패널의 🍀 옆에 🐧 버튼이 나타나요. 꺼두면 학생 화면에는 아무것도 안 보여요.</p>
-          <div class="field"><label>이름당 하루 플레이 횟수</label>
-            <input type="number" id="gameLimitInput" min="1" max="20" value="1">
-          </div>
-          <div class="field"><label>포인트 지급 방식</label>
-            <select id="gameRewardMode">
-              <option value="daily-top">매일 상위 기록자에게 지급 (다음 날 자동 정산)</option>
-              <option value="off">지급 안 함 (기록만 남김)</option>
-            </select>
-          </div>
-          <div class="field"><label>상위 몇 명에게? (동점이면 같이 지급)</label>
-            <input type="number" id="gameRewardTopN" min="1" max="10" value="1">
-          </div>
-          <div class="field"><label>지급 포인트</label>
-            <input type="number" id="gameRewardPoints" min="0" max="100" value="1">
-          </div>
-          <button class="btn" id="gameSaveBtn">저장</button>
-          <button class="btn secondary" id="gameSettleBtn">오늘 상위 기록 지금 정산</button>
-          <span class="msg" id="gameMsg"></span>
-          <p class="hint">정산은 날짜마다 딱 한 번만 이루어져요. "지금 정산"을 누르면 오늘 분도 바로 지급되고, 이후 오늘 기록이 바뀌어도 다시 지급되지 않아요. 지급 내역은 포인트 탭의 학생 내역에서 확인/회수할 수 있어요.</p>
-        </div>
-        <div class="section">
-          <div class="collapse-header" id="gameFold0Header"><h3 style="margin:0;">🏆 오늘 랭킹</h3><span class="chev">▾</span></div>
-          <div class="collapse-body" id="gameFold0Body">
-          <div id="gameDailyList"></div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="collapse-header" id="gameFold1Header"><h3 style="margin:0;">🏅 전체 최고 기록</h3><span class="chev">▾</span></div>
-          <div class="collapse-body" id="gameFold1Body">
-          <div id="gameBestList"></div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="collapse-header" id="gameFold3Header"><h3 style="margin:0;">⏱️ 오늘 플레이 시각</h3><span class="chev">▾</span></div>
-          <div class="collapse-body" id="gameFold3Body">
-          <p class="hint">한 판마다 시작한 시각과 끝난 시각이에요(시간순). 관리자 페이지에서만 보여요.</p>
-          <div id="gameTimeList"></div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="collapse-header" id="gameFold2Header"><h3 style="margin:0;">🎮 오늘 플레이 현황</h3><span class="chev">▾</span></div>
-          <div class="collapse-body" id="gameFold2Body">
-          <p class="hint">횟수를 초기화하면 그 학생이 오늘 다시 플레이할 수 있어요.</p>
-          <div id="gamePlaysList"></div>
-          <div class="divider"></div>
-          <button class="btn danger" id="gameResetAllBtn">랭킹 전체 초기화</button>
-          <span class="msg" id="gameResetMsg"></span>
-          </div>
-        </div>
-      </div>
     </div>
   </main>
 </div>
@@ -1140,7 +1141,6 @@ async function initAdmin(){
   document.getElementById('overrideDate').value = todayStr();
   await loadNoticeForDate(todayStr());
   await loadRecentChips();
-  await loadHistoryList();
   await loadRoster();
   db.ref('roster').on('value', ()=>{ if(initedOnce) loadRoster(); });
   await loadAttendanceTab();
@@ -1178,13 +1178,11 @@ document.getElementById('publishToggleMorning').addEventListener('click', async 
   const date = document.getElementById('noticeDate').value || todayStr();
   setPublishBtn('morning', !morningPublished);
   await db.ref('notices/'+date+'/morningPublished').set(morningPublished);
-  await loadHistoryList();
 });
 document.getElementById('publishToggleClosing').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
   setPublishBtn('closing', !closingPublished);
   await db.ref('notices/'+date+'/closingPublished').set(closingPublished);
-  await loadHistoryList();
 });
 function shiftNoticeDate(deltaDays){
   const cur = document.getElementById('noticeDate').value || todayStr();
@@ -1339,7 +1337,7 @@ document.getElementById('saveNoticeBtn').addEventListener('click', async ()=>{
   await db.ref('notices/'+date).set({ date, morning, closing, morningPublished, closingPublished });
   document.getElementById('noticeMsg').textContent = '저장됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
-  await loadRecentChips(); await loadHistoryList();
+  await loadRecentChips();
 });
 document.getElementById('deleteNoticeBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('noticeDate').value || todayStr();
@@ -1350,11 +1348,11 @@ document.getElementById('deleteNoticeBtn').addEventListener('click', async ()=>{
   setPublishBtn('closing', false);
   document.getElementById('noticeMsg').textContent = '삭제됐어요 ✓';
   setTimeout(()=>document.getElementById('noticeMsg').textContent='', 2000);
-  await loadRecentChips(); await loadHistoryList();
+  await loadRecentChips();
 });
 async function loadRecentChips(){
   const box = document.getElementById('recentNoticeChips');
-  const snap = await db.ref('notices').orderByKey().limitToLast(15).once('value');
+  const snap = await db.ref('notices').orderByKey().limitToLast(5).once('value');
   const val = snap.val() || {};
   const dates = Object.keys(val).sort().reverse();
   if(!dates.length){ box.innerHTML = '<span class="chip empty">기록이 없습니다</span>'; return; }
@@ -1364,49 +1362,6 @@ async function loadRecentChips(){
       const n = val[c.dataset.date];
       document.getElementById('inputMorning').value = n.morning || '';
       document.getElementById('inputClosing').value = n.closing || '';
-    });
-  });
-}
-
-/* ---- 지난 기록 (읽기+수정 이동) ---- */
-async function loadHistoryList(){
-  const box = document.getElementById('historyList');
-  const snap = await db.ref('notices').orderByKey().limitToLast(5).once('value');
-  const val = snap.val() || {};
-  const dates = Object.keys(val).sort().reverse();
-  if(!dates.length){ box.innerHTML = '<p class="hint">기록이 없습니다.</p>'; return; }
-  box.innerHTML = dates.map(date=>{
-    const n = val[date];
-    const prev = (n.morning||'').split('\n')[0] || (n.closing||'').split('\n')[0] || '(내용 없음)';
-    return `<div class="history-row" data-date="${date}">
-      <div class="history-top">
-        <span class="history-date">${date}</span>
-        <span class="history-badge ${n.morningPublished?'on':'off'}">조회 ${n.morningPublished?'공개':'비공개'}</span>
-        <span class="history-badge ${n.closingPublished?'on':'off'}">종례 ${n.closingPublished?'공개':'비공개'}</span>
-      </div>
-      <div class="history-preview">${escapeHtml(prev)}</div>
-      <div class="history-body">
-        <b>조회:</b> ${n.morning ? escapeHtml(n.morning).split('\n').join('<br>') : '(없음)'}<br><br>
-        <b>종례:</b> ${n.closing ? escapeHtml(n.closing).split('\n').join('<br>') : '(없음)'}
-        <div class="history-edit-link" data-edit="${date}">✏️ 이 날짜 수정하기</div>
-      </div>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('.history-row').forEach(row=>{
-    row.addEventListener('click', (e)=>{
-      if(e.target.dataset.edit) return;
-      row.classList.toggle('open');
-    });
-  });
-  box.querySelectorAll('[data-edit]').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const date = el.dataset.edit;
-      if(datePickers['noticeDate']) datePickers['noticeDate'].setValue(date);
-      else document.getElementById('noticeDate').value = date;
-      loadNoticeForDate(date);
-      switchTab('notice');
-      switchSubTab('tab-notice', 'write');
     });
   });
 }
