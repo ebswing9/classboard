@@ -20,8 +20,8 @@
 <script src="firebase.js"></script>
 
 <style>
-  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 눈누 CDN에서 불러옴. 둘 다 안 되면 주아체로 대체 */
-  @font-face{ font-family:'MapleStory'; src:url('fonts/MaplestoryOTFBold.woff') format('woff'), url('fonts/MaplestoryOTFBold.otf') format('opentype'), url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/MaplestoryOTFBold.woff') format('woff'); font-weight:normal; font-style:normal; font-display:swap; }
+  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 CDN(fonts-archive)에서 불러옴. 둘 다 안 되면 주아체로 대체 */
+  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Bold.woff2') format('woff2'), url('fonts/Maplestory-Bold.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff') format('woff'); font-weight:700; font-style:normal; font-display:swap; }
 
   :root{
     --bg1:#fdf3f6; --bg2:#eef1fd; --bg3:#fbf6e9;
@@ -866,7 +866,11 @@ async function renderNoticePanel(which, opts){
 async function getRosterList(){
   const snap = await db.ref('roster').once('value');
   const val = snap.val() || {};
-  return Object.keys(val).map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const today = todayStr();
+  // 전학 간 학생은 출석·퀴즈·설문·투표·역할·게임 등 모든 선택 목록과 출석률 계산에서 제외
+  return Object.keys(val)
+    .filter(id=> !(val[id].transferred && (!val[id].transferDate || val[id].transferDate <= today)))
+    .map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
 async function renderAttendancePanel(){
   const myRequestId = panelRequestId;

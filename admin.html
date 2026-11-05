@@ -19,8 +19,8 @@
 <script src="firebase.js"></script>
 
 <style>
-  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 눈누 CDN에서 불러옴. 둘 다 안 되면 주아체로 대체 */
-  @font-face{ font-family:'MapleStory'; src:url('fonts/MaplestoryOTFBold.woff') format('woff'), url('fonts/MaplestoryOTFBold.otf') format('opentype'), url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/MaplestoryOTFBold.woff') format('woff'); font-weight:normal; font-style:normal; font-display:swap; }
+  /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 CDN(fonts-archive)에서 불러옴. 둘 다 안 되면 주아체로 대체 */
+  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Bold.woff2') format('woff2'), url('fonts/Maplestory-Bold.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff') format('woff'); font-weight:700; font-style:normal; font-display:swap; }
 
   :root{
     --bg:#fff8fc; --card:#ffffff;
@@ -1367,14 +1367,21 @@ async function loadRecentChips(){
 }
 
 /* ---- 학생 명단 ---- */
-async function getRosterList(){
+/* opts.all: 전학생까지 모두 / opts.date: 그 날짜 기준으로 전학 전 학생만 (기본: 오늘) */
+async function getRosterList(opts){
+  opts = opts || {};
   const snap = await db.ref('roster').once('value');
   const val = snap.val() || {};
-  return Object.keys(val).map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const date = opts.date || todayStr();
+  return Object.keys(val)
+    .map(id=>({id, name:val[id].name, transferred:!!val[id].transferred, transferDate:val[id].transferDate||''}))
+    .filter(s=> opts.all || !(s.transferred && (!s.transferDate || s.transferDate <= date)))
+    .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
 async function loadRoster(){
-  const roster = await getRosterList();
-  document.getElementById('rosterCountLabel').textContent = roster.length+'명';
+  const roster = await getRosterList({all:true});
+  const tcount = roster.filter(s=>s.transferred).length;
+  document.getElementById('rosterCountLabel').textContent = (roster.length - tcount)+'명' + (tcount ? ' (전학 '+tcount+'명 제외)' : '');
   const box = document.getElementById('rosterList');
   box.innerHTML = roster.length ? roster.map(s=>`
     <div class="roster-row">
@@ -1382,10 +1389,23 @@ async function loadRoster(){
         <input type="checkbox" class="roster-check" data-id="${s.id}">
         <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
       </label>
-      <span class="name">${escapeHtml(s.name)}</span>
+      <span class="name" style="${s.transferred ? 'color:var(--muted);' : ''}">${escapeHtml(s.name)}${s.transferred ? ' <span style="font-size:11px; background:var(--line); border-radius:8px; padding:1px 7px; font-weight:700;">전학' + (s.transferDate ? ' ' + escapeHtml(s.transferDate) : '') + '</span>' : ''}</span>
+      <button class="del-link" data-transfer="${s.id}" data-on="${s.transferred ? '0' : '1'}" style="color:var(--sky-deep); margin-right:8px;">${s.transferred ? '전학 해제' : '전학 처리'}</button>
       <button class="del-link" data-id="${s.id}">삭제</button>
     </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
-  box.querySelectorAll('.del-link').forEach(btn=>{
+  box.querySelectorAll('[data-transfer]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.transfer;
+      if(btn.dataset.on === '1'){
+        if(!confirm('이 학생을 전학 처리할까요?\n오늘부터 출석·퀴즈 등 선택 목록과 출석률 계산에서 빠져요. (기록은 그대로 남아요)')) return;
+        await db.ref('roster/'+id).update({ transferred:true, transferDate:todayStr() });
+      } else {
+        await db.ref('roster/'+id).update({ transferred:null, transferDate:null });
+      }
+      await loadRoster(); await loadAttendanceTab();
+    });
+  });
+  box.querySelectorAll('.del-link[data-id]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       await db.ref('roster/'+btn.dataset.id).remove();
       await loadRoster(); await loadAttendanceTab();
@@ -1468,7 +1488,7 @@ document.querySelectorAll('#attSortTabs .filter-btn').forEach(btn=>{
 });
 async function loadAttendanceTab(){
   const date = currentAttDate();
-  const roster = await getRosterList();
+  const roster = await getRosterList({date});
   const attSnap = await db.ref('attendance/'+date).once('value');
   const att = attSnap.val() || {};
   const clapSnap = await db.ref('clapAllowed/'+date).once('value');
@@ -1579,7 +1599,7 @@ let roleEditingId = null;
 let roleRosterCache = [];
 async function renderRoleLists(){
   const date = currentRoleDate();
-  roleRosterCache = await getRosterList();
+  roleRosterCache = await getRosterList({date});
   const [rolesSnap, checksSnap] = await Promise.all([
     db.ref('roles').once('value'),
     db.ref('roleChecks/'+date).once('value')
@@ -1704,7 +1724,7 @@ db.ref('roster').on('value', ()=>{ if(initedOnce) loadRolesTab(); });
 /* ---- 포인트 ---- */
 let pointSortMode = 'score';
 async function loadPointsTab(){
-  const roster = await getRosterList();
+  const roster = (await getRosterList({all:true})).map(s=> s.transferred ? ({...s, name: s.name + ' (전학)'}) : s);
   const pointsSnap = await db.ref('points').once('value');
   const points = pointsSnap.val() || {};
   const metaSnap = await db.ref('pointMeta').once('value');
@@ -1918,7 +1938,7 @@ document.getElementById('attSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.att-check').forEach(cb=> cb.checked = e.target.checked);
 });
 document.getElementById('markSelectedPresentBtn').addEventListener('click', async ()=>{
-  const roster = await getRosterList();
+  const roster = await getRosterList({all:true});
   const checkedIds = [...document.querySelectorAll('.att-check:checked')].map(cb=>cb.dataset.id);
   if(!checkedIds.length){ alert('선택된 학생이 없습니다.'); return; }
   const nameById = {};
