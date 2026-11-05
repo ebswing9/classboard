@@ -20,7 +20,7 @@
 
 <style>
   /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 CDN(fonts-archive)에서 불러옴. 둘 다 안 되면 주아체로 대체 */
-  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Bold.woff2') format('woff2'), url('fonts/Maplestory-Bold.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff') format('woff'); font-weight:700; font-style:normal; font-display:swap; }
+  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Light.woff2') format('woff2'), url('fonts/Maplestory-Light.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Light.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Light.woff') format('woff'); font-weight:400; font-style:normal; font-display:swap; }
 
   :root{
     --bg:#fff8fc; --card:#ffffff;
@@ -680,7 +680,8 @@
             </span>
             전체 선택
           </label>
-          <button class="btn danger" id="rosterBulkDeleteBtn" style="margin:0 0 0 auto;">선택 삭제</button>
+          <button class="btn" id="rosterTransferBtn" style="margin:0 0 0 auto;">선택 전학 처리/해제</button>
+          <button class="btn danger" id="rosterBulkDeleteBtn" style="margin:0 0 0 8px;">선택 삭제</button>
         </div>
         <div id="rosterList">불러오는 중...</div>
       </div>
@@ -1390,21 +1391,8 @@ async function loadRoster(){
         <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
       </label>
       <span class="name" style="${s.transferred ? 'color:var(--muted);' : ''}">${escapeHtml(s.name)}${s.transferred ? ' <span style="font-size:11px; background:var(--line); border-radius:8px; padding:1px 7px; font-weight:700;">전학' + (s.transferDate ? ' ' + escapeHtml(s.transferDate) : '') + '</span>' : ''}</span>
-      <button class="del-link" data-transfer="${s.id}" data-on="${s.transferred ? '0' : '1'}" style="color:var(--sky-deep); margin-right:8px;">${s.transferred ? '전학 해제' : '전학 처리'}</button>
       <button class="del-link" data-id="${s.id}">삭제</button>
     </div>`).join('') : '<p class="hint">등록된 학생이 없습니다.</p>';
-  box.querySelectorAll('[data-transfer]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id = btn.dataset.transfer;
-      if(btn.dataset.on === '1'){
-        if(!confirm('이 학생을 전학 처리할까요?\n오늘부터 출석·퀴즈 등 선택 목록과 출석률 계산에서 빠져요. (기록은 그대로 남아요)')) return;
-        await db.ref('roster/'+id).update({ transferred:true, transferDate:todayStr() });
-      } else {
-        await db.ref('roster/'+id).update({ transferred:null, transferDate:null });
-      }
-      await loadRoster(); await loadAttendanceTab();
-    });
-  });
   box.querySelectorAll('.del-link[data-id]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       await db.ref('roster/'+btn.dataset.id).remove();
@@ -1415,6 +1403,24 @@ async function loadRoster(){
 }
 document.getElementById('rosterSelectAll').addEventListener('change', (e)=>{
   document.querySelectorAll('.roster-check').forEach(cb=> cb.checked = e.target.checked);
+});
+document.getElementById('rosterTransferBtn').addEventListener('click', async ()=>{
+  const ids = [...document.querySelectorAll('.roster-check:checked')].map(cb=>cb.dataset.id);
+  if(!ids.length){ alert('전학 처리할 학생을 먼저 체크해 주세요.'); return; }
+  const all = await getRosterList({all:true});
+  const map = {}; all.forEach(s=> map[s.id] = s);
+  const sel = ids.map(id=>map[id]).filter(Boolean);
+  const notYet = sel.filter(s=>!s.transferred);
+  const updates = {};
+  if(notYet.length){
+    if(!confirm(`선택한 ${notYet.length}명을 전학 처리할까요?\n출석·행운번호 추첨에서만 빠지고, 다른 곳에서는 이름이 회색으로 남아요. (기록은 그대로)`)) return;
+    notYet.forEach(s=>{ updates['roster/'+s.id+'/transferred'] = true; updates['roster/'+s.id+'/transferDate'] = todayStr(); });
+  } else {
+    if(!confirm(`선택한 ${sel.length}명은 모두 전학 처리된 학생이에요. 전학을 해제할까요?`)) return;
+    sel.forEach(s=>{ updates['roster/'+s.id+'/transferred'] = null; updates['roster/'+s.id+'/transferDate'] = null; });
+  }
+  await db.ref().update(updates);
+  await loadRoster(); await loadAttendanceTab();
 });
 document.getElementById('rosterBulkDeleteBtn').addEventListener('click', async ()=>{
   const ids = [...document.querySelectorAll('.roster-check:checked')].map(cb=>cb.dataset.id);

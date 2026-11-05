@@ -21,7 +21,7 @@
 
 <style>
   /* 넥슨 메이플스토리 Bold — fonts/ 폴더에 파일을 두면 그걸 먼저 쓰고, 없으면 CDN(fonts-archive)에서 불러옴. 둘 다 안 되면 주아체로 대체 */
-  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Bold.woff2') format('woff2'), url('fonts/Maplestory-Bold.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Bold.woff') format('woff'); font-weight:700; font-style:normal; font-display:swap; }
+  @font-face{ font-family:'MapleStory'; src:url('fonts/Maplestory-Light.woff2') format('woff2'), url('fonts/Maplestory-Light.woff') format('woff'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Light.woff2') format('woff2'), url('https://cdn.jsdelivr.net/gh/fonts-archive/Maplestory/Maplestory-Light.woff') format('woff'); font-weight:400; font-style:normal; font-display:swap; }
 
   :root{
     --bg1:#fdf3f6; --bg2:#eef1fd; --bg3:#fbf6e9;
@@ -122,7 +122,7 @@
   .meal-empty, .meal-loading{ color:var(--muted); font-size:13px; font-weight:600; text-align:center; padding:14px 4px; }
   #quizCard{ flex:0 1 520px; min-width:300px; background:linear-gradient(160deg, #fff, var(--sky) 230%); position:relative; overflow:hidden; }
 
-  #clockTime{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  #clockTime{ font-family:'Jua',sans-serif; font-weight:400; font-size:clamp(52px, 6vw, 108px); line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
   #clockDate{ font-size:21px; font-weight:700; color:var(--pink-deep); margin-top:10px; }
   #clockDday{ font-size:14px; font-weight:600; color:var(--muted); margin-top:6px; }
   #ddayWidget{ cursor:pointer; transition:opacity .22s ease, transform .22s ease; -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; font-family:'MapleStory','Jua',sans-serif; font-size:15px; color:var(--lav-deep); margin-top:14px; background:var(--lav); padding:8px 18px; border-radius:20px; display:none; }
@@ -243,6 +243,7 @@
   .ca-label{ font-family:'MapleStory','Jua',sans-serif; font-size:16px; color:var(--muted); margin:20px 0 8px; letter-spacing:0.5px; }
   .ca-pill{ border:none; background:linear-gradient(145deg, #e4f3fd, var(--sky)); color:var(--text); padding:8px 14px; margin:4px; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 8px rgba(121,179,236,0.25); transition:transform .12s; }
   .ca-pill:active{ transform:scale(.94); }
+  .ca-pill.done{ background:#eceaf1; color:var(--muted); opacity:.6; cursor:default; box-shadow:none; }
   .ca-yn{ border:none; color:#fff; padding:11px 36px; margin:18px 8px 2px; border-radius:18px; font-family:'MapleStory','Jua',sans-serif; font-size:22px; cursor:pointer; box-shadow:0 6px 14px rgba(74,68,88,0.2); transition:transform .12s; }
   .ca-yn:active{ transform:scale(.95); }
   .ca-yn.yes{ background:linear-gradient(145deg, #7fdcc0, var(--mint-deep)); }
@@ -863,14 +864,16 @@ async function renderNoticePanel(which, opts){
     : `<div class="notice-empty"><div class="e-icon">☁️</div><div>아직 공개된 내용이 없어요</div></div>`;
 }
 
-async function getRosterList(){
+// 기본: 전학생 제외(출석·행운번호용) / {all:true}: 전학생도 포함(transferred:true) → 이름 선택창에서 회색 비활성화
+async function getRosterList(opts){
   const snap = await db.ref('roster').once('value');
   const val = snap.val() || {};
   const today = todayStr();
-  // 전학 간 학생은 출석·퀴즈·설문·투표·역할·게임 등 모든 선택 목록과 출석률 계산에서 제외
+  const all = !!(opts && opts.all);
   return Object.keys(val)
-    .filter(id=> !(val[id].transferred && (!val[id].transferDate || val[id].transferDate <= today)))
-    .map(id=>({id, name:val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    .map(id=>({id, name:val[id].name, transferred: !!(val[id].transferred && (!val[id].transferDate || val[id].transferDate <= today))}))
+    .filter(s=> all || !s.transferred)
+    .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
 async function renderAttendancePanel(){
   const myRequestId = panelRequestId;
@@ -1305,14 +1308,14 @@ drawCanvas.addEventListener('pointerup', stopDrawing);
 drawCanvas.addEventListener('pointerleave', stopDrawing);
 
 async function openDrawOverlay(){
-  const roster = await getRosterList();
+  const roster = await getRosterList({all:true});
   const answeredSnap = await db.ref('quizAnswers/'+todayStr()).once('value');
   const answered = answeredSnap.val() || {};
   const pointsSnap = await db.ref('points').once('value');
   const pointsVal = pointsSnap.val() || {};
   const grid = document.getElementById('drawNameGrid');
   grid.innerHTML = roster.length ? roster.map(s=>{
-    const done = !!answered[s.id];
+    const done = !!answered[s.id] || s.transferred;
     return done
       ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
       : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`;
@@ -1391,11 +1394,11 @@ svCanvas.addEventListener('pointerleave', svStop);
 
 async function openSurveyOverlay(){
   if(!(svCfg && svCfg.open && svCfg.id)) return;
-  const roster = await getRosterList();
+  const roster = await getRosterList({all:true});
   const answered = (await db.ref('surveyAnswers/'+svCfg.id).once('value')).val() || {};
   document.getElementById('svTitleLabel').textContent = '📝 ' + (svCfg.title || '설문');
   const grid = document.getElementById('svNameGrid');
-  grid.innerHTML = roster.length ? roster.map(s=> answered[s.id]
+  grid.innerHTML = roster.length ? roster.map(s=> (answered[s.id] || s.transferred)
     ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
     : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`
   ).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
@@ -1456,11 +1459,11 @@ function updateVoteIcon(){
 }
 async function openVoteOverlay(){
   if(!(vtCfg && vtCfg.open && vtCfg.id)) return;
-  const roster = await getRosterList();
+  const roster = await getRosterList({all:true});
   const voted = (await db.ref('voteAnswers/'+vtCfg.id).once('value')).val() || {};
   document.getElementById('vtTitleLabel').textContent = '✅ ' + (vtCfg.title || '투표');
   const grid = document.getElementById('vtNameGrid');
-  grid.innerHTML = roster.length ? roster.map(s=> voted[s.id]
+  grid.innerHTML = roster.length ? roster.map(s=> (voted[s.id] || s.transferred)
     ? `<button class="name-pill done" disabled>${escapeHtml(s.name)}</button>`
     : `<button class="name-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`
   ).join('') : '<p style="color:var(--muted); font-size:13px;">등록된 학생이 없습니다.</p>';
@@ -1562,11 +1565,12 @@ function caHide(){
 }
 function caWasDismissed(id){ try{ return sessionStorage.getItem('caDismissed') === id; }catch(e){ return false; } }
 async function caRenderNames(){
-  const roster = await getRosterList();
+  const roster = await getRosterList({all:true});
   const grid = document.getElementById('caNameGrid');
-  grid.innerHTML = roster.length ? roster.map(s=>
-    `<button class="ca-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`).join('') : '';
-  grid.querySelectorAll('.ca-pill').forEach(btn=>{
+  grid.innerHTML = roster.length ? roster.map(s=> s.transferred
+    ? `<button class="ca-pill done" disabled>${escapeHtml(s.name)}</button>`
+    : `<button class="ca-pill" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}</button>`).join('') : '';
+  grid.querySelectorAll('.ca-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       caStudent = { id: btn.dataset.id, name: btn.dataset.name };
       if(caRaw && (caRaw.mode === 'yesno' || caRaw.mode === 'yesonly')){
@@ -1727,7 +1731,7 @@ function gameConfetti(){
   }
 }
 async function gameRenderPick(){
-  const [roster, playsSnap] = await Promise.all([getRosterList(), db.ref('gamePlays/'+todayStr()).once('value')]);
+  const [roster, playsSnap] = await Promise.all([getRosterList({all:true}), db.ref('gamePlays/'+todayStr()).once('value')]);
   const plays = playsSnap.val() || {};
   let chips = '<span class="gm-chip c1">하루 ' + gameLimit + '번</span>';
   if(gameRewardCfg.mode === 'daily-top') chips += '<span class="gm-chip c2">오늘 ' + (gameRewardCfg.topN > 1 ? '상위 '+gameRewardCfg.topN+'명' : '1등') + ' 포인트 +' + gameRewardCfg.points + '</span>';
@@ -1735,6 +1739,7 @@ async function gameRenderPick(){
   const grid = document.getElementById('gameNameGrid');
   grid.innerHTML = roster.length ? roster.map((s,i)=>{
     const left = gameLimit - (plays[s.id] || 0);
+    if(s.transferred) return `<button class="gm-pill done" disabled>${escapeHtml(s.name)}</button>`;
     return left > 0
       ? `<button class="gm-pill p${i%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-left="${left}">${escapeHtml(s.name)}<small>${left}번 남음</small></button>`
       : `<button class="gm-pill done" disabled>${escapeHtml(s.name)}<small>완료</small></button>`;
