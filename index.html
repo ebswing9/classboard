@@ -107,12 +107,35 @@
   .att-locked-note{ text-align:center; font-size:12.5px; color:var(--muted); font-weight:700; margin-top:12px; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
-  .att-cell.att-tap{ -webkit-user-select:none; user-select:none; transition:background .2s ease; padding:16px 14px; }
+  /* ---- 출석 카드 (이름을 톡 눌러 출석) ---- */
+  .att-cell.att-tap, .att-cell.att-absent{ -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; flex-direction:row; align-items:center; padding:10px 12px; background:#fff; border:2px solid var(--line); box-shadow:0 3px 0 rgba(200,185,225,0.35); -webkit-transition:background .25s ease, border-color .25s ease, -webkit-transform .12s ease; transition:background .25s ease, border-color .25s ease, transform .12s ease; }
+  .att-cell .att-bubble{ width:40px; height:40px; min-width:40px; border-radius:50%; margin-right:10px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:var(--text); background:var(--pink); -webkit-transition:background .25s ease; transition:background .25s ease; }
+  .att-cell .att-info{ -webkit-box-flex:1; flex:1; min-width:0; display:flex; flex-direction:column; }
+  .att-cell .att-info .att-name{ font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .att-cell .att-sub{ font-size:11.5px; font-weight:700; color:var(--muted); margin-top:2px; }
+  .att-cell .att-rank-badge{ margin-left:6px; padding:3px 9px; border-radius:999px; background:#fff; color:var(--pink-deep); font-size:12px; font-weight:800; white-space:nowrap; }
   .att-cell.tappable{ cursor:pointer; }
-  .att-cell.tappable:active{ -webkit-transform:scale(.96); transform:scale(.96); }
-  .att-cell.is-present{ background:var(--mint); }
-  .att-cell.is-present .att-name{ color:var(--text); }
-  .att-cell.is-out{ background:var(--sky); }
+  .att-cell.tappable .att-sub{ color:var(--pink-deep); }
+  .att-cell.tappable:active{ -webkit-transform:translateY(2px) scale(.97); transform:translateY(2px) scale(.97); box-shadow:0 1px 0 rgba(200,185,225,0.35); }
+  .att-cell.c0 .att-bubble{ background:var(--pink); } .att-cell.c1 .att-bubble{ background:var(--sky); } .att-cell.c2 .att-bubble{ background:var(--yellow); } .att-cell.c3 .att-bubble{ background:var(--lav); } .att-cell.c4 .att-bubble{ background:var(--mint); }
+  .att-cell.is-present{ background:linear-gradient(135deg, #e6f8f1, var(--mint)); border-color:#b5e6d3; box-shadow:0 3px 0 rgba(79,190,156,0.25); }
+  .att-cell.is-present .att-bubble{ background:var(--mint-deep); color:#fff; }
+  .att-cell.is-present .att-sub{ color:var(--mint-deep); }
+  .att-cell.is-out{ background:linear-gradient(135deg, #eef8fe, var(--sky)); border-color:#bfe0f5; box-shadow:0 3px 0 rgba(121,179,236,0.25); }
+  .att-cell.is-out .att-bubble{ background:var(--sky-deep); color:#fff; font-size:14px; }
+  .att-cell.is-out .att-sub{ color:var(--sky-deep); }
+  .att-cell.att-absent{ background:#fff3f5; border-color:#ffd9e0; box-shadow:none; }
+  .att-cell.att-absent .att-bubble{ background:#ffd3dc; color:#e0556f; font-size:14px; }
+  .att-cell.att-absent .att-sub{ color:#e0556f; }
+  .att-cell.just{ -webkit-animation:attPop .5s ease; animation:attPop .5s ease; }
+  .att-cell.just .att-bubble{ -webkit-animation:attSpin .6s ease; animation:attSpin .6s ease; }
+  .att-spark{ position:absolute; font-size:14px; pointer-events:none; opacity:0; left:30px; top:20px; -webkit-animation:attSpark .8s ease-out; animation:attSpark .8s ease-out; }
+  @-webkit-keyframes attPop{ 0%{-webkit-transform:scale(.9)} 45%{-webkit-transform:scale(1.035)} 100%{-webkit-transform:scale(1)} }
+  @keyframes attPop{ 0%{transform:scale(.9)} 45%{transform:scale(1.035)} 100%{transform:scale(1)} }
+  @-webkit-keyframes attSpin{ 0%{-webkit-transform:rotate(-200deg) scale(.4)} 100%{-webkit-transform:rotate(0) scale(1)} }
+  @keyframes attSpin{ 0%{transform:rotate(-200deg) scale(.4)} 100%{transform:rotate(0) scale(1)} }
+  @-webkit-keyframes attSpark{ 0%{opacity:1; -webkit-transform:translate(0,0) scale(.5)} 100%{opacity:0; -webkit-transform:translate(var(--dx,20px),var(--dy,-24px)) scale(1.2)} }
+  @keyframes attSpark{ 0%{opacity:1; transform:translate(0,0) scale(.5)} 100%{opacity:0; transform:translate(var(--dx,20px),var(--dy,-24px)) scale(1.2)} }
 
   #clockCard{ flex:1 1 480px; min-width:280px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 1 260px; min-width:160px; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
@@ -918,6 +941,7 @@ async function getRosterList(opts){
     .filter(s=> all || !s.transferred)
     .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
+let justCheckedId = null;
 async function renderAttendancePanel(){
   const myRequestId = panelRequestId;
   const roster = await getRosterList();
@@ -937,26 +961,28 @@ async function renderAttendancePanel(){
   const rankById = {};
   dashboardPresentOrder.forEach((s,i)=> rankById[s.id] = i+1);
 
+  const SPARKS = ['✨','⭐','💖','✨','🌟'];
   box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
-    if(rec && rec.status === 'absent'){
-      return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-        <div class="att-name-row">
-          <span class="att-name">${escapeHtml(s.name)}</span>
-        </div>
-        <div class="att-absent-label">결석</div>
-      </div>`;
-    }
+    const ci = Math.max(0, roster.indexOf(s)) % 5;
+    const first = escapeHtml(String(s.name).charAt(0));
     const st = rec ? rec.status : '';
+    const nm = escapeHtml(s.name);
+    const d = `data-id="${s.id}" data-name="${nm}"`;
+    if(st === 'absent'){
+      return `<div class="att-cell att-absent" ${d}><span class="att-bubble">결</span><div class="att-info"><span class="att-name">${nm}</span><span class="att-sub">결석</span></div></div>`;
+    }
     const canTap = !rec && !isAttendanceLocked();
-    return `<div class="att-cell att-tap ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-      <div class="att-name-row">
-        <span class="att-name-group">
-          <span class="att-name">${escapeHtml(s.name)}</span>
-          ${rankById[s.id] ? `<span class="att-rank">${rankById[s.id]}등</span>` : ''}
-        </span>
-        ${st==='out' ? `<span class="att-time">조퇴 ${rec.time||''}</span>` : (st==='present' ? '<span class="att-time">✔ 출석</span>' : '')}
-      </div>
+    const just = (justCheckedId === s.id);
+    const sparks = just ? SPARKS.map((e,k)=> `<span class="att-spark" style="--dx:${[-26,-10,8,24,38][k]}px; --dy:${[-22,-30,-26,-30,-18][k]}px; -webkit-animation-delay:${k*0.04}s; animation-delay:${k*0.04}s;">${e}</span>`).join('') : '';
+    let bubble, sub, badge = '';
+    if(st === 'present'){ bubble = '✓'; sub = '출석 완료!'; if(rankById[s.id]) badge = `<span class="att-rank-badge">${rankById[s.id]}등</span>`; }
+    else if(st === 'out'){ bubble = '조'; sub = '조퇴 ' + (rec.time||''); }
+    else { bubble = first; sub = isAttendanceLocked() ? '🔒 잠시 쉬는 중' : '톡! 눌러서 출석'; }
+    return `<div class="att-cell att-tap c${ci} ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''} ${just?'just':''}" ${d}>
+      <span class="att-bubble">${bubble}</span>
+      <div class="att-info"><span class="att-name">${nm}</span><span class="att-sub">${sub}</span></div>
+      ${badge}${sparks}
     </div>`;
   }).join('') + '</div>' + (isAttendanceLocked() ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
   box.querySelectorAll('.att-cell.tappable').forEach(cell=>{
@@ -967,11 +993,13 @@ async function renderAttendancePanel(){
       // 이미 기록이 있으면(다른 학생이 먼저 눌렀거나 관리자가 처리) 덮어쓰지 않음. 대시보드에서는 취소 불가.
       const res = await db.ref(`attendance/${todayStr()}/${id}`).transaction(cur=> cur ? undefined : { name, status:'present', time: nowHHMM(), ts: Date.now(), source:'dashboard' });
       if(res && res.committed){
+        justCheckedId = id;
         await checkAndCelebrateReward(id, name);
         const b = await reconcileAttendancePoint(todayStr(), id);
         if(b && b.amount > 0) showPointToast('🏅 ' + escapeHtml(name) + '님 ' + b.rank + '등! 보너스 +' + b.amount + '점');
       }
       await renderAttendancePanel();
+      justCheckedId = null;
       await loadAttendanceWidget();
       checkOverflowFallback();
     });
