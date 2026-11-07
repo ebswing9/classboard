@@ -107,33 +107,31 @@
   .att-locked-note{ text-align:center; font-size:12.5px; color:var(--muted); font-weight:700; margin-top:12px; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
-  /* ---- 출석 카드: 이름 칸을 누르면 물결이 퍼지며 체크 ---- */
-  .att-cell.att-tap, .att-cell.att-absent{ -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; flex-direction:row; align-items:center; -webkit-box-pack:justify; justify-content:space-between; padding:15px 16px; background:#fff; border:2px solid #efe7f7; border-radius:18px; box-shadow:0 4px 0 #efe7f7; margin-bottom:0; -webkit-transition:background .4s ease, border-color .4s ease, box-shadow .15s ease, -webkit-transform .15s ease; transition:background .4s ease, border-color .4s ease, box-shadow .15s ease, transform .15s ease; }
-  .att-cell .att-name{ position:relative; z-index:1; font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .att-cell .att-right{ position:relative; z-index:1; display:flex; align-items:center; margin-left:8px; }
-  .att-cell .att-rk{ font-size:12.5px; font-weight:800; color:var(--mint-deep); margin-right:8px; }
-  .att-cell .att-word{ font-size:12.5px; font-weight:800; }
-  .att-ring{ width:26px; height:26px; box-sizing:border-box; border-radius:50%; border:2px solid #e6dcf2; background:transparent; display:flex; align-items:center; justify-content:center; -webkit-transition:background .3s ease, border-color .3s ease; transition:background .3s ease, border-color .3s ease; }
-  .att-ring svg{ width:16px; height:16px; }
-  .att-ring path{ fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:22; stroke-dashoffset:22; -webkit-transition:stroke-dashoffset .35s ease .12s; transition:stroke-dashoffset .35s ease .12s; }
+  /* ---- 출석 카드: 게임 이름 선택 버튼과 같은 파스텔 카드. 누르면 톡 튀며 체크되고 차분한 색으로 가라앉음 ---- */
+  .att-cell.att-tap, .att-cell.att-absent{ -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; position:relative; box-sizing:border-box; height:60px; padding:6px 8px; border:none; border-radius:18px; flex-direction:column; -webkit-box-align:center; align-items:center; -webkit-box-pack:center; justify-content:center; gap:0; text-align:center; font-family:'MapleStory','Jua',sans-serif; background:var(--pink); box-shadow:0 4px 10px rgba(160,140,190,0.2); -webkit-transition:background .5s ease, box-shadow .5s ease, -webkit-transform .12s ease; transition:background .5s ease, box-shadow .5s ease, transform .12s ease; }
+  .att-cell.p0{ background:var(--pink); } .att-cell.p1{ background:var(--sky); } .att-cell.p2{ background:var(--mint); } .att-cell.p3{ background:var(--yellow); } .att-cell.p4{ background:var(--lav); }
+  .att-cell .att-name{ display:block; max-width:100%; font-size:17px; font-weight:400; line-height:1.2; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -webkit-transition:color .5s ease; transition:color .5s ease; }
+  .att-cell .att-small{ display:block; margin-top:1px; line-height:1.1; font-size:11px; font-weight:800; color:var(--muted); }
+  .att-cell .att-badge{ position:absolute; top:7px; right:9px; width:20px; height:20px; border-radius:50%; background:var(--mint-deep); display:none; align-items:center; justify-content:center; }
+  .att-cell .att-badge svg{ width:12px; height:12px; }
+  .att-cell .att-badge path{ fill:none; stroke:#fff; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round; }
   .att-cell.tappable{ cursor:pointer; }
-  .att-cell.tappable:active{ -webkit-transform:translateY(3px) scale(.97); transform:translateY(3px) scale(.97); box-shadow:0 1px 0 #efe7f7; }
-  .att-cell.is-present{ background:#eafaf4; border-color:#bfead9; box-shadow:0 4px 0 #cdeee1; }
-  .att-cell.is-present .att-ring{ background:var(--mint-deep); border-color:var(--mint-deep); }
-  .att-cell.is-present .att-ring path{ stroke-dashoffset:0; }
-  .att-cell.is-out{ background:#eaf5fd; border-color:#c6e3f6; box-shadow:0 4px 0 #d3e9f7; }
-  .att-cell.is-out .att-word{ color:var(--sky-deep); }
-  .att-cell.att-absent{ background:#fff0f3; border-color:#ffd6df; box-shadow:0 4px 0 #ffe3e9; }
-  .att-cell.att-absent .att-word{ color:#e0556f; }
-  .att-cell.just{ -webkit-animation:attPop .6s ease; animation:attPop .6s ease; }
-  .att-cell.just .att-ring{ -webkit-animation:attRing .6s ease; animation:attRing .6s ease; }
-  .att-cell.just::after{ content:''; position:absolute; z-index:0; right:16px; top:50%; width:26px; height:26px; margin-top:-13px; border-radius:50%; background:rgba(79,190,156,0.32); pointer-events:none; -webkit-animation:attRipple .75s ease-out; animation:attRipple .75s ease-out; }
-  @-webkit-keyframes attPop{ 0%{-webkit-transform:scale(.97)} 35%{-webkit-transform:scale(1.03)} 100%{-webkit-transform:scale(1)} }
-  @keyframes attPop{ 0%{transform:scale(.97)} 35%{transform:scale(1.03)} 100%{transform:scale(1)} }
-  @-webkit-keyframes attRing{ 0%{-webkit-transform:scale(.6)} 55%{-webkit-transform:scale(1.3)} 100%{-webkit-transform:scale(1)} }
-  @keyframes attRing{ 0%{transform:scale(.6)} 55%{transform:scale(1.3)} 100%{transform:scale(1)} }
-  @-webkit-keyframes attRipple{ 0%{opacity:1; -webkit-transform:scale(1)} 100%{opacity:0; -webkit-transform:scale(16)} }
-  @keyframes attRipple{ 0%{opacity:1; transform:scale(1)} 100%{opacity:0; transform:scale(16)} }
+  .att-cell.tappable:active{ -webkit-transform:scale(.94); transform:scale(.94); }
+  .att-cell.is-present, .att-cell.is-out, .att-cell.att-absent{ background:#eceaf1; box-shadow:none; }
+  .att-cell.is-present .att-name, .att-cell.is-out .att-name, .att-cell.att-absent .att-name{ color:var(--muted); }
+  .att-cell.is-present .att-small{ color:var(--mint-deep); }
+  .att-cell.is-present .att-badge{ display:flex; }
+  .att-cell.is-out .att-small{ color:var(--sky-deep); }
+  .att-cell.att-absent .att-small{ color:#e0556f; }
+  .att-cell.just{ -webkit-animation:attPop .5s cubic-bezier(.3,1.5,.5,1); animation:attPop .5s cubic-bezier(.3,1.5,.5,1); }
+  .att-cell.just .att-badge{ -webkit-animation:attBadge .45s cubic-bezier(.3,1.7,.5,1) .08s both; animation:attBadge .45s cubic-bezier(.3,1.7,.5,1) .08s both; }
+  .att-cell.just::after{ content:''; position:absolute; left:0; top:0; right:0; bottom:0; border-radius:18px; pointer-events:none; -webkit-animation:attGlow .6s ease-out; animation:attGlow .6s ease-out; }
+  @-webkit-keyframes attPop{ 0%{-webkit-transform:scale(.94)} 55%{-webkit-transform:scale(1.07)} 100%{-webkit-transform:scale(1)} }
+  @keyframes attPop{ 0%{transform:scale(.94)} 55%{transform:scale(1.07)} 100%{transform:scale(1)} }
+  @-webkit-keyframes attBadge{ 0%{-webkit-transform:scale(0)} 100%{-webkit-transform:scale(1)} }
+  @keyframes attBadge{ 0%{transform:scale(0)} 100%{transform:scale(1)} }
+  @-webkit-keyframes attGlow{ 0%{box-shadow:0 0 0 0 rgba(79,190,156,0.45)} 100%{box-shadow:0 0 0 16px rgba(79,190,156,0)} }
+  @keyframes attGlow{ 0%{box-shadow:0 0 0 0 rgba(79,190,156,0.45)} 100%{box-shadow:0 0 0 16px rgba(79,190,156,0)} }
 
   #clockCard{ flex:1 1 480px; min-width:280px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 1 260px; min-width:160px; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
@@ -983,15 +981,16 @@ async function renderAttendancePanel(){
     const st = rec ? rec.status : '';
     const nm = escapeHtml(s.name);
     const d = `data-id="${s.id}" data-name="${nm}"`;
-    const TICK = '<span class="att-ring"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4L18 8"/></svg></span>';
+    const ci = Math.max(0, roster.indexOf(s)) % 5;
+    const BADGE = '<span class="att-badge"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4L18 8"/></svg></span>';
     if(st === 'absent'){
-      return `<div class="att-cell att-absent" ${d}><span class="att-name">${nm}</span><span class="att-right"><span class="att-word">결석</span></span></div>`;
+      return `<div class="att-cell att-absent" ${d}><span class="att-name">${nm}</span><span class="att-small">결석</span></div>`;
     }
     const canTap = !rec && !isAttendanceLocked();
-    let right = TICK;
-    if(st === 'present') right = (rankById[s.id] ? `<span class="att-rk">${rankById[s.id]}등</span>` : '') + TICK;
-    else if(st === 'out') right = '<span class="att-word">조퇴</span>';
-    return `<div class="att-cell att-tap ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" ${d}><span class="att-name">${nm}</span><span class="att-right">${right}</span></div>`;
+    let small = '';
+    if(st === 'present') small = rankById[s.id] ? rankById[s.id] + '등' : '출석';
+    else if(st === 'out') small = '조퇴';
+    return `<div class="att-cell att-tap p${ci} ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" ${d}><span class="att-name">${nm}</span>${small ? `<span class="att-small">${small}</span>` : ''}${BADGE}</div>`;
   }).join('') + '</div>' + (isAttendanceLocked() ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
   box.querySelectorAll('.att-cell.tappable').forEach(cell=>{
     const id = cell.dataset.id, name = cell.dataset.name;
@@ -1010,7 +1009,7 @@ async function renderAttendancePanel(){
           if(b && b.amount > 0) showPointToast('🏅 ' + escapeHtml(name) + '님 ' + b.rank + '등! 보너스 +' + b.amount + '점');
         }
       })();
-      await Promise.all([work, new Promise(r=> setTimeout(r, 1000))]);
+      await Promise.all([work, new Promise(r=> setTimeout(r, 750))]);
       attHold--;
       await attRenderFlip();
       await loadAttendanceWidget();
