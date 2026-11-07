@@ -527,6 +527,18 @@
           <button class="publish-btn off" id="attendanceLockToggle">허용 중</button>
         </div>
         <p class="hint" style="margin-top:-10px; margin-bottom:14px;">켜두면 <b>오늘 하루만</b> 대시보드에서 학생이 출석/조퇴 버튼을 눌러도 반응하지 않아요. 다음 날이 되면 자동으로 풀려요. (여기 관리자 페이지에서 체크/해제하는 건 항상 가능해요)</p>
+        <div class="publish-row" style="margin-bottom:8px;">
+          <span>🏅 출석 N등 보너스 (기간 한정)</span>
+          <button class="publish-btn off" id="attBonusToggle">꺼짐</button>
+        </div>
+        <div id="attBonusBox" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;">
+          <input type="date" id="attBonusStart" style="width:auto;"> ~ <input type="date" id="attBonusEnd" style="width:auto;">
+          <span>출석</span><input type="number" id="attBonusTopN" min="1" max="30" value="3" style="width:64px;">
+          <span>등까지 +</span><input type="number" id="attBonusPts" min="1" max="20" value="1" style="width:64px;"><span>점</span>
+          <button class="btn" id="attBonusSave" style="margin:0;">저장</button>
+          <span class="msg" id="attBonusMsg"></span>
+        </div>
+        <p class="hint" style="margin-bottom:14px;">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
         <div class="publish-row" style="margin-bottom:14px;">
           <span>🍀 오늘의 행운번호</span>
           <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
@@ -788,7 +800,42 @@ async function reconcileAttendancePoint(date, studentId){
     await awardPoints(studentId, -1);
     await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(false);
   }
+  return await reconcileAttendanceBonus(date, studentId);
 }
+// 기간 한정 '출석 N등 보너스' 정산. config/attBonus = {enabled,start,end,topN,points}
+// 대시보드에서 직접 출석한 학생을 시간순으로 줄 세워 N등까지 보너스를 주고,
+// 관리자가 출석을 취소해 순위가 바뀌면 자동으로 다시 맞춘다. (지급 내역: pointLedger/attBonus/날짜/학생 = 지급액, -1 = 관리자가 회수)
+async function reconcileAttendanceBonus(date, focusId){
+  const cfg = (await db.ref('config/attBonus').once('value')).val() || {};
+  const [attSnap, ledSnap] = await Promise.all([
+    db.ref('attendance/'+date).once('value'),
+    db.ref('pointLedger/attBonus/'+date).once('value')
+  ]);
+  const att = attSnap.val() || {}, led = ledSnap.val() || {};
+  const topN = parseInt(cfg.topN,10) || 0, pts = parseInt(cfg.points,10) || 0;
+  const active = !!(cfg.enabled && cfg.start && cfg.end && date >= cfg.start && date <= cfg.end && topN > 0 && pts > 0);
+  const order = Object.keys(att).filter(id=> att[id] && att[id].status==='present' && att[id].source==='dashboard')
+    .sort((a,b)=> (att[a].ts||0)-(att[b].ts||0) || (att[a].time||'').localeCompare(att[b].time||'') || String(att[a].name||'').localeCompare(String(att[b].name||''),'ko'));
+  const rank = {}; order.forEach((id,i)=> rank[id] = i+1);
+  const ids = {}; Object.keys(att).forEach(k=>{ ids[k]=1; }); Object.keys(led).forEach(k=>{ ids[k]=1; });
+  const result = { rank: focusId ? (rank[focusId]||0) : 0, amount: 0 };
+  for(const id of Object.keys(ids)){
+    const prev = led[id] || 0;
+    const prevAmt = prev > 0 ? prev : 0;
+    let target;
+    if(!rank[id]) target = 0;                                   // 더 이상 대시보드 출석이 아님 → 회수
+    else if(prev === -1) { continue; }                          // 관리자가 직접 회수한 건 다시 안 줌
+    else target = active ? (rank[id] <= topN ? pts : 0) : prevAmt; // 기간 밖/꺼짐이면 기존 지급분 유지
+    if(target !== prevAmt){
+      await awardPoints(id, target - prevAmt);
+      if(target > 0) await db.ref('pointLedger/attBonus/'+date+'/'+id).set(target);
+      else await db.ref('pointLedger/attBonus/'+date+'/'+id).remove();
+    }
+    if(id === focusId) result.amount = target;
+  }
+  return result;
+}
+
 function uid(){ return 'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dowKeyOf(dateStr){ const d = new Date(dateStr+'T00:00:00'); return DAY_KEYS[d.getDay()]; }
 
@@ -1145,6 +1192,7 @@ async function initAdmin(){
   await loadRoster();
   db.ref('roster').on('value', ()=>{ if(initedOnce) loadRoster(); });
   await loadAttendanceTab();
+  await loadAttBonusCfg();
   bindAttendanceListener();
   await loadPointsTab();
   await loadRolesTab();
@@ -1484,6 +1532,37 @@ document.getElementById('attendanceLockToggle').addEventListener('click', async 
   // 막아둔 '날짜'를 저장함 → 날짜가 바뀌면 자동으로 풀림
   await db.ref('config/attendanceLocked').set(attendanceLocked ? todayStr() : null);
 });
+/* ---- 출석 N등 보너스 설정 ---- */
+let attBonusOn = false;
+function setAttBonusBtn(on){
+  attBonusOn = on;
+  const btn = document.getElementById('attBonusToggle');
+  btn.textContent = on ? '켜짐' : '꺼짐';
+  btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+async function loadAttBonusCfg(){
+  const c = (await db.ref('config/attBonus').once('value')).val() || {};
+  setAttBonusBtn(!!c.enabled);
+  document.getElementById('attBonusStart').value = c.start || todayStr();
+  document.getElementById('attBonusEnd').value = c.end || todayStr();
+  document.getElementById('attBonusTopN').value = c.topN || 3;
+  document.getElementById('attBonusPts').value = c.points || 1;
+}
+async function saveAttBonusCfg(){
+  const topN = Math.max(1, parseInt(document.getElementById('attBonusTopN').value,10) || 1);
+  const points = Math.max(1, parseInt(document.getElementById('attBonusPts').value,10) || 1);
+  const start = document.getElementById('attBonusStart').value, end = document.getElementById('attBonusEnd').value;
+  const msg = document.getElementById('attBonusMsg');
+  if(attBonusOn && (!start || !end || start > end)){ msg.textContent = '기간을 확인해 주세요'; return false; }
+  await db.ref('config/attBonus').set({ enabled: attBonusOn, start: start || null, end: end || null, topN, points });
+  msg.textContent = '저장됨 ✓'; setTimeout(()=>{ msg.textContent=''; }, 1800);
+  return true;
+}
+document.getElementById('attBonusToggle').addEventListener('click', async ()=>{
+  setAttBonusBtn(!attBonusOn);
+  if(!(await saveAttBonusCfg())) setAttBonusBtn(false);
+});
+document.getElementById('attBonusSave').addEventListener('click', saveAttBonusCfg);
 document.querySelectorAll('#attSortTabs .filter-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('#attSortTabs .filter-btn').forEach(b=>b.classList.remove('active'));
@@ -1867,11 +1946,12 @@ async function renderPointHistory(){
   const id = pointHistoryStudent.id;
   const listEl = document.getElementById('pointHistoryList');
   listEl.innerHTML = '<p class="hint">불러오는 중...</p>';
-  const [totalSnap, logSnap, qaSnap, ledSnap] = await Promise.all([
+  const [totalSnap, logSnap, qaSnap, ledSnap, bonusSnap] = await Promise.all([
     db.ref('points/'+id).once('value'),
     db.ref('pointLog/'+id).once('value'),
     db.ref('quizAnswers').once('value'),
-    db.ref('pointLedger/attendance').once('value')
+    db.ref('pointLedger/attendance').once('value'),
+    db.ref('pointLedger/attBonus').once('value')
   ]);
   if(!pointHistoryStudent || pointHistoryStudent.id !== id) return;
   const total = totalSnap.val() || 0;
@@ -1893,6 +1973,11 @@ async function renderPointHistory(){
     if(led[date] && led[date][id] === true){
       events.push({ type:'attendance', date:date, delta:1, ts:dateKeyToTs(date), label:'🙋 대시보드 출석 ('+date+')' });
     }
+  });
+  const bled = bonusSnap.val() || {};
+  Object.keys(bled).forEach(date=>{
+    const amt = bled[date] && bled[date][id];
+    if(amt > 0) events.push({ type:'attBonus', date:date, delta:amt, ts:dateKeyToTs(date), label:'🏅 출석 등수 보너스 ('+date+')' });
   });
   events.sort((a,b)=> b.ts - a.ts);
   const sum = events.reduce((acc,e)=> acc + e.delta, 0);
@@ -1924,6 +2009,9 @@ async function revokePointEvent(id, e){
   } else if(e.type === 'quiz'){
     await db.ref('quizAnswers/'+e.date+'/'+id).update({ verdict: null, awardedAmount: 0 });
     await awardPoints(id, -e.delta);
+  } else if(e.type === 'attBonus'){
+    await awardPoints(id, -e.delta);
+    await db.ref('pointLedger/attBonus/'+e.date+'/'+id).set(-1);
   } else if(e.type === 'attendance'){
     // 출석 기록의 출처를 '관리자'로 바꾸면 정산 함수가 포인트를 되돌려줌 (출석 자체는 유지)
     await db.ref('attendance/'+e.date+'/'+id).update({ source: 'admin' });

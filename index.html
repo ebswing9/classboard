@@ -107,6 +107,12 @@
   .att-locked-note{ text-align:center; font-size:12.5px; color:var(--muted); font-weight:700; margin-top:12px; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
+  .att-cell.att-tap{ -webkit-user-select:none; user-select:none; transition:background .2s ease; padding:16px 14px; }
+  .att-cell.tappable{ cursor:pointer; }
+  .att-cell.tappable:active{ -webkit-transform:scale(.96); transform:scale(.96); }
+  .att-cell.is-present{ background:var(--mint); }
+  .att-cell.is-present .att-name{ color:var(--text); }
+  .att-cell.is-out{ background:var(--sky); }
 
   #clockCard{ flex:1 1 480px; min-width:280px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 1 260px; min-width:160px; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
@@ -633,7 +639,42 @@ async function reconcileAttendancePoint(date, studentId){
     await awardPoints(studentId, -1);
     await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(false);
   }
+  return await reconcileAttendanceBonus(date, studentId);
 }
+// 기간 한정 '출석 N등 보너스' 정산. config/attBonus = {enabled,start,end,topN,points}
+// 대시보드에서 직접 출석한 학생을 시간순으로 줄 세워 N등까지 보너스를 주고,
+// 관리자가 출석을 취소해 순위가 바뀌면 자동으로 다시 맞춘다. (지급 내역: pointLedger/attBonus/날짜/학생 = 지급액, -1 = 관리자가 회수)
+async function reconcileAttendanceBonus(date, focusId){
+  const cfg = (await db.ref('config/attBonus').once('value')).val() || {};
+  const [attSnap, ledSnap] = await Promise.all([
+    db.ref('attendance/'+date).once('value'),
+    db.ref('pointLedger/attBonus/'+date).once('value')
+  ]);
+  const att = attSnap.val() || {}, led = ledSnap.val() || {};
+  const topN = parseInt(cfg.topN,10) || 0, pts = parseInt(cfg.points,10) || 0;
+  const active = !!(cfg.enabled && cfg.start && cfg.end && date >= cfg.start && date <= cfg.end && topN > 0 && pts > 0);
+  const order = Object.keys(att).filter(id=> att[id] && att[id].status==='present' && att[id].source==='dashboard')
+    .sort((a,b)=> (att[a].ts||0)-(att[b].ts||0) || (att[a].time||'').localeCompare(att[b].time||'') || String(att[a].name||'').localeCompare(String(att[b].name||''),'ko'));
+  const rank = {}; order.forEach((id,i)=> rank[id] = i+1);
+  const ids = {}; Object.keys(att).forEach(k=>{ ids[k]=1; }); Object.keys(led).forEach(k=>{ ids[k]=1; });
+  const result = { rank: focusId ? (rank[focusId]||0) : 0, amount: 0 };
+  for(const id of Object.keys(ids)){
+    const prev = led[id] || 0;
+    const prevAmt = prev > 0 ? prev : 0;
+    let target;
+    if(!rank[id]) target = 0;                                   // 더 이상 대시보드 출석이 아님 → 회수
+    else if(prev === -1) { continue; }                          // 관리자가 직접 회수한 건 다시 안 줌
+    else target = active ? (rank[id] <= topN ? pts : 0) : prevAmt; // 기간 밖/꺼짐이면 기존 지급분 유지
+    if(target !== prevAmt){
+      await awardPoints(id, target - prevAmt);
+      if(target > 0) await db.ref('pointLedger/attBonus/'+date+'/'+id).set(target);
+      else await db.ref('pointLedger/attBonus/'+date+'/'+id).remove();
+    }
+    if(id === focusId) result.amount = target;
+  }
+  return result;
+}
+
 function showPointToast(html){
   const el = document.getElementById('pointToast');
   el.innerHTML = html;
@@ -892,7 +933,7 @@ async function renderAttendancePanel(){
 
   const dashboardPresentOrder = roster
     .filter(s=> att[s.id] && att[s.id].status==='present' && att[s.id].source==='dashboard')
-    .sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+    .sort((a,b)=> (att[a.id].ts||0)-(att[b.id].ts||0) || (att[a.id].time||'').localeCompare(att[b.id].time||''));
   const rankById = {};
   dashboardPresentOrder.forEach((s,i)=> rankById[s.id] = i+1);
 
@@ -906,38 +947,33 @@ async function renderAttendancePanel(){
         <div class="att-absent-label">결석</div>
       </div>`;
     }
-    return `<div class="att-cell" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
+    const st = rec ? rec.status : '';
+    const canTap = !rec && !isAttendanceLocked();
+    return `<div class="att-cell att-tap ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
       <div class="att-name-row">
         <span class="att-name-group">
           <span class="att-name">${escapeHtml(s.name)}</span>
           ${rankById[s.id] ? `<span class="att-rank">${rankById[s.id]}등</span>` : ''}
         </span>
-        ${(rec && rec.status==='out') ? `<span class="att-time">${rec.time}</span>` : ''}
-      </div>
-      <div class="att-btns">
-        <button class="att-pill ${(rec&&rec.status==='present')?'on-present':''}" data-status="present" ${isAttendanceLocked()?'disabled':''}>출석</button>
-        <button class="att-pill ${(rec&&rec.status==='out')?'on-out':''}" data-status="out" ${isAttendanceLocked()?'disabled':''}>조퇴</button>
+        ${st==='out' ? `<span class="att-time">조퇴 ${rec.time||''}</span>` : (st==='present' ? '<span class="att-time">✔ 출석</span>' : '')}
       </div>
     </div>`;
   }).join('') + '</div>' + (isAttendanceLocked() ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
-  box.querySelectorAll('.att-cell').forEach(cell=>{
+  box.querySelectorAll('.att-cell.tappable').forEach(cell=>{
     const id = cell.dataset.id, name = cell.dataset.name;
-    cell.querySelectorAll('.att-pill').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        if(isAttendanceLocked()) return;
-        const isActive = btn.classList.contains('on-present') || btn.classList.contains('on-out');
-        if(isActive){
-          await db.ref(`attendance/${todayStr()}/${id}`).remove();
-        } else {
-          const status = btn.dataset.status;
-          await db.ref(`attendance/${todayStr()}/${id}`).set({ name, status, time: nowHHMM(), source: 'dashboard' });
-          await checkAndCelebrateReward(id, name);
-        }
-        await reconcileAttendancePoint(todayStr(), id);
-        await renderAttendancePanel();
-        await loadAttendanceWidget();
-        checkOverflowFallback();
-      });
+    cell.addEventListener('click', async ()=>{
+      if(isAttendanceLocked() || cell.dataset.busy) return;
+      cell.dataset.busy = '1';
+      // 이미 기록이 있으면(다른 학생이 먼저 눌렀거나 관리자가 처리) 덮어쓰지 않음. 대시보드에서는 취소 불가.
+      const res = await db.ref(`attendance/${todayStr()}/${id}`).transaction(cur=> cur ? undefined : { name, status:'present', time: nowHHMM(), ts: Date.now(), source:'dashboard' });
+      if(res && res.committed){
+        await checkAndCelebrateReward(id, name);
+        const b = await reconcileAttendancePoint(todayStr(), id);
+        if(b && b.amount > 0) showPointToast('🏅 ' + escapeHtml(name) + '님 ' + b.rank + '등! 보너스 +' + b.amount + '점');
+      }
+      await renderAttendancePanel();
+      await loadAttendanceWidget();
+      checkOverflowFallback();
     });
   });
   await renderLuckyDraw();
