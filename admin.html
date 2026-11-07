@@ -531,14 +531,19 @@
           <span>🏅 출석 N등 보너스 (기간 한정)</span>
           <button class="publish-btn off" id="attBonusToggle">꺼짐</button>
         </div>
-        <div id="attBonusBox" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;">
-          <input type="date" id="attBonusStart" style="width:auto;"> ~ <input type="date" id="attBonusEnd" style="width:auto;">
-          <span>출석</span><input type="number" id="attBonusTopN" min="1" max="30" value="3" style="width:64px;">
-          <span>등까지 +</span><input type="number" id="attBonusPts" min="1" max="20" value="1" style="width:64px;"><span>점</span>
-          <button class="btn" id="attBonusSave" style="margin:0;">저장</button>
+        <div id="attBonusBox" style="margin-bottom:14px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="field" style="flex:1; min-width:160px;"><label>시작일</label><input type="date" id="attBonusStart"></div>
+            <div class="field" style="flex:1; min-width:160px;"><label>종료일</label><input type="date" id="attBonusEnd"></div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="field" style="flex:1; min-width:160px;"><label>몇 등까지?</label><input type="number" id="attBonusTopN" min="1" max="30" value="3"></div>
+            <div class="field" style="flex:1; min-width:160px;"><label>보너스 포인트</label><input type="number" id="attBonusPts" min="1" max="20" value="1"></div>
+          </div>
+          <button class="btn" id="attBonusSave">저장</button>
           <span class="msg" id="attBonusMsg"></span>
+          <p class="hint">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
         </div>
-        <p class="hint" style="margin-bottom:14px;">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
         <div class="publish-row" style="margin-bottom:14px;">
           <span>🍀 오늘의 행운번호</span>
           <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
@@ -948,6 +953,8 @@ attachCalendarPicker('quizAnswerDate', { markedDatesFn: getQuizMarkedDates });
 attachCalendarPicker('ddayDateInput');
 attachCalendarPicker('ddaySurpriseDateInput');
 attachCalendarPicker('attDate');
+attachCalendarPicker('attBonusStart');
+attachCalendarPicker('attBonusEnd');
 async function getRoleMarkedDates(year, month){
   const prefix = year+'-'+String(month+1).padStart(2,'0');
   const snap = await db.ref('roleChecks').orderByKey().startAt(prefix).endAt(prefix+'\uf8ff').once('value');
@@ -1543,8 +1550,8 @@ function setAttBonusBtn(on){
 async function loadAttBonusCfg(){
   const c = (await db.ref('config/attBonus').once('value')).val() || {};
   setAttBonusBtn(!!c.enabled);
-  document.getElementById('attBonusStart').value = c.start || todayStr();
-  document.getElementById('attBonusEnd').value = c.end || todayStr();
+  datePickers['attBonusStart'].setValue(c.start || todayStr());
+  datePickers['attBonusEnd'].setValue(c.end || todayStr());
   document.getElementById('attBonusTopN').value = c.topN || 3;
   document.getElementById('attBonusPts').value = c.points || 1;
 }

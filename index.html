@@ -107,24 +107,33 @@
   .att-locked-note{ text-align:center; font-size:12.5px; color:var(--muted); font-weight:700; margin-top:12px; }
   .att-pill.on-present{ background:var(--mint-deep); color:#fff; }
   .att-pill.on-out{ background:var(--sky-deep); color:#fff; }
-  /* ---- 출석 카드: 이름 칸을 누르면 색이 차오르며 출석 ---- */
-  .att-cell.att-tap, .att-cell.att-absent{ -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; flex-direction:row; align-items:center; justify-content:space-between; padding:15px 16px; background:var(--line); -webkit-transition:background .35s ease, -webkit-transform .12s ease; transition:background .35s ease, transform .12s ease; }
-  .att-cell .att-name{ font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .att-cell .att-mark{ font-size:12.5px; font-weight:800; margin-left:8px; white-space:nowrap; display:inline-block; }
+  /* ---- 출석 카드: 이름 칸을 누르면 물결이 퍼지며 체크 ---- */
+  .att-cell.att-tap, .att-cell.att-absent{ -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; flex-direction:row; align-items:center; -webkit-box-pack:justify; justify-content:space-between; padding:15px 16px; background:#fff; border:2px solid #efe7f7; border-radius:18px; box-shadow:0 4px 0 #efe7f7; margin-bottom:0; -webkit-transition:background .4s ease, border-color .4s ease, box-shadow .15s ease, -webkit-transform .15s ease; transition:background .4s ease, border-color .4s ease, box-shadow .15s ease, transform .15s ease; }
+  .att-cell .att-name{ position:relative; z-index:1; font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .att-cell .att-right{ position:relative; z-index:1; display:flex; align-items:center; margin-left:8px; }
+  .att-cell .att-rk{ font-size:12.5px; font-weight:800; color:var(--mint-deep); margin-right:8px; }
+  .att-cell .att-word{ font-size:12.5px; font-weight:800; }
+  .att-ring{ width:26px; height:26px; box-sizing:border-box; border-radius:50%; border:2px solid #e6dcf2; background:transparent; display:flex; align-items:center; justify-content:center; -webkit-transition:background .3s ease, border-color .3s ease; transition:background .3s ease, border-color .3s ease; }
+  .att-ring svg{ width:16px; height:16px; }
+  .att-ring path{ fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:22; stroke-dashoffset:22; -webkit-transition:stroke-dashoffset .35s ease .12s; transition:stroke-dashoffset .35s ease .12s; }
   .att-cell.tappable{ cursor:pointer; }
-  .att-cell.tappable:active{ -webkit-transform:scale(.96); transform:scale(.96); }
-  .att-cell.is-present{ background:var(--mint); }
-  .att-cell.is-present .att-mark{ color:var(--mint-deep); font-size:15px; }
-  .att-cell.is-out{ background:var(--sky); }
-  .att-cell.is-out .att-mark{ color:var(--sky-deep); }
-  .att-cell.att-absent{ background:#ffe6ec; }
-  .att-cell.att-absent .att-mark{ color:#e0556f; }
-  .att-cell.just{ -webkit-animation:attPop .55s ease; animation:attPop .55s ease; }
-  .att-cell.just .att-mark{ -webkit-animation:attMark .55s ease; animation:attMark .55s ease; }
-  @-webkit-keyframes attPop{ 0%{-webkit-transform:scale(.96)} 40%{-webkit-transform:scale(1.035)} 100%{-webkit-transform:scale(1)} }
-  @keyframes attPop{ 0%{transform:scale(.96)} 40%{transform:scale(1.035)} 100%{transform:scale(1)} }
-  @-webkit-keyframes attMark{ 0%{-webkit-transform:scale(0)} 60%{-webkit-transform:scale(1.6)} 100%{-webkit-transform:scale(1)} }
-  @keyframes attMark{ 0%{transform:scale(0)} 60%{transform:scale(1.6)} 100%{transform:scale(1)} }
+  .att-cell.tappable:active{ -webkit-transform:translateY(3px) scale(.97); transform:translateY(3px) scale(.97); box-shadow:0 1px 0 #efe7f7; }
+  .att-cell.is-present{ background:#eafaf4; border-color:#bfead9; box-shadow:0 4px 0 #cdeee1; }
+  .att-cell.is-present .att-ring{ background:var(--mint-deep); border-color:var(--mint-deep); }
+  .att-cell.is-present .att-ring path{ stroke-dashoffset:0; }
+  .att-cell.is-out{ background:#eaf5fd; border-color:#c6e3f6; box-shadow:0 4px 0 #d3e9f7; }
+  .att-cell.is-out .att-word{ color:var(--sky-deep); }
+  .att-cell.att-absent{ background:#fff0f3; border-color:#ffd6df; box-shadow:0 4px 0 #ffe3e9; }
+  .att-cell.att-absent .att-word{ color:#e0556f; }
+  .att-cell.just{ -webkit-animation:attPop .6s ease; animation:attPop .6s ease; }
+  .att-cell.just .att-ring{ -webkit-animation:attRing .6s ease; animation:attRing .6s ease; }
+  .att-cell.just::after{ content:''; position:absolute; z-index:0; right:16px; top:50%; width:26px; height:26px; margin-top:-13px; border-radius:50%; background:rgba(79,190,156,0.32); pointer-events:none; -webkit-animation:attRipple .75s ease-out; animation:attRipple .75s ease-out; }
+  @-webkit-keyframes attPop{ 0%{-webkit-transform:scale(.97)} 35%{-webkit-transform:scale(1.03)} 100%{-webkit-transform:scale(1)} }
+  @keyframes attPop{ 0%{transform:scale(.97)} 35%{transform:scale(1.03)} 100%{transform:scale(1)} }
+  @-webkit-keyframes attRing{ 0%{-webkit-transform:scale(.6)} 55%{-webkit-transform:scale(1.3)} 100%{-webkit-transform:scale(1)} }
+  @keyframes attRing{ 0%{transform:scale(.6)} 55%{transform:scale(1.3)} 100%{transform:scale(1)} }
+  @-webkit-keyframes attRipple{ 0%{opacity:1; -webkit-transform:scale(1)} 100%{opacity:0; -webkit-transform:scale(16)} }
+  @keyframes attRipple{ 0%{opacity:1; transform:scale(1)} 100%{opacity:0; transform:scale(16)} }
 
   #clockCard{ flex:1 1 480px; min-width:280px; align-items:center; text-align:center; justify-content:center; background:linear-gradient(155deg, #fff, var(--pink) 180%); }
   #timetableCard{ flex:0 1 260px; min-width:160px; background:linear-gradient(180deg, var(--pink) -120%, #fff 50%, var(--yellow) 220%); }
@@ -930,6 +939,24 @@ async function getRosterList(opts){
     .filter(s=> all || !s.transferred)
     .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 }
+// 목록을 다시 그릴 때 카드들이 제자리에서 새 자리로 부드럽게 미끄러지도록(FLIP)
+async function attRenderFlip(){
+  const box = document.getElementById('panelBody');
+  const before = {};
+  box.querySelectorAll('.att-cell').forEach(c=>{ before[c.dataset.id] = c.getBoundingClientRect(); });
+  await renderAttendancePanel();
+  box.querySelectorAll('.att-cell').forEach(c=>{
+    const o = before[c.dataset.id]; if(!o) return;
+    const n = c.getBoundingClientRect();
+    const dx = o.left - n.left, dy = o.top - n.top;
+    if(!dx && !dy) return;
+    c.style.webkitTransition = 'none'; c.style.transition = 'none';
+    c.style.webkitTransform = 'translate('+dx+'px,'+dy+'px)'; c.style.transform = 'translate('+dx+'px,'+dy+'px)';
+    c.offsetWidth; // reflow
+    c.style.webkitTransition = '-webkit-transform .5s cubic-bezier(.2,.8,.2,1)'; c.style.transition = 'transform .5s cubic-bezier(.2,.8,.2,1)';
+    c.style.webkitTransform = ''; c.style.transform = '';
+  });
+}
 let attHold = 0; // 출석 연출 중에는 목록을 다시 그리지 않음(맨 아래로 내려가기 전에 효과를 보여주려고)
 async function renderAttendancePanel(){
   if(attHold > 0) return;
@@ -956,36 +983,36 @@ async function renderAttendancePanel(){
     const st = rec ? rec.status : '';
     const nm = escapeHtml(s.name);
     const d = `data-id="${s.id}" data-name="${nm}"`;
+    const TICK = '<span class="att-ring"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4L18 8"/></svg></span>';
     if(st === 'absent'){
-      return `<div class="att-cell att-absent" ${d}><span class="att-name">${nm}</span><span class="att-mark">결석</span></div>`;
+      return `<div class="att-cell att-absent" ${d}><span class="att-name">${nm}</span><span class="att-right"><span class="att-word">결석</span></span></div>`;
     }
     const canTap = !rec && !isAttendanceLocked();
-    let mark = '';
-    if(st === 'present') mark = rankById[s.id] ? rankById[s.id] + '등' : '✓';
-    else if(st === 'out') mark = '조퇴 ' + (rec.time||'');
-    return `<div class="att-cell att-tap ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" ${d}><span class="att-name">${nm}</span><span class="att-mark">${mark}</span></div>`;
+    let right = TICK;
+    if(st === 'present') right = (rankById[s.id] ? `<span class="att-rk">${rankById[s.id]}등</span>` : '') + TICK;
+    else if(st === 'out') right = '<span class="att-word">조퇴</span>';
+    return `<div class="att-cell att-tap ${st==='present'?'is-present':''} ${st==='out'?'is-out':''} ${canTap?'tappable':''}" ${d}><span class="att-name">${nm}</span><span class="att-right">${right}</span></div>`;
   }).join('') + '</div>' + (isAttendanceLocked() ? '<p class="att-locked-note">🔒 지금은 선생님이 출결 체크를 막아두셨어요</p>' : '');
   box.querySelectorAll('.att-cell.tappable').forEach(cell=>{
     const id = cell.dataset.id, name = cell.dataset.name;
     cell.addEventListener('click', async ()=>{
       if(isAttendanceLocked() || cell.dataset.busy) return;
       cell.dataset.busy = '1';
+      // 서버 응답/실시간 갱신보다 먼저 연출을 시작하고, 연출이 끝날 때까지 목록을 다시 그리지 않음
+      attHold++;
+      cell.classList.remove('tappable'); cell.classList.add('is-present'); cell.classList.add('just');
       // 이미 기록이 있으면(다른 학생이 먼저 눌렀거나 관리자가 처리) 덮어쓰지 않음. 대시보드에서는 취소 불가.
       const res = await db.ref(`attendance/${todayStr()}/${id}`).transaction(cur=> cur ? undefined : { name, status:'present', time: nowHHMM(), ts: Date.now(), source:'dashboard' });
-      if(res && res.committed){
-        attHold++;
-        // 자리에서 먼저 색이 차오르는 걸 보여주고, 잠깐 뒤에 목록 맨 아래로 내려보냄
-        cell.classList.remove('tappable'); cell.classList.add('is-present'); cell.classList.add('just');
-        cell.querySelector('.att-mark').textContent = '✓';
-        const work = (async ()=>{
+      const work = (async ()=>{
+        if(res && res.committed){
           await checkAndCelebrateReward(id, name);
           const b = await reconcileAttendancePoint(todayStr(), id);
           if(b && b.amount > 0) showPointToast('🏅 ' + escapeHtml(name) + '님 ' + b.rank + '등! 보너스 +' + b.amount + '점');
-        })();
-        await Promise.all([work, new Promise(r=> setTimeout(r, 800))]);
-        attHold--;
-      }
-      await renderAttendancePanel();
+        }
+      })();
+      await Promise.all([work, new Promise(r=> setTimeout(r, 1000))]);
+      attHold--;
+      await attRenderFlip();
       await loadAttendanceWidget();
       checkOverflowFallback();
     });
