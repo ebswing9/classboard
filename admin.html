@@ -495,6 +495,43 @@
       <div class="tab-panel active" id="subtab-att">
       <div class="section">
         <h3>🙋 출결 체크</h3>
+        <div class="publish-row" style="margin-bottom:14px;">
+          <span>🔒 학생 출결 버튼 막아두기</span>
+          <button class="publish-btn off" id="attendanceLockToggle">허용 중</button>
+        </div>
+        <p class="hint" style="margin-top:-8px; margin-bottom:16px;">켜두면 <b>오늘 하루만</b> 학생이 대시보드에서 출석을 눌러도 반응하지 않아요. 다음 날 자동으로 풀려요. (관리자 체크는 항상 가능)</p>
+        <div style="background:var(--primary-soft); border-radius:16px; padding:12px 16px; margin-bottom:16px;">
+          <div class="collapse-header" id="attExtraHeader"><span style="font-weight:700; font-size:13.5px; color:var(--primary-text);">⚙️ 출결 부가 설정 <span style="font-weight:600; font-size:12px; color:var(--muted);">축하 효과음 · 출석 N등 보너스 · 행운번호</span></span><span class="chev">▾</span></div>
+          <div class="collapse-body" id="attExtraBody">
+        <div class="publish-row" style="margin-bottom:14px;">
+          <span>👏 축하 효과음 허용</span>
+          <button class="publish-btn off" id="clapToggleBtn">비활성</button>
+        </div>
+        <p class="hint" style="margin-top:-8px; margin-bottom:14px;">축하 효과음을 켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 축하 효과음을 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
+        <div class="publish-row" style="margin-bottom:8px;">
+          <span>🏅 출석 N등 보너스 (기간 한정)</span>
+          <button class="publish-btn off" id="attBonusToggle">꺼짐</button>
+        </div>
+        <div id="attBonusBox" style="margin-bottom:14px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="field" style="flex:1; min-width:160px;"><label>시작일</label><input type="date" id="attBonusStart"></div>
+            <div class="field" style="flex:1; min-width:160px;"><label>종료일</label><input type="date" id="attBonusEnd"></div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="field" style="flex:1; min-width:160px;"><label>몇 등까지?</label><input type="number" id="attBonusTopN" min="1" max="30" value="3"></div>
+            <div class="field" style="flex:1; min-width:160px;"><label>보너스 포인트</label><input type="number" id="attBonusPts" min="1" max="20" value="1"></div>
+          </div>
+          <button class="btn" id="attBonusSave">저장</button>
+          <span class="msg" id="attBonusMsg"></span>
+          <p class="hint">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
+        </div>
+        <div class="publish-row" style="margin-bottom:14px;">
+          <span>🍀 오늘의 행운번호</span>
+          <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
+        </div>
+        <span class="msg" id="luckyResetMsg"></span>
+          </div>
+        </div>
         <div class="field"><label>날짜</label>
           <div style="display:flex; align-items:center; gap:6px;">
             <button type="button" class="date-nav-btn" id="attDatePrevBtn">‹</button>
@@ -518,40 +555,8 @@
           <button class="filter-btn active" data-sort="name">이름순</button>
           <button class="filter-btn" data-sort="time">출석한 순서</button>
         </div>
-        <div class="publish-row" style="margin-bottom:14px;">
-          <span>👏 축하 효과음 허용</span>
-          <button class="publish-btn off" id="clapToggleBtn">비활성</button>
-        </div>
-        <div class="publish-row" style="margin-bottom:14px;">
-          <span>🔒 학생 출결 버튼 막아두기</span>
-          <button class="publish-btn off" id="attendanceLockToggle">허용 중</button>
-        </div>
-        <p class="hint" style="margin-top:-10px; margin-bottom:14px;">켜두면 <b>오늘 하루만</b> 대시보드에서 학생이 출석/조퇴 버튼을 눌러도 반응하지 않아요. 다음 날이 되면 자동으로 풀려요. (여기 관리자 페이지에서 체크/해제하는 건 항상 가능해요)</p>
-        <div class="publish-row" style="margin-bottom:8px;">
-          <span>🏅 출석 N등 보너스 (기간 한정)</span>
-          <button class="publish-btn off" id="attBonusToggle">꺼짐</button>
-        </div>
-        <div id="attBonusBox" style="margin-bottom:14px;">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field" style="flex:1; min-width:160px;"><label>시작일</label><input type="date" id="attBonusStart"></div>
-            <div class="field" style="flex:1; min-width:160px;"><label>종료일</label><input type="date" id="attBonusEnd"></div>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field" style="flex:1; min-width:160px;"><label>몇 등까지?</label><input type="number" id="attBonusTopN" min="1" max="30" value="3"></div>
-            <div class="field" style="flex:1; min-width:160px;"><label>보너스 포인트</label><input type="number" id="attBonusPts" min="1" max="20" value="1"></div>
-          </div>
-          <button class="btn" id="attBonusSave">저장</button>
-          <span class="msg" id="attBonusMsg"></span>
-          <p class="hint">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
-        </div>
-        <div class="publish-row" style="margin-bottom:14px;">
-          <span>🍀 오늘의 행운번호</span>
-          <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
-        </div>
-        <span class="msg" id="luckyResetMsg"></span>
         <div class="summary-row" id="attSummary"></div>
         <div id="attList">불러오는 중...</div>
-        <p class="hint">축하 효과음을 켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 축하 효과음을 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
       </div>
     
       </div>
@@ -1538,6 +1543,10 @@ document.getElementById('attendanceLockToggle').addEventListener('click', async 
   setAttendanceLockBtn(!attendanceLocked);
   // 막아둔 '날짜'를 저장함 → 날짜가 바뀌면 자동으로 풀림
   await db.ref('config/attendanceLocked').set(attendanceLocked ? todayStr() : null);
+});
+document.getElementById('attExtraHeader').addEventListener('click', ()=>{
+  document.getElementById('attExtraHeader').classList.toggle('open');
+  document.getElementById('attExtraBody').classList.toggle('open');
 });
 /* ---- 출석 N등 보너스 설정 ---- */
 let attBonusOn = false;
