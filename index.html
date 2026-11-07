@@ -1008,6 +1008,15 @@ async function renderAttendancePanel(){
   const attSnap = await db.ref('attendance/'+todayStr()).once('value');
   if(myRequestId !== panelRequestId) return; // 그 사이 다른 패널로 전환됨 → 이 결과는 버림
   const att = attSnap.val() || {};
+  let bonusChip = '';
+  try{
+    const bc = (await db.ref('config/attBonus').once('value')).val() || {};
+    const td = todayStr();
+    if(bc.enabled && bc.start && bc.end && td >= bc.start && td <= bc.end && bc.topN > 0 && bc.points > 0){
+      bonusChip = '<div class="gm-chips" style="margin:0 0 10px 2px;"><span class="gm-chip c2" style="font-family:\'Pretendard\',sans-serif;">출석 ' + (bc.topN > 1 ? bc.topN + '등까지' : '1등') + ' 포인트 +' + bc.points + '</span></div>';
+    }
+  }catch(e){}
+  if(myRequestId !== panelRequestId) return;
   const box = document.getElementById('panelBody');
   if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
 
@@ -1021,7 +1030,7 @@ async function renderAttendancePanel(){
   const rankById = {};
   dashboardPresentOrder.forEach((s,i)=> rankById[s.id] = i+1);
 
-  box.innerHTML = '<div class="att-grid">' + ordered.map(s=>{
+  box.innerHTML = bonusChip + '<div class="att-grid">' + ordered.map(s=>{
     const rec = att[s.id];
     const st = rec ? rec.status : '';
     const nm = escapeHtml(s.name);
