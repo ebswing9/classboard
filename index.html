@@ -356,11 +356,15 @@
   .gm-confetti{ position:fixed; top:0; left:0; width:10px; height:10px; z-index:5300; pointer-events:none; opacity:1; transition:transform 1.5s cubic-bezier(.15,.7,.3,1), opacity 1.5s ease-in; }
 
   /* 포인트 축하 토스트 */
-  #pointToast{ position:fixed; top:26px; left:50%; transform:translateX(-50%) translateY(-16px); background:linear-gradient(135deg, var(--pink-deep), var(--yellow-deep)); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:16px; padding:14px 28px; border-radius:20px; box-shadow:0 12px 28px rgba(160,140,190,0.4); opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease; z-index:999; text-align:center; white-space:nowrap; }
+  #pointToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:20px; padding:20px 36px; border-radius:26px; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:999; text-align:center; white-space:nowrap; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
   #suspendOverlay .emoji{ font-size:56px; margin-bottom:16px; }
   #suspendOverlay .msg{ font-family:'MapleStory','Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
-  #pointToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #pointGiveToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); min-width:220px; max-width:80vw; box-sizing:border-box; padding:22px 40px 20px; border-radius:28px; background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); text-align:center; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:9999; }
+  #pointGiveToast.show{ opacity:1; -webkit-transform:translate(-50%,-50%) scale(1); transform:translate(-50%,-50%) scale(1); }
+  #pointGiveToast .pg-amt{ font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:46px; line-height:1.15; color:var(--text); }
+  #pointGiveToast .pg-reason{ margin-top:6px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-size:15px; font-weight:700; color:#6f6585; }
+  #pointToast.show{ opacity:1; -webkit-transform:translate(-50%,-50%) scale(1); transform:translate(-50%,-50%) scale(1); }
 
   /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
   #luckyDrawIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
@@ -494,6 +498,7 @@
 </div>
 
 <div id="pointToast"></div>
+<div id="pointGiveToast"></div>
 
 <div id="drawOverlay">
   <div class="draw-box">
@@ -693,12 +698,49 @@ async function reconcileAttendanceBonus(date, focusId){
   return result;
 }
 
-function showPointToast(html){
+// 알림이 겹치지 않도록 하나씩 차례로 띄우는 대기열
+const toastQueue = []; let toastBusy = false;
+function enqueueToast(fn){
+  toastQueue.push(fn);
+  if(toastBusy) return;
+  toastBusy = true;
+  (function next(){
+    const f = toastQueue.shift();
+    if(!f){ toastBusy = false; return; }
+    try{ f(); }catch(e){}
+    setTimeout(next, 2800);
+  })();
+}
+function showPointToast(html){ enqueueToast(function(){ _showPointToast(html); }); }
+function _showPointToast(html){
   const el = document.getElementById('pointToast');
   el.innerHTML = html;
   el.classList.add('show');
   clearTimeout(showPointToast._t);
   showPointToast._t = setTimeout(()=> el.classList.remove('show'), 2600);
+}
+// 선생님이 수동으로 준/뺀 포인트 알림: "+3점" + 작은 글씨 사유. 학생이 다음에 출석/퀴즈 제출할 때 한 번씩 순서대로 표시
+function showGiveToast(delta, reason){ enqueueToast(function(){ _showGiveToast(delta, reason); }); }
+function _showGiveToast(delta, reason){
+  const el = document.getElementById('pointGiveToast');
+  el.className = delta < 0 ? 'minus' : '';
+  el.innerHTML = '<div class="pg-amt">' + (delta > 0 ? '+' : '') + delta + '점</div>' + (reason ? '<div class="pg-reason">' + escapeHtml(reason) + '</div>' : '');
+  void el.offsetWidth;
+  el.className += ' show';
+  clearTimeout(showGiveToast._t);
+  showGiveToast._t = setTimeout(()=>{ el.className = el.className.replace(' show',''); }, 2400);
+}
+async function showPendingManualPoints(studentId){
+  try{
+    const snap = await db.ref(`pointMeta/${studentId}/pendingManual`).once('value');
+    const val = snap.val(); if(!val) return;
+    await db.ref(`pointMeta/${studentId}/pendingManual`).remove();
+    const keys = Object.keys(val).sort();
+    for(let i=0;i<keys.length;i++){
+      const v = val[keys[i]];
+      showGiveToast(v.delta || 0, (v.reason && v.reason !== '(사유 없음)') ? v.reason : '');
+    }
+  }catch(e){ console.error('manual point toast error', e); }
 }
 // 상점(10점 보상) 지급 완료 후, 학생이 다음 번 답안 제출/출석 체크를 할 때 최초 1번만 축하 토스트를 띄움
 async function checkAndCelebrateReward(studentId, studentName){
@@ -709,6 +751,7 @@ async function checkAndCelebrateReward(studentId, studentName){
       showPointToast(`🎉 ${escapeHtml(studentName)}님, 10점 모아 상점 받았어요! 🎉`);
     }
   }catch(e){ console.error('reward celebration check error', e); }
+  showPendingManualPoints(studentId);
 }
 // 포인트 → 하트 뱃지 문자열 (10점당 하트 1개, 100점 이상이면 특별 아이콘 1개로 표시)
 function pointsToHearts(points){

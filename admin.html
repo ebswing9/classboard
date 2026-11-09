@@ -1911,7 +1911,12 @@ document.getElementById('pointManualApplyBtn').addEventListener('click', async (
   if(!ids.length){ msgEl.textContent = '학생을 한 명 이상 선택해주세요.'; return; }
   if(!amount){ msgEl.textContent = '0이 아닌 점수를 입력해주세요.'; return; }
   await Promise.all(ids.map(id => awardPoints(id, amount)));
-  await Promise.all(ids.map(id => db.ref(`pointLog/${id}`).push({ delta: amount, reason: reason || '(사유 없음)', at: Date.now() })));
+  await Promise.all(ids.map(async id => {
+    const r = db.ref(`pointLog/${id}`).push();
+    await r.set({ delta: amount, reason: reason || '(사유 없음)', at: Date.now() });
+    // 학생이 다음에 출석/퀴즈 제출할 때 대시보드에 알림으로 뜸 (같은 키 사용 → 되돌리기 시 같이 삭제)
+    await db.ref(`pointMeta/${id}/pendingManual/${r.key}`).set({ delta: amount, reason: reason || '' });
+  }));
   document.getElementById('pointManualReason').value = '';
   msgEl.textContent = `적용됐어요 ✓ (${ids.length}명)`;
   setTimeout(()=> msgEl.textContent = '', 2200);
@@ -2022,6 +2027,7 @@ async function revokePointEvent(id, e){
   if(e.type === 'manual'){
     await awardPoints(id, -e.delta);
     await db.ref('pointLog/'+id+'/'+e.logId).remove();
+    await db.ref('pointMeta/'+id+'/pendingManual/'+e.logId).remove();
   } else if(e.type === 'quiz'){
     await db.ref('quizAnswers/'+e.date+'/'+id).update({ verdict: null, awardedAmount: 0 });
     await awardPoints(id, -e.delta);
