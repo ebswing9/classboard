@@ -356,14 +356,14 @@
   .gm-confetti{ position:fixed; top:0; left:0; width:10px; height:10px; z-index:5300; pointer-events:none; opacity:1; transition:transform 1.5s cubic-bezier(.15,.7,.3,1), opacity 1.5s ease-in; }
 
   /* 포인트 축하 토스트 */
-  #pointToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:20px; padding:20px 36px; border-radius:26px; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:999; text-align:center; white-space:nowrap; }
+  #pointToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:20px; padding:20px 36px; border-radius:26px; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:99998; text-align:center; white-space:nowrap; }
   #suspendOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:linear-gradient(135deg, var(--pink), var(--sky)); z-index:9999; align-items:center; justify-content:center; text-align:center; }
   #suspendOverlay .emoji{ font-size:56px; margin-bottom:16px; }
   #suspendOverlay .msg{ font-family:'MapleStory','Jua',sans-serif; font-size:20px; font-weight:400; color:var(--text); }
-  #pointGiveToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); min-width:220px; max-width:80vw; box-sizing:border-box; padding:22px 40px 20px; border-radius:28px; background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); text-align:center; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:9999; }
+  #pointGiveToast{ position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%) scale(.6); transform:translate(-50%,-50%) scale(.6); min-width:220px; max-width:80vw; box-sizing:border-box; padding:22px 40px 20px; border-radius:28px; background:linear-gradient(135deg, var(--pink), var(--lav) 55%, var(--sky)); text-align:center; box-shadow:0 14px 32px rgba(160,140,190,0.4), 0 0 0 3px rgba(255,255,255,0.8); opacity:0; pointer-events:none; -webkit-transition:opacity .3s ease, -webkit-transform .4s cubic-bezier(.3,1.5,.5,1); transition:opacity .3s ease, transform .4s cubic-bezier(.3,1.5,.5,1); z-index:99999; }
   #pointGiveToast.show{ opacity:1; -webkit-transform:translate(-50%,-50%) scale(1); transform:translate(-50%,-50%) scale(1); }
-  #pointGiveToast .pg-amt{ font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:46px; line-height:1.15; color:var(--text); }
-  #pointGiveToast .pg-reason{ margin-top:6px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-size:15px; font-weight:700; color:#6f6585; }
+  #pointGiveToast .pg-amt{ font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:34px; line-height:1.15; color:var(--text); }
+  #pointGiveToast .pg-reason{ margin-top:8px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-size:20px; font-weight:700; color:#6f6585; }
   #pointToast.show{ opacity:1; -webkit-transform:translate(-50%,-50%) scale(1); transform:translate(-50%,-50%) scale(1); }
 
   /* 오늘의 행운번호: 작은 아이콘 버튼 + 모달 팝업 */
@@ -1510,6 +1510,7 @@ async function openDrawOverlay(){
   grid.querySelectorAll('.name-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       selectedStudent = { id: btn.dataset.id, name: btn.dataset.name };
+      showPendingManualPoints(selectedStudent.id);
       const hearts = pointsToHearts(pointsVal[selectedStudent.id]);
       document.getElementById('drawingForLabel').innerHTML = `✏️ ${escapeHtml(selectedStudent.name)}님 ${hearts ? `<span class="pill-hearts">${hearts}</span>` : ''}`;
       document.getElementById('drawStepName').style.display = 'none';
@@ -1947,6 +1948,7 @@ async function gameOpen(){
   await gameRenderPick();
 }
 async function gameStartFor(student, left){
+  showPendingManualPoints(student.id);
   gameStudent = student; gameRemaining = left;
   gameStarted = false; gameDenied = false; gameSubmitted = false;
   let best = 0;
