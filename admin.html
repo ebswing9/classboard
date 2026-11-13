@@ -55,6 +55,18 @@
   .tab-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
   .tab-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
   .filter-btn{ flex:1; background:none; border:none; padding:10px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; cursor:pointer; transition:all .15s; }
+  .qs-cards{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .qs-card{ flex:1; min-width:110px; background:var(--primary-soft); border-radius:16px; padding:12px 14px; text-align:center; }
+  .qs-card b{ display:block; font-size:22px; color:var(--primary-text); }
+  .qs-card span{ font-size:12px; color:var(--muted); font-weight:600; }
+  .qs-table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  .qs-table th{ text-align:center; padding:9px 6px; background:var(--primary-soft); color:var(--primary-text); font-size:12.5px; white-space:nowrap; cursor:pointer; user-select:none; }
+  .qs-table th:first-child{ border-radius:12px 0 0 12px; text-align:left; padding-left:12px; } .qs-table th:last-child{ border-radius:0 12px 12px 0; }
+  .qs-table td{ text-align:center; padding:9px 6px; border-bottom:1px solid var(--border); }
+  .qs-table td:first-child{ text-align:left; padding-left:12px; font-weight:700; }
+  .qs-table tr.out td{ color:var(--muted); }
+  .qs-bar{ height:5px; border-radius:5px; background:#eee; margin-top:4px; overflow:hidden; }
+  .qs-bar i{ display:block; height:100%; border-radius:5px; background:var(--mint-deep, #4fbe9c); }
   .filter-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
   .tab-panel{ display:none; } .tab-panel.active{ display:block; animation:fadeIn .2s ease; }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
@@ -210,8 +222,6 @@
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="points">포인트</button>
-      <button class="tab-btn" data-tab="timetable">시간표</button>
-      <button class="tab-btn" data-tab="roster">학생 명단</button>
       <button class="tab-btn" data-tab="settings">설정</button>
     </div>
 
@@ -366,6 +376,28 @@
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="quizmain">퀴즈</button>
         <button class="tab-btn" data-subtab="game">게임</button>
+        <button class="tab-btn" data-subtab="quizstats">통계</button>
+      </div>
+      <div class="tab-panel" id="subtab-quizstats">
+        <div class="section">
+          <h3>📊 퀴즈 통계</h3>
+          <p class="hint">지금까지 제출된 퀴즈 답안과 채점 결과를 학생별·날짜별로 모아 봐요. 정답률은 <b>채점한 답안</b>(정답+오답) 기준이에요.</p>
+          <div class="tabs" id="qsPeriodTabs" style="margin-bottom:12px;">
+            <button class="filter-btn active" data-p="all">전체</button>
+            <button class="filter-btn" data-p="month">이번 달</button>
+            <button class="filter-btn" data-p="30">최근 30일</button>
+            <button class="filter-btn" data-p="7">최근 7일</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="btn secondary" id="qsReloadBtn" style="margin:0;">🔄 새로 불러오기</button>
+            <button class="btn secondary" id="qsCsvBtn" style="margin:0;">⬇️ 엑셀(CSV)로 저장</button>
+            <span class="msg" id="qsMsg"></span>
+          </div>
+          <div id="qsSummary"></div>
+          <div id="qsStudentTable"></div>
+          <div class="collapse-header" id="qsDateFoldHeader" style="margin-top:18px;"><span style="font-weight:700; font-size:14px;">📅 날짜별 통계</span><span class="chev">▾</span></div>
+          <div class="collapse-body" id="qsDateFoldBody"><div id="qsDateTable"></div></div>
+        </div>
       </div>
       <div class="tab-panel active" id="subtab-quizmain">
       <div class="section">
@@ -645,74 +677,12 @@
       </div>
     </div>
 
-    <!-- ===== 시간표 ===== -->
-    <div class="tab-panel" id="tab-timetable">
-      <div class="section">
-        <h3>📚 주간 기본 시간표</h3>
-        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 저장 버튼 한 번이면 전체 반영돼요.</p>
-        <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
-        <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
-        <span class="msg" id="weeklyMsg"></span>
-      </div>
-      <div class="section">
-        <div class="collapse-header" id="overrideCollapseHeader">
-          <h3 style="margin:0;">특정 날짜만 임시 변경</h3>
-          <span class="chev">▾</span>
-        </div>
-        <div class="collapse-body" id="overrideCollapseBody">
-          <p class="hint" style="margin-top:12px;">날짜를 고르면 그 요일 기본 시간표가 자동으로 채워져요. 바뀌는 과목만 수정하고 저장하세요.</p>
-          <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
-          <div id="overrideEditor"></div>
-          <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
-          <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
-          <span class="msg" id="overrideMsg"></span>
-          <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== 학생 명단 ===== -->
-    <div class="tab-panel" id="tab-roster">
-      <div class="section">
-        <h3>👤 학생 추가</h3>
-        <div class="field">
-          <label>이름 하나씩 추가</label>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="rosterAddInput" placeholder="이름 입력 후 Enter">
-            <button class="btn" id="rosterAddBtn" style="margin:0; white-space:nowrap;">추가</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>여러 명 한 번에 (줄바꿈 구분)</label>
-          <textarea id="rosterBulkInput" placeholder="홍길동&#10;김철수"></textarea>
-          <button class="btn secondary" id="rosterBulkBtn">일괄 추가</button>
-        </div>
-        <div class="field">
-          <label>CSV 파일 업로드</label>
-          <input type="file" id="rosterCsvInput" accept=".csv">
-        </div>
-      </div>
-      <div class="section">
-        <h3>현재 명단 <span class="sub" id="rosterCountLabel"></span></h3>
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-          <label class="cute-checkbox-label">
-            <span class="cute-checkbox">
-              <input type="checkbox" id="rosterSelectAll">
-              <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
-            </span>
-            전체 선택
-          </label>
-          <button class="btn" id="rosterTransferBtn" style="margin:0 0 0 auto;">선택 전학 처리/해제</button>
-          <button class="btn danger" id="rosterBulkDeleteBtn" style="margin:0 0 0 8px;">선택 삭제</button>
-        </div>
-        <div id="rosterList">불러오는 중...</div>
-      </div>
-    </div>
-
-    <!-- ===== 설정 (하위 탭: 일반 / 급식) ===== -->
+    <!-- ===== 설정 (하위 탭: 일반 / 시간표 / 학생 명단 / 급식) ===== -->
     <div class="tab-panel" id="tab-settings">
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="general">일반</button>
+        <button class="tab-btn" data-subtab="timetable">시간표</button>
+        <button class="tab-btn" data-subtab="roster">학생 명단</button>
         <button class="tab-btn" data-subtab="meal">급식</button>
       </div>
 
@@ -750,6 +720,70 @@
           <span class="msg" id="ddaySurpriseMsg"></span>
         </div>
       </div>
+
+    <!-- 시간표 (설정 하위 탭) -->
+    <div class="tab-panel" id="subtab-timetable">
+      <div class="section">
+        <h3>📚 주간 기본 시간표</h3>
+        <p class="hint">요일이 열, 교시가 행이에요. 다 입력한 뒤 저장 버튼 한 번이면 전체 반영돼요.</p>
+        <div id="weeklyEditorWrap" style="overflow-x:auto;"></div>
+        <button class="btn" id="saveWeeklyBtn" style="margin-top:12px;">전체 저장</button>
+        <span class="msg" id="weeklyMsg"></span>
+      </div>
+      <div class="section">
+        <div class="collapse-header" id="overrideCollapseHeader">
+          <h3 style="margin:0;">특정 날짜만 임시 변경</h3>
+          <span class="chev">▾</span>
+        </div>
+        <div class="collapse-body" id="overrideCollapseBody">
+          <p class="hint" style="margin-top:12px;">날짜를 고르면 그 요일 기본 시간표가 자동으로 채워져요. 바뀌는 과목만 수정하고 저장하세요.</p>
+          <div class="field"><label>날짜</label><input type="date" id="overrideDate"></div>
+          <div id="overrideEditor"></div>
+          <button class="btn" id="saveOverrideBtn">이 날짜만 저장</button>
+          <button class="btn danger" id="clearOverrideBtn">임시변경 삭제</button>
+          <span class="msg" id="overrideMsg"></span>
+          <div class="hint" id="overrideListView" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학생 명단 (설정 하위 탭) -->
+    <div class="tab-panel" id="subtab-roster">
+      <div class="section">
+        <h3>👤 학생 추가</h3>
+        <div class="field">
+          <label>이름 하나씩 추가</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="rosterAddInput" placeholder="이름 입력 후 Enter">
+            <button class="btn" id="rosterAddBtn" style="margin:0; white-space:nowrap;">추가</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>여러 명 한 번에 (줄바꿈 구분)</label>
+          <textarea id="rosterBulkInput" placeholder="홍길동&#10;김철수"></textarea>
+          <button class="btn secondary" id="rosterBulkBtn">일괄 추가</button>
+        </div>
+        <div class="field">
+          <label>CSV 파일 업로드</label>
+          <input type="file" id="rosterCsvInput" accept=".csv">
+        </div>
+      </div>
+      <div class="section">
+        <h3>현재 명단 <span class="sub" id="rosterCountLabel"></span></h3>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <label class="cute-checkbox-label">
+            <span class="cute-checkbox">
+              <input type="checkbox" id="rosterSelectAll">
+              <span class="box"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></span>
+            </span>
+            전체 선택
+          </label>
+          <button class="btn" id="rosterTransferBtn" style="margin:0 0 0 auto;">선택 전학 처리/해제</button>
+          <button class="btn danger" id="rosterBulkDeleteBtn" style="margin:0 0 0 8px;">선택 삭제</button>
+        </div>
+        <div id="rosterList">불러오는 중...</div>
+      </div>
+    </div>
 
       <div class="tab-panel" id="subtab-meal">
         <div class="section">
@@ -2405,6 +2439,131 @@ async function loadQuizAnswers(date){
     });
   });
 }
+
+/* ---------- 퀴즈 통계 ---------- */
+let qsRaw = null;        // { dates:[...], students:[{id,name,transferred}], cell:{ 'date|id': {sub:bool, v:'correct'|'incorrect'|''} } }
+let qsPeriod = 'all', qsSortKey = 'name', qsSortAsc = true, qsLoading = false;
+function qsPct(n, d){ return d > 0 ? Math.round(n / d * 1000) / 10 : null; }
+function qsFmt(p){ return p === null ? '-' : (p % 1 === 0 ? p : p.toFixed(1)) + '%'; }
+async function loadQuizStats(force){
+  if(qsLoading) return;
+  if(qsRaw && !force){ renderQuizStats(); return; }
+  qsLoading = true;
+  const msg = document.getElementById('qsMsg');
+  document.getElementById('qsSummary').innerHTML = '<p class="hint">불러오는 중...</p>';
+  document.getElementById('qsStudentTable').innerHTML = ''; document.getElementById('qsDateTable').innerHTML = '';
+  try{
+    const quizSnap = await db.ref('quiz').once('value');
+    const qv = quizSnap.val() || {};
+    const dates = Object.keys(qv).filter(d=> /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+    const students = await getRosterList({all:true});
+    const cell = {};
+    const jobs = [];
+    dates.forEach(d=> students.forEach(s=> jobs.push([d, s.id])));
+    let done = 0;
+    for(let i=0; i<jobs.length; i+=150){
+      const chunk = jobs.slice(i, i+150);
+      await Promise.all(chunk.map(async ([d,id])=>{
+        const [a,b] = await Promise.all([
+          db.ref('quizAnswers/'+d+'/'+id+'/submittedAt').once('value'),
+          db.ref('quizAnswers/'+d+'/'+id+'/verdict').once('value')
+        ]);
+        cell[d+'|'+id] = { sub: a.val() !== null, v: b.val() || '' };
+      }));
+      done += chunk.length;
+      msg.textContent = '불러오는 중... ' + Math.min(100, Math.round(done / jobs.length * 100)) + '%';
+    }
+    msg.textContent = '';
+    qsRaw = { dates, students, cell };
+  }catch(e){
+    console.error(e); msg.textContent = '불러오지 못했어요. 다시 시도해 주세요.';
+  }
+  qsLoading = false;
+  if(qsRaw) renderQuizStats();
+}
+function qsPeriodDates(){
+  const all = qsRaw.dates; const now = new Date();
+  if(qsPeriod === 'all') return all;
+  let from;
+  if(qsPeriod === 'month') from = todayStr(new Date(now.getFullYear(), now.getMonth(), 1));
+  else from = todayStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (parseInt(qsPeriod,10) - 1)));
+  return all.filter(d=> d >= from);
+}
+function renderQuizStats(){
+  if(!qsRaw) return;
+  const dates = qsPeriodDates();
+  const rows = qsRaw.students.map(s=>{
+    let sub=0, cor=0, inc=0;
+    dates.forEach(d=>{ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub){ sub++; if(c.v==='correct') cor++; else if(c.v==='incorrect') inc++; } });
+    let streak = 0;
+    for(let k=dates.length-1; k>=0; k--){ const c = qsRaw.cell[dates[k]+'|'+s.id]; if(c && c.sub) streak++; else break; }
+    return { id:s.id, name:s.name + (s.transferred ? ' (전학)' : ''), out:!!s.transferred, sub, cor, inc, ung: sub-cor-inc,
+             acc: qsPct(cor, cor+inc), rate: qsPct(sub, dates.length), streak };
+  });
+  const active = rows.filter(r=>!r.out);
+  const totSub = active.reduce((a,r)=>a+r.sub,0), totCor = active.reduce((a,r)=>a+r.cor,0), totInc = active.reduce((a,r)=>a+r.inc,0);
+  const totUng = totSub - totCor - totInc;
+  document.getElementById('qsSummary').innerHTML = '<div class="qs-cards">'
+    + '<div class="qs-card"><b>'+dates.length+'회</b><span>출제된 퀴즈</span></div>'
+    + '<div class="qs-card"><b>'+totSub+'건</b><span>총 제출 (전학생 제외)</span></div>'
+    + '<div class="qs-card"><b>'+qsFmt(qsPct(totSub, dates.length * active.length))+'</b><span>평균 제출률</span></div>'
+    + '<div class="qs-card"><b>'+qsFmt(qsPct(totCor, totCor+totInc))+'</b><span>전체 정답률</span></div>'
+    + '<div class="qs-card"><b>'+totUng+'건</b><span>미채점</span></div></div>';
+  if(!dates.length){ document.getElementById('qsStudentTable').innerHTML = '<p class="hint">이 기간에 출제된 퀴즈가 없어요.</p>'; document.getElementById('qsDateTable').innerHTML=''; return; }
+  const key = qsSortKey, asc = qsSortAsc ? 1 : -1;
+  rows.sort((a,b)=>{
+    if(a.out !== b.out) return a.out ? 1 : -1;
+    if(key === 'name') return asc * a.name.localeCompare(b.name,'ko');
+    const av = a[key] === null ? -1 : a[key], bv = b[key] === null ? -1 : b[key];
+    return (av - bv) * asc || a.name.localeCompare(b.name,'ko');
+  });
+  const cols = [['name','이름'],['sub','제출'],['cor','정답'],['inc','오답'],['ung','미채점'],['acc','정답률'],['rate','제출률'],['streak','연속 제출']];
+  const arrow = k => k === key ? (qsSortAsc ? ' ▲' : ' ▼') : '';
+  document.getElementById('qsStudentTable').innerHTML = '<table class="qs-table"><thead><tr>'
+    + cols.map(c=>'<th data-k="'+c[0]+'">'+c[1]+arrow(c[0])+'</th>').join('') + '</tr></thead><tbody>'
+    + rows.map(r=>'<tr'+(r.out?' class="out"':'')+'><td>'+escapeHtml(r.name)+'</td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td>'+r.ung+'</td>'
+      + '<td>'+qsFmt(r.acc)+(r.acc!==null?'<div class="qs-bar"><i style="width:'+r.acc+'%"></i></div>':'')+'</td>'
+      + '<td>'+qsFmt(r.rate)+'</td><td>'+(r.streak ? r.streak+'회' : '-')+'</td></tr>').join('') + '</tbody></table>'
+    + '<p class="hint" style="margin-top:10px;">제목 줄을 누르면 그 기준으로 정렬돼요. 연속 제출은 가장 최근 퀴즈부터 끊기지 않고 낸 횟수예요.</p>';
+  document.querySelectorAll('#qsStudentTable th').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      if(qsSortKey === th.dataset.k) qsSortAsc = !qsSortAsc; else { qsSortKey = th.dataset.k; qsSortAsc = (qsSortKey === 'name'); }
+      renderQuizStats();
+    });
+  });
+  // 날짜별
+  const drows = dates.slice().reverse().map(d=>{
+    let sub=0, cor=0, inc=0;
+    qsRaw.students.forEach(s=>{ if(s.transferred) return; const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub){ sub++; if(c.v==='correct') cor++; else if(c.v==='incorrect') inc++; } });
+    return { d, sub, cor, inc, ung: sub-cor-inc, acc: qsPct(cor, cor+inc), rate: qsPct(sub, active.length) };
+  });
+  document.getElementById('qsDateTable').innerHTML = '<table class="qs-table"><thead><tr><th style="cursor:default;">날짜</th><th style="cursor:default;">제출</th><th style="cursor:default;">정답</th><th style="cursor:default;">오답</th><th style="cursor:default;">미채점</th><th style="cursor:default;">정답률</th><th style="cursor:default;">제출률</th></tr></thead><tbody>'
+    + drows.map(r=>'<tr><td>'+r.d+'</td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td>'+r.ung+'</td><td>'+qsFmt(r.acc)+'</td><td>'+qsFmt(r.rate)+'</td></tr>').join('') + '</tbody></table>';
+  qsCurrentRows = rows;
+}
+let qsCurrentRows = [];
+document.querySelectorAll('#qsPeriodTabs .filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#qsPeriodTabs .filter-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    qsPeriod = btn.dataset.p; renderQuizStats();
+  });
+});
+document.getElementById('qsReloadBtn').addEventListener('click', ()=> loadQuizStats(true));
+document.getElementById('qsDateFoldHeader').addEventListener('click', ()=>{
+  document.getElementById('qsDateFoldHeader').classList.toggle('open');
+  document.getElementById('qsDateFoldBody').classList.toggle('open');
+});
+document.getElementById('qsCsvBtn').addEventListener('click', ()=>{
+  if(!qsCurrentRows.length){ alert('먼저 통계를 불러와 주세요.'); return; }
+  const head = ['이름','제출','정답','오답','미채점','정답률(%)','제출률(%)','연속 제출'];
+  const lines = [head].concat(qsCurrentRows.map(r=>[r.name, r.sub, r.cor, r.inc, r.ung, r.acc===null?'':r.acc, r.rate===null?'':r.rate, r.streak]));
+  const csv = '﻿' + lines.map(l=> l.map(v=> '"' + String(v).split('"').join('""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = '퀴즈통계_' + todayStr() + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+});
+document.querySelector('#tab-quiz .tabs.subtabs [data-subtab="quizstats"]').addEventListener('click', ()=> loadQuizStats(false));
 function shiftQuizDate(deltaDays){
   const cur = document.getElementById('quizAnswerDate').value || todayStr();
   const [y,m,d] = cur.split('-').map(Number);
