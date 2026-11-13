@@ -319,7 +319,8 @@
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
   .pz-tray-label{ position:absolute; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
-  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; box-sizing:border-box; border-radius:12px; background:rgba(240,143,192,0.2); border:2px dashed #e59ac4; }
+  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; -webkit-filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); }
+  .pz-cellhl img{ display:block; width:100%; height:100%; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
   .pz-pc img{ display:block; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; }
   .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
@@ -1835,7 +1836,7 @@ function imgAttachListener(){
    puzzleImg/{id} = dataURL, puzzleBoard/{id}/{칸번호} = {by,name,at} (칸번호 = 조각번호 = 맞는 자리)
    puzzlePlays/{id}/{날짜}/{학생id} = 사용한 기회, puzzleParticipants/{id}/{학생id} = {name,tries,correct}, puzzleDone/{id} */
 let pzCfg = null, pzPlaced = {}, pzPending = null, pzBusy = false, pzBoardRef = null, pzBoardRefId = null;
-let pzData = null, pzEls = [], pzLoose = {}, pzRoster = [], pzLeft = {}, pzZ = 10, pzDrag = null, pzG = null, pzBuiltId = null, pzHlSlot = -1, pzBoardKey = '', pzSilCache = {};
+let pzJitSeed = 0, pzData = null, pzEls = [], pzLoose = {}, pzRoster = [], pzLeft = {}, pzZ = 10, pzDrag = null, pzG = null, pzBuiltId = null, pzHlSlot = -1, pzBoardKey = '', pzSilCache = {};
 const pzCache = {};
 const pzOverlay = document.getElementById('puzzleOverlay');
 function pzTotal(){ return pzCfg ? (pzCfg.rows * pzCfg.cols) : 0; }
@@ -1995,7 +1996,7 @@ function pzDrawBoard(done){
 }
 function pzBuild(){
   const surf = document.getElementById('pzSurface');
-  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"><div class="pz-tray-label" id="pzTrayLabel"></div></div><div class="pz-cellhl" id="pzHl"></div>';
+  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"><div class="pz-tray-label" id="pzTrayLabel"></div></div><div class="pz-cellhl" id="pzHl"><img alt=""></div>';
   pzHlSlot = -1; pzBoardKey = '';
   pzEls = [];
   const total = pzTotal();
@@ -2005,7 +2006,7 @@ function pzBuild(){
     el.innerHTML = '<img src="' + pzData.urls[p] + '" alt="">';
     surf.appendChild(el); pzEls[p] = el;
   }
-  pzBuiltId = pzCfg.id;
+  pzBuiltId = pzCfg.id; pzJitSeed = 0; for(let i=0;i<pzCfg.id.length;i++) pzJitSeed += pzCfg.id.charCodeAt(i);
   const rnd = pzRng('tray' + pzCfg.id);
   pzLoose = {};
   const keys = []; for(let p=0;p<total;p++) keys.push({ p: p, k: rnd() });
@@ -2018,7 +2019,7 @@ function pzTrayCalc(){
   const total = pzTotal(), ix = t.x + 14, iy = t.y + 46, iw = t.w - 28, ih = t.h - 46 - 14;
   let lo = 0.12, hi = 1, best = null;
   function fit(s){
-    const pw = g.ew * s * 0.8, ph = g.eh * s * 0.8, cols = Math.max(1, Math.floor(iw / pw)), rows = Math.ceil(total / cols);
+    const pw = g.ew * s * 0.74, ph = g.eh * s * 0.74, cols = Math.max(1, Math.floor(iw / pw)), rows = Math.ceil(total / cols);
     return { ok: rows * ph <= ih, s: s, pw: pw, ph: ph, cols: cols, rows: rows };
   }
   const f1 = fit(1);
@@ -2027,13 +2028,17 @@ function pzTrayCalc(){
   best.ix = ix; best.iy = iy; best.iw = iw; best.ih = ih;
   g.tr = best;
 }
+function pzJit(n){ const v = Math.sin((n + 1) * 12.9898 + pzJitSeed) * 43758.5453; return v - Math.floor(v); }
 function pzLoosePos(p){
   const g = pzG, T = g.tr, L = pzLoose[p], col = L.idx % T.cols, row = Math.floor(L.idx / T.cols);
   const lastRow = Math.ceil(pzTotal() / T.cols) - 1;
   const inRow = (row === lastRow) ? (pzTotal() - lastRow * T.cols) : T.cols;
   const ox = T.ix + (T.iw - inRow * T.pw) / 2, oy = T.iy + (T.ih - T.rows * T.ph) / 2;
   const w = g.ew * T.s, h = g.eh * T.s;
-  return { x: ox + col * T.pw + (T.pw - w) / 2, y: oy + row * T.ph + (T.ph - h) / 2, w: w, h: h };
+  const jx = (pzJit(L.idx * 2) - 0.5) * T.pw * 0.9, jy = (pzJit(L.idx * 2 + 1) - 0.5) * T.ph * 0.9;
+  let x = ox + col * T.pw + (T.pw - w) / 2 + jx, y = oy + row * T.ph + (T.ph - h) / 2 + jy;
+  x = Math.max(T.ix, Math.min(T.ix + T.iw - w, x)); y = Math.max(T.iy, Math.min(T.iy + T.ih - h, y));
+  return { x: x, y: y, w: w, h: h };
 }
 function pzLayout(){
   if(!pzCfg || !pzData) return;
@@ -2049,7 +2054,6 @@ function pzLayout(){
   if(g.tray){ tray.style.display = 'block'; tray.style.left = g.tray.x + 'px'; tray.style.top = g.tray.y + 'px'; tray.style.width = g.tray.w + 'px'; tray.style.height = g.tray.h + 'px'; }
   else tray.style.display = 'none';
   const hl = document.getElementById('pzHl');
-  hl.style.width = g.cw + 'px'; hl.style.height = g.chh + 'px';
   document.getElementById('pzTrayLabel').textContent = (pzTotal() - Object.keys(pzPlaced).length) + '개';
   const total = pzTotal();
   pzTrayCalc();
@@ -2142,6 +2146,12 @@ function pzCellAt(el){
   const col = Math.max(0, Math.min(pzCfg.cols - 1, Math.floor(cx / g.cw))), row = Math.max(0, Math.min(pzCfg.rows - 1, Math.floor(cy / g.chh)));
   return row * pzCfg.cols + col;
 }
+function pzSilhouette(slot){
+  if(pzSilCache[pzBuiltId + '_' + slot]) return pzSilCache[pzBuiltId + '_' + slot];
+  const src = pzData.cvs[slot], c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = 'rgba(244,150,200,0.38)'; x.fillRect(0, 0, c.width, c.height);
+  return (pzSilCache[pzBuiltId + '_' + slot] = c.toDataURL());
+}
 function pzDragMove(e){
   if(!pzDrag) return;
   e.preventDefault();
@@ -2152,7 +2162,8 @@ function pzDragMove(e){
   if(s >= 0 && !pzPlaced[s]){
     const pos = pzSlotPos(s);
     pzHlSlot = s;
-    hl.style.left = (pos.x + pzG.px) + 'px'; hl.style.top = (pos.y + pzG.py) + 'px'; hl.style.display = 'block';
+    hl.style.left = pos.x + 'px'; hl.style.top = pos.y + 'px'; hl.style.width = pzG.ew + 'px'; hl.style.height = pzG.eh + 'px';
+    hl.firstChild.src = pzSilhouette(s); hl.style.display = 'block';
   } else { hl.style.display = 'none'; pzHlSlot = -1; }
 }
 function pzDragEnd(e){
