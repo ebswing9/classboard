@@ -227,6 +227,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
+      <button class="tab-btn" data-tab="game">게임</button>
       <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="points">포인트</button>
       <button class="tab-btn" data-tab="settings">설정</button>
@@ -401,8 +402,6 @@
     <div class="tab-panel" id="tab-quiz">
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="quizmain">퀴즈</button>
-        <button class="tab-btn" data-subtab="game">게임</button>
-        <button class="tab-btn" data-subtab="puzzle">퍼즐</button>
         <button class="tab-btn" data-subtab="quizstats">통계</button>
       </div>
       <div class="tab-panel" id="subtab-quizstats">
@@ -484,59 +483,15 @@
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
       </div>
+    </div>
 
-      <div class="tab-panel" id="subtab-puzzle">
-        <div class="section">
-          <h3>🧩 협동 퍼즐 현황</h3>
-          <p class="hint">공개를 켜면 대시보드 출결 패널의 🐧 옆에 🧩 버튼이 나타나요. 학생들이 조각을 맞추고, 완성되면 한 번이라도 참여한 모두에게 포인트가 지급돼요.</p>
-          <button class="publish-btn off" id="pzToggleBtn">퍼즐 없음</button>
-          <span class="msg" id="pzMsg"></span>
-          <div id="pzStatus" style="margin-top:14px;"></div>
-        </div>
-        <div class="section">
-          <h3>새 퍼즐 만들기</h3>
-          <div class="field"><label>퍼즐 이미지</label>
-            <input type="file" id="pzFileInput" accept="image/*">
-          </div>
-          <div class="field"><label>가로 칸 수 (2~12)</label>
-            <input type="number" id="pzColsInput" min="2" max="12" value="8">
-          </div>
-          <div class="field"><label>세로 칸 수 (2~12)</label>
-            <input type="number" id="pzRowsInput" min="2" max="12" value="8">
-          </div>
-          <p class="hint">가로 × 세로 = 조각 수예요. 시작하면 이전 퍼즐의 기록은 지워져요.</p>
-          <button class="btn" id="pzStartBtn">새 퍼즐 시작</button>
-        </div>
-        <div class="section">
-          <h3>기회 · 포인트 설정</h3>
-          <div class="field"><label>하루 기본 기회</label>
-            <input type="number" id="pzBaseInput" min="0" max="20" value="1">
-          </div>
-          <div class="field"><label>대시보드 출석 시 추가 기회</label>
-            <input type="number" id="pzAttInput" min="0" max="20" value="1">
-          </div>
-          <div class="field"><label>퀴즈 제출 시 추가 기회</label>
-            <input type="number" id="pzQuizInput" min="0" max="20" value="1">
-          </div>
-          <div class="field"><label>완성 시 참여자 포인트</label>
-            <input type="number" id="pzPointsInput" min="0" max="20" value="1">
-          </div>
-          <p class="hint">기회는 매일 새로 계산돼요 (이월 없음). 진행 중에도 바꿀 수 있고, 바로 반영돼요.</p>
-          <button class="btn" id="pzSaveBtn">설정 저장</button>
-        </div>
-        <div class="section">
-          <h3>참여자 <span class="sub" id="pzPartCount"></span></h3>
-          <div id="pzPartList"></div>
-          <div class="divider"></div>
-          <div class="field"><label>힌트 공개 (막혔을 때 선생님이 대신 맞춰 줄 조각 수)</label>
-            <input type="number" id="pzHintN" min="1" max="50" value="3">
-          </div>
-          <button class="btn secondary" id="pzHintBtn">무작위 조각 맞춰 주기</button>
-          <button class="btn danger" id="pzClearBtn" style="margin-left:8px;">퍼즐 지우기</button>
-        </div>
+    <!-- ===== 게임 ===== -->
+    <div class="tab-panel" id="tab-game">
+      <div class="tabs subtabs">
+        <button class="tab-btn active" data-subtab="penguin">펭귄 러너</button>
+        <button class="tab-btn" data-subtab="puzzle">퍼즐</button>
       </div>
-
-      <div class="tab-panel" id="subtab-game">
+      <div class="tab-panel active" id="subtab-penguin">
         <div class="section">
           <h3>🐧 펭귄 게임 설정</h3>
           <div class="publish-row" style="margin-bottom:14px;">
@@ -592,6 +547,57 @@
           <button class="btn danger" id="gameResetAllBtn">랭킹 전체 초기화</button>
           <span class="msg" id="gameResetMsg"></span>
           </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-puzzle">
+        <div class="section">
+          <h3>🧩 협동 퍼즐 현황</h3>
+          <p class="hint">공개를 켜면 대시보드 출결 패널의 🐧 옆에 🧩 버튼이 나타나요. 학생들이 조각을 맞추고, 완성되면 한 번이라도 참여한 모두에게 포인트가 지급돼요.</p>
+          <button class="publish-btn off" id="pzToggleBtn">퍼즐 없음</button>
+          <span class="msg" id="pzMsg"></span>
+          <div id="pzStatus" style="margin-top:14px;"></div>
+        </div>
+        <div class="section">
+          <h3>새 퍼즐 만들기</h3>
+          <div class="field"><label>퍼즐 이미지</label>
+            <input type="file" id="pzFileInput" accept="image/*">
+          </div>
+          <div class="field"><label>가로 칸 수 (2~12)</label>
+            <input type="number" id="pzColsInput" min="2" max="12" value="8">
+          </div>
+          <div class="field"><label>세로 칸 수 (2~12)</label>
+            <input type="number" id="pzRowsInput" min="2" max="12" value="8">
+          </div>
+          <p class="hint">가로 × 세로 = 조각 수예요. 시작하면 이전 퍼즐의 기록은 지워져요.</p>
+          <button class="btn" id="pzStartBtn">새 퍼즐 시작</button>
+        </div>
+        <div class="section">
+          <h3>기회 · 포인트 설정</h3>
+          <div class="field"><label>하루 기본 기회</label>
+            <input type="number" id="pzBaseInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>대시보드 출석 시 추가 기회</label>
+            <input type="number" id="pzAttInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>퀴즈 제출 시 추가 기회</label>
+            <input type="number" id="pzQuizInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>완성 시 참여자 포인트</label>
+            <input type="number" id="pzPointsInput" min="0" max="20" value="1">
+          </div>
+          <p class="hint">기회는 매일 새로 계산돼요 (이월 없음). 진행 중에도 바꿀 수 있고, 바로 반영돼요.</p>
+          <button class="btn" id="pzSaveBtn">설정 저장</button>
+        </div>
+        <div class="section">
+          <h3>참여자 <span class="sub" id="pzPartCount"></span></h3>
+          <div id="pzPartList"></div>
+          <div class="divider"></div>
+          <div class="field"><label>힌트 공개 (막혔을 때 선생님이 대신 맞춰 줄 조각 수)</label>
+            <input type="number" id="pzHintN" min="1" max="50" value="3">
+          </div>
+          <button class="btn secondary" id="pzHintBtn">무작위 조각 맞춰 주기</button>
+          <button class="btn danger" id="pzClearBtn" style="margin-left:8px;">퍼즐 지우기</button>
         </div>
       </div>
     </div>
