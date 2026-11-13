@@ -232,6 +232,7 @@
         <button class="tab-btn" data-subtab="alert">교실 알림</button>
         <button class="tab-btn" data-subtab="survey">설문</button>
         <button class="tab-btn" data-subtab="vote">투표</button>
+        <button class="tab-btn" data-subtab="imgshare">이미지</button>
       </div>
 
       <div class="tab-panel active" id="subtab-write">
@@ -331,6 +332,24 @@
           <div id="vtResult"></div>
           <div class="divider"></div>
           <button class="btn secondary" id="vtResetBtn">투표 모두 초기화 (항목 유지, 다시 투표)</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-imgshare">
+        <div class="section">
+          <h3>🖼️ 이미지 공유 (QR·사진 보여주기)</h3>
+          <p class="hint">공개를 켜면 대시보드 출결 창에 🖼️ 버튼이 나타나요. 학생이 누르면 이미지가 크게 뜨고, 여러 장이면 좌우로 넘겨 볼 수 있어요. 공개를 끄면 버튼이 사라져요. (최대 10장)</p>
+          <div class="field"><label>이미지 추가</label>
+            <input type="file" id="isFileInput" accept="image/*" multiple>
+          </div>
+          <button class="publish-btn off" id="isToggleBtn">이미지 없음</button>
+          <span class="msg" id="isMsg"></span>
+        </div>
+        <div class="section">
+          <h3>등록된 이미지 <span class="sub" id="isCount"></span></h3>
+          <div id="isList"></div>
+          <div class="divider"></div>
+          <button class="btn danger" id="isClearBtn">이미지 전부 지우기</button>
         </div>
       </div>
 
@@ -1249,6 +1268,7 @@ async function initAdmin(){
   bindGameListeners();
   bindSurveyListeners();
   bindVoteListeners();
+  bindImgShareListeners();
   settleGameRewards(false);
   await loadWeeklyEditor();
   await loadOverrideEditor();
@@ -2273,6 +2293,79 @@ function setQuizImagePreview(dataUrl){
     wrap.style.display = 'none';
   }
 }
+
+/* ---- 이미지 공유: config/imgShare = { open, items:[{id,title}] }, 이미지 본문은 imgShareData/{id} (dataURL) ---- */
+let isCfgAdmin = null; const isThumbCache = {};
+function isItems(){ return (isCfgAdmin && isCfgAdmin.items) ? isCfgAdmin.items.filter(Boolean) : []; }
+async function isRender(){
+  const items = isItems();
+  const t = document.getElementById('isToggleBtn');
+  if(!items.length){ t.textContent = '이미지 없음'; t.className = 'publish-btn off'; }
+  else if(isCfgAdmin.open){ t.textContent = '공개 중 (누르면 숨기기)'; t.className = 'publish-btn on'; }
+  else { t.textContent = '숨김 (누르면 공개)'; t.className = 'publish-btn off'; }
+  document.getElementById('isCount').textContent = items.length ? '(' + items.length + '장)' : '';
+  const box = document.getElementById('isList');
+  if(!items.length){ box.innerHTML = '<p class="hint">등록된 이미지가 없어요.</p>'; return; }
+  await Promise.all(items.map(async it=>{ if(!isThumbCache[it.id]) isThumbCache[it.id] = (await db.ref('imgShareData/'+it.id).once('value')).val() || ''; }));
+  box.innerHTML = items.map((it,i)=> `<div style="display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:10px 12px; margin-bottom:10px; box-shadow:var(--shadow);">
+      <img src="${isThumbCache[it.id]||''}" style="width:72px; height:72px; object-fit:contain; border-radius:10px; background:#f4f1f8; flex-shrink:0;">
+      <div class="field" style="flex:1; min-width:0; margin:0;"><input type="text" data-istitle="${i}" value="${escapeHtml(it.title||'')}" placeholder="설명 (선택, 예: 설문 QR)"></div>
+      <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-end; flex-shrink:0;">
+        <span><button class="del-link" data-isup="${i}" ${i===0?'disabled':''}>▲</button> <button class="del-link" data-isdown="${i}" ${i===items.length-1?'disabled':''}>▼</button></span>
+        <button class="del-link" data-isdel="${i}">삭제</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('[data-istitle]').forEach(inp=> inp.addEventListener('change', async ()=>{
+    await db.ref('config/imgShare/items/'+inp.dataset.istitle+'/title').set(inp.value.trim());
+  }));
+  box.querySelectorAll('[data-isdel]').forEach(b=> b.addEventListener('click', async ()=>{
+    const arr = isItems(), it = arr[parseInt(b.dataset.isdel,10)]; if(!it) return;
+    if(!confirm('이 이미지를 삭제할까요?')) return;
+    arr.splice(parseInt(b.dataset.isdel,10),1);
+    await db.ref('imgShareData/'+it.id).remove(); delete isThumbCache[it.id];
+    await db.ref('config/imgShare').update({ items: arr.length ? arr : null, open: arr.length ? isCfgAdmin.open : false });
+  }));
+  function mv(i,d){ const arr = isItems(); const j=i+d; if(j<0||j>=arr.length) return; const x=arr[i]; arr[i]=arr[j]; arr[j]=x; db.ref('config/imgShare/items').set(arr); }
+  box.querySelectorAll('[data-isup]').forEach(b=> b.addEventListener('click', ()=> mv(parseInt(b.dataset.isup,10),-1)));
+  box.querySelectorAll('[data-isdown]').forEach(b=> b.addEventListener('click', ()=> mv(parseInt(b.dataset.isdown,10),1)));
+}
+function bindImgShareListeners(){
+  db.ref('config/imgShare').on('value', (snap)=>{ isCfgAdmin = snap.val(); isRender(); });
+}
+document.getElementById('isFileInput').addEventListener('change', async (e)=>{
+  const files = Array.prototype.slice.call(e.target.files || []);
+  const msg = document.getElementById('isMsg');
+  if(!files.length) return;
+  const arr = isItems();
+  const room = 10 - arr.length;
+  if(room <= 0){ msg.textContent = '최대 10장까지만 올릴 수 있어요.'; e.target.value=''; return; }
+  const use = files.slice(0, room);
+  try{
+    msg.textContent = '올리는 중...';
+    for(let i=0;i<use.length;i++){
+      const data = await resizeImageFileToDataUrl(use[i], 1400, 0.9);
+      const id = Date.now() + '_' + i;
+      await db.ref('imgShareData/'+id).set(data);
+      isThumbCache[id] = data;
+      arr.push({ id:id, title:'' });
+    }
+    await db.ref('config/imgShare').update({ items: arr, open: !!(isCfgAdmin && isCfgAdmin.open) });
+    msg.textContent = use.length + '장 올렸어요 ✓' + (files.length > use.length ? ' (10장 초과분은 제외)' : '');
+  }catch(err){ msg.textContent = '올리지 못했어요: ' + err.message; }
+  e.target.value = '';
+  setTimeout(()=> msg.textContent = '', 3000);
+});
+document.getElementById('isToggleBtn').addEventListener('click', async ()=>{
+  if(!isItems().length) return;
+  await db.ref('config/imgShare/open').set(!(isCfgAdmin && isCfgAdmin.open));
+});
+document.getElementById('isClearBtn').addEventListener('click', async ()=>{
+  const arr = isItems(); if(!arr.length) return;
+  if(!confirm('등록된 이미지를 전부 지울까요?')) return;
+  await Promise.all(arr.map(it=> db.ref('imgShareData/'+it.id).remove()));
+  await db.ref('config/imgShare').remove();
+});
+
 function resizeImageFileToDataUrl(file, maxDim, quality){
   maxDim = maxDim || 900; quality = quality || 0.85;
   return new Promise((resolve, reject)=>{

@@ -288,9 +288,22 @@
 
   /* 펭귄 게임 */
   #gameIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn, #voteIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn:hover, #voteIconBtn:hover{ transform:scale(1.08); }
-  #surveyIconBtn:active, #voteIconBtn:active{ transform:scale(0.92); }
+  #surveyIconBtn, #voteIconBtn, #imgIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #surveyIconBtn:hover, #voteIconBtn:hover, #imgIconBtn:hover{ transform:scale(1.08); }
+  #surveyIconBtn:active, #voteIconBtn:active, #imgIconBtn:active{ transform:scale(0.92); }
+
+  #imgOverlay{ position:fixed; top:0; right:0; bottom:0; left:0; z-index:300; background:rgba(74,68,88,0.55); display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity .22s ease, visibility 0s linear .22s; }
+  #imgOverlay.open{ opacity:1; visibility:visible; transition:opacity .22s ease, visibility 0s; }
+  .img-box{ position:relative; background:#fff; border-radius:22px; padding:16px 18px 14px; box-shadow:0 14px 40px rgba(74,68,88,0.35); max-width:92vw; text-align:center; }
+  .img-stage{ display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; gap:10px; }
+  #imgMain{ min-width:300px; min-height:300px; max-width:min(78vw,860px); max-height:74vh; object-fit:contain; border-radius:12px; display:block; background:#f6f3fa; }
+  .img-nav{ width:38px; height:38px; min-width:38px; border-radius:50%; border:none; background:var(--sky); color:var(--text); font-size:18px; cursor:pointer; padding:0; }
+  .img-nav:disabled{ opacity:.3; cursor:default; }
+  #imgCaption{ margin-top:10px; font-size:15px; font-weight:700; color:var(--text); }
+  #imgDots{ margin-top:8px; }
+  #imgDots span{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--line); margin:0 3px; }
+  #imgDots span.on{ background:var(--sky-deep); }
+  #imgOverlay .close-x{ top:10px; right:10px; width:26px; height:26px; font-size:12px; z-index:2; }
   .vt-opts{ text-align:center; max-height:50vh; overflow-y:auto; }
   .vt-opt{ display:block; width:100%; box-sizing:border-box; border:2px solid var(--line); background:#fff; color:var(--text); padding:9px 12px; margin:0 0 6px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; text-align:left; word-break:keep-all; }
   .vt-opt:hover{ border-color:var(--sky-deep); }
@@ -442,6 +455,7 @@
             <button id="gameIconBtn" title="펭귄 게임">🐧</button>
             <button id="surveyIconBtn" title="설문">📝</button>
             <button id="voteIconBtn" title="투표">✅</button>
+            <button id="imgIconBtn" title="이미지">🖼️</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -522,6 +536,19 @@
     <div id="drawStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료 🎉</div>
     </div>
+  </div>
+</div>
+
+<div id="imgOverlay">
+  <div class="img-box">
+    <button class="close-x" id="closeImgOverlay">✕</button>
+    <div class="img-stage">
+      <button class="img-nav" id="imgPrev">‹</button>
+      <img id="imgMain" alt="">
+      <button class="img-nav" id="imgNext">›</button>
+    </div>
+    <div id="imgCaption"></div>
+    <div id="imgDots"></div>
   </div>
 </div>
 
@@ -1699,6 +1726,49 @@ document.getElementById('vtSubmitBtn').addEventListener('click', async ()=>{
   done.style.display = 'block';
   setTimeout(()=>{ vtOverlay.classList.remove('open'); }, 1300);
 });
+/* ---------- 이미지 공유 (config/imgShare = {open, items:[{id,title}]}, 본문 imgShareData/{id}) ---------- */
+let imgCfg = null, imgIdx = 0; const imgCache = {};
+const imgOverlay = document.getElementById('imgOverlay');
+function imgItems(){ return (imgCfg && imgCfg.items) ? imgCfg.items.filter(Boolean) : []; }
+function updateImgIcon(){
+  const on = !!(imgCfg && imgCfg.open && imgItems().length && openPanelType === 'attendance');
+  document.getElementById('imgIconBtn').style.display = on ? 'flex' : 'none';
+}
+async function imgShow(){
+  const items = imgItems(); if(!items.length) return;
+  if(imgIdx >= items.length) imgIdx = items.length - 1;
+  if(imgIdx < 0) imgIdx = 0;
+  const it = items[imgIdx];
+  if(imgCache[it.id] === undefined){
+    document.getElementById('imgMain').removeAttribute('src');
+    imgCache[it.id] = (await db.ref('imgShareData/'+it.id).once('value')).val() || '';
+  }
+  if(items[imgIdx] !== it && items[imgIdx].id !== it.id) return;
+  document.getElementById('imgMain').src = imgCache[it.id];
+  document.getElementById('imgCaption').textContent = it.title || '';
+  document.getElementById('imgCaption').style.display = it.title ? 'block' : 'none';
+  document.getElementById('imgPrev').style.visibility = items.length > 1 ? 'visible' : 'hidden';
+  document.getElementById('imgNext').style.visibility = items.length > 1 ? 'visible' : 'hidden';
+  document.getElementById('imgPrev').disabled = imgIdx === 0;
+  document.getElementById('imgNext').disabled = imgIdx === items.length - 1;
+  document.getElementById('imgDots').innerHTML = items.length > 1 ? items.map((_,k)=> '<span class="'+(k===imgIdx?'on':'')+'"></span>').join('') : '';
+}
+document.getElementById('imgIconBtn').addEventListener('click', ()=>{
+  if(!(imgCfg && imgCfg.open && imgItems().length)) return;
+  imgIdx = 0; imgShow(); imgOverlay.classList.add('open');
+});
+document.getElementById('imgPrev').addEventListener('click', ()=>{ imgIdx--; imgShow(); });
+document.getElementById('imgNext').addEventListener('click', ()=>{ imgIdx++; imgShow(); });
+document.getElementById('closeImgOverlay').addEventListener('click', ()=> imgOverlay.classList.remove('open'));
+imgOverlay.addEventListener('click', (e)=>{ if(e.target === imgOverlay) imgOverlay.classList.remove('open'); });
+function imgAttachListener(){
+  db.ref('config/imgShare').on('value', (snap)=>{
+    imgCfg = snap.val();
+    updateImgIcon();
+    if(!(imgCfg && imgCfg.open && imgItems().length)) imgOverlay.classList.remove('open');
+    else if(imgOverlay.classList.contains('open')) imgShow();
+  });
+}
 function vtAttachListener(){
   db.ref('config/vote').on('value', (snap)=>{
     vtCfg = snap.val();
@@ -1854,6 +1924,7 @@ function updateGameIcon(){
   document.getElementById('gameIconBtn').style.display = (gameEnabled && openPanelType === 'attendance') ? 'flex' : 'none';
   updateSurveyIcon();
   updateVoteIcon();
+  updateImgIcon();
 }
 function gameShowStep(name){
   document.getElementById('gameStepPick').style.display = name === 'pick' ? 'block' : 'none';
@@ -2083,6 +2154,7 @@ function attachRealtimeListeners(){
   db.ref('clapAllowed/'+todayStr()).on('value', ()=> loadAttendanceWidget());
   svAttachListener();
   vtAttachListener();
+  imgAttachListener();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
