@@ -310,15 +310,16 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 50px 0 14px; border:none; background:var(--pink-deep); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:18px; padding:12px 28px; border-radius:18px; box-shadow:0 5px 12px rgba(247,143,179,0.42); cursor:pointer; white-space:nowrap; }
-  .pz-confirm:active{ -webkit-transform:scale(.95); transform:scale(.95); }
+  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 50px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:19px; letter-spacing:1px; line-height:28px; padding:9px 28px 10px 12px; border-radius:999px; box-shadow:0 4px 0 #e0709a, 0 10px 18px rgba(247,143,179,0.38), inset 0 2px 0 rgba(255,255,255,0.35); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; position:relative; top:-2px; }
+  .pz-confirm .pz-ck{ display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:50%; background:#fff; color:#f0709f; font-size:16px; margin-right:10px; box-shadow:0 1px 3px rgba(224,112,154,0.4); vertical-align:middle; }
+  .pz-confirm:active{ -webkit-transform:translateY(3px); transform:translateY(3px); box-shadow:0 1px 0 #e0709a, 0 3px 8px rgba(247,143,179,0.3), inset 0 2px 0 rgba(255,255,255,0.35); }
   .pz-bar{ height:9px; border-radius:6px; background:#fff; box-shadow:inset 0 1px 3px rgba(160,140,190,0.28); overflow:hidden; margin:14px 0 20px; }
   #pzBarFill{ height:100%; width:0; background:var(--mint-deep); border-radius:6px; -webkit-transition:width .5s ease; transition:width .5s ease; }
   #pzSurface{ position:relative; margin:0 auto; -webkit-user-select:none; user-select:none; }
   .pz-board{ position:absolute; background:#fff; border-radius:22px; box-shadow:0 10px 26px rgba(160,140,190,0.26), 0 0 0 5px rgba(255,255,255,0.75); }
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
-  .pz-tray-label{ position:absolute; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .pz-tray-label{ position:absolute; z-index:950; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
   .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; -webkit-filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); }
   .pz-cellhl img{ display:block; width:100%; height:100%; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
@@ -647,7 +648,7 @@
         <div class="gm-title" id="pzTitle">협동 퍼즐</div>
         <div class="gm-chips" id="pzMeta"></div>
       </div>
-      <button class="pz-confirm" id="pzConfirmBtn">✓ 확정</button>
+      <button class="pz-confirm" id="pzConfirmBtn"><span class="pz-ck">✓</span>확정</button>
     </div>
     <div class="pz-bar"><div id="pzBarFill"></div></div>
     <div id="pzSurface"></div>
@@ -2016,10 +2017,10 @@ function pzBuild(){
 function pzSlotPos(slot){ const r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols; return { x: pzG.ox + c*pzG.cw - pzG.px, y: pzG.oy + r*pzG.chh - pzG.py }; }
 function pzTrayCalc(){
   const g = pzG, t = g.tray; if(!t) return;
-  const total = pzTotal(), ix = t.x + 14, iy = t.y + 46, iw = t.w - 28, ih = t.h - 46 - 14;
+  const total = pzTotal(), ix = t.x + 8, iy = t.y + 8, iw = t.w - 16, ih = t.h - 16;
   let lo = 0.12, hi = 1, best = null;
   function fit(s){
-    const pw = g.ew * s * 0.74, ph = g.eh * s * 0.74, cols = Math.max(1, Math.floor(iw / pw)), rows = Math.ceil(total / cols);
+    const pw = g.ew * s * 0.78, ph = g.eh * s * 0.78, cols = Math.max(1, Math.floor(iw / pw)), rows = Math.ceil(total / cols);
     return { ok: rows * ph <= ih, s: s, pw: pw, ph: ph, cols: cols, rows: rows };
   }
   const f1 = fit(1);
@@ -2035,7 +2036,7 @@ function pzLoosePos(p){
   const inRow = (row === lastRow) ? (pzTotal() - lastRow * T.cols) : T.cols;
   const ox = T.ix + (T.iw - inRow * T.pw) / 2, oy = T.iy + (T.ih - T.rows * T.ph) / 2;
   const w = g.ew * T.s, h = g.eh * T.s;
-  const jx = (pzJit(L.idx * 2) - 0.5) * T.pw * 0.9, jy = (pzJit(L.idx * 2 + 1) - 0.5) * T.ph * 0.9;
+  const jx = (pzJit(L.idx * 2) - 0.5) * T.pw * 0.75, jy = (pzJit(L.idx * 2 + 1) - 0.5) * T.ph * 0.75;
   let x = ox + col * T.pw + (T.pw - w) / 2 + jx, y = oy + row * T.ph + (T.ph - h) / 2 + jy;
   x = Math.max(T.ix, Math.min(T.ix + T.iw - w, x)); y = Math.max(T.iy, Math.min(T.iy + T.ih - h, y));
   return { x: x, y: y, w: w, h: h };
@@ -2073,7 +2074,7 @@ function pzRenderTop(){
   const done = pzIsDone(), n = Object.keys(pzPlaced).length, total = pzTotal();
   document.getElementById('pzTitle').textContent = done ? '퍼즐 완성! 🎉' : '협동 퍼즐';
   document.getElementById('pzMeta').innerHTML = '<span class="gm-chip c1">' + n + ' / ' + total + ' 조각</span>'
-    + '<span class="gm-chip c2">완성하면 참여한 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
+    + '<span class="gm-chip c2">완성하면 맞춘 친구 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
   document.getElementById('pzBarFill').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
 }
 async function pzRenderNames(){
@@ -2081,7 +2082,7 @@ async function pzRenderNames(){
   if(pzIsDone()){
     btn.style.display = 'none';
     const ps = (await db.ref('puzzleParticipants/'+pzCfg.id).once('value')).val() || {};
-    const names = Object.keys(ps).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
+    const names = Object.keys(ps).filter(function(k){ return (ps[k].correct||0) > 0; }).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
     box.className = 'pz-names-done';
     box.innerHTML = names.length ? '<div class="gm-section" style="margin:14px 0 6px;">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
     return;
@@ -2249,14 +2250,14 @@ async function pzAttempt(student){
   }catch(e){ console.error('puzzle attempt error', e); }
   finally{ pzBusy = false; }
 }
-// 완성되면 한 번만 정산: 1번이라도 시도한 모든 학생에게 포인트
+// 완성되면 한 번만 정산: 조각을 맞게 올려 완성에 기여한 학생에게 포인트
 async function pzSettle(cfg){
   try{
     const claim = await db.ref('puzzleDone/'+cfg.id).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
     if(!claim.committed) return;
     const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
     const pts = parseInt(cfg.points,10) || 0;
-    const ids = Object.keys(ps);
+    const ids = Object.keys(ps).filter(function(k){ return (ps[k].correct||0) > 0; });
     if(pts !== 0){
       for(let k=0;k<ids.length;k++){
         await awardPoints(ids[k], pts);

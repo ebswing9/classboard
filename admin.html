@@ -553,7 +553,7 @@
       <div class="tab-panel" id="subtab-puzzle">
         <div class="section">
           <h3>🧩 협동 퍼즐 현황</h3>
-          <p class="hint">공개를 켜면 대시보드 출결 패널의 🐧 옆에 🧩 버튼이 나타나요. 학생들이 조각을 맞추고, 완성되면 한 번이라도 참여한 모두에게 포인트가 지급돼요.</p>
+          <p class="hint">공개를 켜면 대시보드 출결 패널의 🐧 옆에 🧩 버튼이 나타나요. 학생들이 조각을 맞추고, 완성되면 조각을 맞게 올려 완성에 기여한 학생(틀리기만 한 학생은 제외)에게 포인트가 지급돼요.</p>
           <button class="publish-btn off" id="pzToggleBtn">퍼즐 없음</button>
           <span class="msg" id="pzMsg"></span>
           <div id="pzStatus" style="margin-top:14px;"></div>
@@ -2498,10 +2498,11 @@ async function pzRenderA(){
     + '</div></div>';
   const ps = pzPartA[id] || {};
   const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k] })).sort((x,y)=> (y.correct||0) - (x.correct||0) || (x.name||'').localeCompare(y.name||'','ko'));
-  document.getElementById('pzPartCount').textContent = rows.length ? '(' + rows.length + '명)' : '';
+  const okN = rows.filter(r=> (r.correct||0) > 0).length;
+  document.getElementById('pzPartCount').textContent = rows.length ? '(포인트 대상 ' + okN + '명 · 시도만 ' + (rows.length - okN) + '명)' : '';
   const today = todayStr(), usedMap = (pzPlaysA[id] && pzPlaysA[id][today]) || {};
   document.getElementById('pzPartList').innerHTML = rows.length
-    ? rows.map(r=> '<span style="display:inline-block; background:var(--mint); border-radius:12px; padding:5px 6px 5px 11px; margin:0 6px 6px 0; font-size:13px; font-weight:700;">'+escapeHtml(r.name||'')+' <span style="font-weight:600; color:var(--muted); font-size:12px;">시도 '+(r.tries||0)+' · 성공 '+(r.correct||0)+' · 오늘 '+(usedMap[r.id]||0)+'회 사용</span> <button class="del-link" data-pzreset="'+r.id+'" title="오늘 쓴 기회를 0으로 되돌려요" style="margin-left:4px; color:#d14a6f;">기회 초기화</button><button class="del-link" data-pzunpart="'+r.id+'" title="완성 포인트를 받는 참여자에서 뺍니다" style="margin-left:4px; color:#d14a6f;">참여 취소</button></span>').join('')
+    ? rows.map(r=> '<span style="display:inline-block; background:'+((r.correct||0) > 0 ? 'var(--mint)' : '#eee9f3')+'; border-radius:12px; padding:5px 6px 5px 11px; margin:0 6px 6px 0; font-size:13px; font-weight:700;">'+escapeHtml(r.name||'')+' <span style="font-weight:600; color:var(--muted); font-size:12px;">시도 '+(r.tries||0)+' · 성공 '+(r.correct||0)+' · 오늘 '+(usedMap[r.id]||0)+'회 사용</span> <button class="del-link" data-pzreset="'+r.id+'" title="오늘 쓴 기회를 0으로 되돌려요" style="margin-left:4px; color:#d14a6f;">기회 초기화</button><button class="del-link" data-pzunpart="'+r.id+'" title="시도 기록을 지웁니다" style="margin-left:4px; color:#d14a6f;">참여 취소</button></span>').join('')
     : '<p class="hint">아직 참여한 학생이 없어요.</p>';
   document.querySelectorAll('#pzPartList [data-pzreset]').forEach(b=> b.addEventListener('click', async ()=>{
     if(!confirm('이 학생의 오늘 사용한 기회를 0으로 되돌릴까요?')) return;
@@ -2509,7 +2510,7 @@ async function pzRenderA(){
   }));
   document.querySelectorAll('#pzPartList [data-pzunpart]').forEach(b=> b.addEventListener('click', async ()=>{
     const sid = b.dataset.pzunpart, p = (pzPartA[id] || {})[sid] || {};
-    let msg = (p.name || '이 학생') + '님을 참여자에서 뺄까요?\n완성해도 포인트를 받지 않아요. (오늘 쓴 기회도 0으로 돌려요)';
+    let msg = (p.name || '이 학생') + '님의 참여 기록을 지울까요?\n(이미 놓은 조각은 그대로 있고) 완성해도 포인트를 받지 않아요. (오늘 쓴 기회도 0으로 돌려요)';
     if((p.correct||0) > 0) msg += '\n※ 이 학생이 맞춘 조각 ' + p.correct + '개는 판에 그대로 남아요. 필요하면 아래 "놓인 조각 관리"에서 따로 빼 주세요.';
     if(!confirm(msg)) return;
     await db.ref('puzzleParticipants/'+id+'/'+sid).remove();
@@ -2549,7 +2550,7 @@ async function pzSettleAdmin(cfg){
     if(!claim.committed) return;
     const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
     const pts = parseInt(cfg.points,10) || 0;
-    const ids = Object.keys(ps);
+    const ids = Object.keys(ps).filter(k=> (ps[k].correct||0) > 0);
     if(pts !== 0){
       for(let k=0;k<ids.length;k++){
         await awardPoints(ids[k], pts);
@@ -2603,7 +2604,7 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
   if(pzCfgA && pzCfgA.id){
     const dn = !!(pzDoneA && pzDoneA[pzCfgA.id]);
     const msg = (reuse ? '같은 그림으로 ' + cols + '×' + rows + ' 퍼즐을 새로 시작할까요?\n' : '새 퍼즐을 시작할까요?\n')
-      + '지금 퍼즐의 놓인 조각과 참여 기록이 모두 지워져요.' + (dn ? '' : '\n(아직 완성되지 않아서 참여자에게 포인트는 지급되지 않아요)');
+      + '지금 퍼즐의 놓인 조각과 참여 기록이 모두 지워져요.' + (dn ? '' : '\n(아직 완성되지 않아서 학생들에게 포인트는 지급되지 않아요)');
     if(!confirm(msg)) return;
   }
   try{
