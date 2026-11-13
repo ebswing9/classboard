@@ -586,6 +586,9 @@
           <div class="field"><label>완성 시 참여자 포인트</label>
             <input type="number" id="pzPointsInput" min="0" max="20" value="1">
           </div>
+          <div class="field"><label>퍼즐판에 조각 모양 홈 선 표시</label>
+            <select id="pzGroovesInput"><option value="on">켜기 (판에 조각 모양 윤곽이 보여요)</option><option value="off">끄기 (점선 테두리와 점만 보여요, 더 어려워요)</option></select>
+          </div>
           <p class="hint">기회는 매일 새로 계산돼요 (이월 없음). 진행 중에도 바꿀 수 있고, 바로 반영돼요.</p>
           <button class="btn" id="pzSaveBtn">설정 저장</button>
         </div>
@@ -2469,6 +2472,7 @@ function pzFillSettings(){
   set('pzAttInput', pzCfgA.att != null ? pzCfgA.att : 1);
   set('pzQuizInput', pzCfgA.quiz != null ? pzCfgA.quiz : 1);
   set('pzPointsInput', pzCfgA.points != null ? pzCfgA.points : 1);
+  set('pzGroovesInput', pzCfgA.grooves === false ? 'off' : 'on');
 }
 async function pzRenderA(){
   const t = document.getElementById('pzToggleBtn');
@@ -2596,14 +2600,14 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
     await db.ref('puzzleImg/'+id).set(data);
     pzThumbId = null;
     await db.ref('config/puzzle').set({ id:id, rows:rows, cols:cols, open:true,
-      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20) });
+      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off' });
     document.getElementById('pzFileInput').value = '';
     pzFlash('퍼즐을 시작했어요 ✓');
   }catch(e){ pzFlash('실패했어요: ' + e.message); }
 });
 document.getElementById('pzSaveBtn').addEventListener('click', async ()=>{
   if(!(pzCfgA && pzCfgA.id)){ pzFlash('먼저 퍼즐을 만들어 주세요.'); return; }
-  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20) });
+  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off' });
   pzFlash('저장했어요 ✓');
 });
 document.getElementById('pzHintBtn').addEventListener('click', async ()=>{

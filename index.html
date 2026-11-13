@@ -1965,10 +1965,10 @@ function pzCalcLayout(done){
   g.px = g.cw * (g.kx - 1) / 2; g.py = g.chh * (g.ky - 1) / 2;
   return g;
 }
-// 퍼즐판: 그림이 들어갈 영역만 점선 테두리와 모서리 점으로 표시 (조각 모양은 보여주지 않음)
+// 퍼즐판: 조각이 들어갈 자리를 직소 모양 홈(윤곽선)으로 표시. 관리자가 끄면 점선 테두리와 모서리 점만 표시
 function pzDrawBoard(done){
-  const g = pzG, cv = document.getElementById('pzBoardCv');
-  const key = [Math.round(g.bpw), Math.round(g.bph), done ? 1 : 0, pzCfg.id].join('|');
+  const g = pzG, cv = document.getElementById('pzBoardCv'), grooves = pzCfg.grooves !== false;
+  const key = [Math.round(g.bpw), Math.round(g.bph), done ? 1 : 0, grooves ? 1 : 0, pzCfg.id].join('|');
   if(pzBoardKey === key) return;
   pzBoardKey = key;
   const sc = Math.min(2, window.devicePixelRatio || 1);
@@ -1976,6 +1976,16 @@ function pzDrawBoard(done){
   const ctx = cv.getContext('2d');
   ctx.clearRect(0, 0, cv.width, cv.height);
   if(done) return;
+  if(grooves){
+    const shape = pzShapes(pzCfg), cw = g.cw * sc, ch = g.chh * sc;
+    ctx.lineWidth = Math.max(1.4, 1.6 * sc); ctx.strokeStyle = 'rgba(176,152,208,0.8)'; ctx.lineJoin = 'round';
+    for(let r=0;r<pzCfg.rows;r++) for(let c=0;c<pzCfg.cols;c++){
+      ctx.save(); ctx.translate(g.pad*sc + c*cw, g.pad*sc + r*ch);
+      pzPath(ctx, cw, ch, shape(r, c));
+      ctx.stroke(); ctx.restore();
+    }
+    return;
+  }
   ctx.strokeStyle = 'rgba(176,152,208,0.55)'; ctx.lineWidth = 1.6 * sc; ctx.setLineDash([7*sc, 6*sc]);
   ctx.strokeRect(g.pad*sc - 1*sc, g.pad*sc - 1*sc, g.bw*sc + 2*sc, g.bh*sc + 2*sc);
   ctx.setLineDash([]); ctx.fillStyle = 'rgba(176,152,208,0.5)';
@@ -2267,7 +2277,7 @@ function pzAttachListener(){
     pzCfg = snap.val();
     updatePuzzleIcon();
     if(!(pzCfg && pzCfg.open && pzCfg.id) || (prev && prev.id !== pzCfg.id)){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPlaced = {}; pzPending = null; pzData = null; }
-    else if(pzOverlay.classList.contains('open') && pzData && !pzBusy && !pzDrag){ pzRenderTop(); }
+    else if(pzOverlay.classList.contains('open') && pzData && !pzBusy && !pzDrag){ pzRenderTop(); pzLayout(); }
   });
 }
 function vtAttachListener(){
