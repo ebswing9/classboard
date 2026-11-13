@@ -1978,7 +1978,7 @@ function pzDrawBoard(done){
   if(done) return;
   if(grooves){
     const shape = pzShapes(pzCfg), cw = g.cw * sc, ch = g.chh * sc;
-    ctx.lineWidth = Math.max(1.4, 1.6 * sc); ctx.strokeStyle = 'rgba(176,152,208,0.8)'; ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(1.2, 1.4 * sc); ctx.strokeStyle = 'rgba(190,170,220,0.42)'; ctx.lineJoin = 'round';
     for(let r=0;r<pzCfg.rows;r++) for(let c=0;c<pzCfg.cols;c++){
       ctx.save(); ctx.translate(g.pad*sc + c*cw, g.pad*sc + r*ch);
       pzPath(ctx, cw, ch, shape(r, c));
