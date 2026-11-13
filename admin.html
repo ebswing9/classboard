@@ -590,8 +590,14 @@
           <button class="btn" id="pzSaveBtn">설정 저장</button>
         </div>
         <div class="section">
+          <h3>놓인 조각 관리 <span class="sub" id="pzBoardCount"></span></h3>
+          <p class="hint">학생이 다른 친구 이름을 잘못 눌렀을 때 쓰세요. 초록색 칸(놓인 조각)을 누르면 그 조각을 판에서 빼고, 놓은 학생의 기회 1번도 돌려줘요.</p>
+          <div id="pzMini" style="margin-top:8px;"></div>
+        </div>
+        <div class="section">
           <h3>참여자 <span class="sub" id="pzPartCount"></span></h3>
           <div id="pzPartList"></div>
+          <button class="btn secondary" id="pzResetAllBtn" style="margin-top:6px;">오늘 모든 학생 기회 초기화</button>
           <div class="divider"></div>
           <div class="field"><label>힌트 공개 (막혔을 때 선생님이 대신 맞춰 줄 조각 수)</label>
             <input type="number" id="pzHintN" min="1" max="50" value="3">
@@ -2454,7 +2460,7 @@ document.getElementById('isClearBtn').addEventListener('click', async ()=>{
 });
 
 /* ---- 협동 퍼즐 ---- */
-let pzCfgA = null, pzBoardA = {}, pzPartA = {}, pzDoneA = null, pzThumbId = null;
+let pzCfgA = null, pzBoardA = {}, pzPartA = {}, pzDoneA = null, pzThumbId = null, pzPlaysA = {};
 function pzNum(id, def, min, max){ let v = parseInt(document.getElementById(id).value, 10); if(isNaN(v)) v = def; return Math.max(min, Math.min(max, v)); }
 function pzFillSettings(){
   if(!pzCfgA) return;
@@ -2489,9 +2495,30 @@ async function pzRenderA(){
   const ps = pzPartA[id] || {};
   const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k] })).sort((x,y)=> (y.correct||0) - (x.correct||0) || (x.name||'').localeCompare(y.name||'','ko'));
   document.getElementById('pzPartCount').textContent = rows.length ? '(' + rows.length + '명)' : '';
+  const today = todayStr(), usedMap = (pzPlaysA[id] && pzPlaysA[id][today]) || {};
   document.getElementById('pzPartList').innerHTML = rows.length
-    ? rows.map(r=> '<span style="display:inline-block; background:var(--mint); border-radius:12px; padding:5px 11px; margin:0 6px 6px 0; font-size:13px; font-weight:700;">'+escapeHtml(r.name||'')+' <span style="font-weight:600; color:var(--muted); font-size:12px;">시도 '+(r.tries||0)+' · 성공 '+(r.correct||0)+'</span></span>').join('')
+    ? rows.map(r=> '<span style="display:inline-block; background:var(--mint); border-radius:12px; padding:5px 6px 5px 11px; margin:0 6px 6px 0; font-size:13px; font-weight:700;">'+escapeHtml(r.name||'')+' <span style="font-weight:600; color:var(--muted); font-size:12px;">시도 '+(r.tries||0)+' · 성공 '+(r.correct||0)+' · 오늘 '+(usedMap[r.id]||0)+'회 사용</span> <button class="del-link" data-pzreset="'+r.id+'" title="오늘 쓴 기회를 0으로 되돌려요" style="margin-left:4px; color:#d14a6f;">기회 초기화</button></span>').join('')
     : '<p class="hint">아직 참여한 학생이 없어요.</p>';
+  document.querySelectorAll('#pzPartList [data-pzreset]').forEach(b=> b.addEventListener('click', async ()=>{
+    if(!confirm('이 학생의 오늘 사용한 기회를 0으로 되돌릴까요?')) return;
+    await db.ref('puzzlePlays/'+id+'/'+todayStr()+'/'+b.dataset.pzreset).remove();
+  }));
+  // 놓인 조각 관리용 미니 판
+  const bd = pzBoardA[id] || {};
+  document.getElementById('pzBoardCount').textContent = '(' + done + ' / ' + total + ')';
+  let mini = '<div style="display:inline-block; line-height:0;">';
+  for(let r=0;r<pzCfgA.rows;r++){
+    for(let c=0;c<pzCfgA.cols;c++){
+      const s = r*pzCfgA.cols + c, e = bd[s];
+      mini += e
+        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+'" style="width:30px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:11px; font-weight:800; cursor:pointer; padding:0;">'+escapeHtml((e.name||'선').charAt(0))+'</button>'
+        : '<span style="display:inline-block; width:30px; height:30px; margin:1px; border-radius:6px; background:#f1edf7; vertical-align:top;"></span>';
+    }
+    mini += '<br>';
+  }
+  mini += '</div><p class="hint">초록: 학생이 놓음 · 보라: 선생님 힌트 · 칸에 마우스를 올리면 위치와 이름이 보여요</p>';
+  document.getElementById('pzMini').innerHTML = mini;
+  document.querySelectorAll('#pzMini [data-pzcancel]').forEach(b=> b.addEventListener('click', ()=> pzCancelPiece(parseInt(b.dataset.pzcancel,10))));
   pzFillSettings();
   if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
 }
@@ -2501,6 +2528,7 @@ function bindPuzzleListeners(){
   db.ref('puzzleBoard').on('value', s=>{ pzBoardA = s.val() || {}; pzRenderA(); });
   db.ref('puzzleParticipants').on('value', s=>{ pzPartA = s.val() || {}; pzRenderA(); });
   db.ref('puzzleDone').on('value', s=>{ pzDoneA = s.val() || {}; pzRenderA(); });
+  db.ref('puzzlePlays').on('value', s=>{ pzPlaysA = s.val() || {}; pzRenderA(); });
   pzDoneA = {};
 }
 async function pzSettleAdmin(cfg){
@@ -2522,6 +2550,34 @@ async function pzSettleAdmin(cfg){
 async function pzWipe(id){
   await Promise.all(['puzzleImg','puzzleBoard','puzzlePlays','puzzleParticipants','puzzleDone'].map(p=> db.ref(p+'/'+id).remove()));
 }
+async function pzCancelPiece(slot){
+  if(!(pzCfgA && pzCfgA.id)) return;
+  const id = pzCfgA.id, e = (pzBoardA[id] || {})[slot];
+  if(!e) return;
+  const r = Math.floor(slot / pzCfgA.cols) + 1, c = slot % pzCfgA.cols + 1;
+  const who = e.by && e.by !== 'admin';
+  let msg = r + '행 ' + c + '열 조각을 판에서 뺄까요?';
+  if(who) msg += '\n(' + (e.name || '') + '님의 기회 1번도 돌려줘요)';
+  if(pzDoneA && pzDoneA[id]) msg += '\n※ 이미 완성 포인트가 지급된 퍼즐이에요. 포인트는 그대로 남고, 다시 완성해도 또 지급되지 않아요.';
+  if(!confirm(msg)) return;
+  await db.ref('puzzleBoard/'+id+'/'+slot).remove();
+  if(who){
+    const d = todayStr(new Date(e.at || Date.now()));
+    await db.ref('puzzlePlays/'+id+'/'+d+'/'+e.by).transaction(cur=> Math.max(0, (cur||1) - 1) || null);
+    await db.ref('puzzleParticipants/'+id+'/'+e.by).transaction(cur=>{
+      if(!cur) return cur;
+      cur.tries = Math.max(0, (cur.tries||1) - 1); cur.correct = Math.max(0, (cur.correct||1) - 1);
+      return cur.tries > 0 ? cur : null;
+    });
+  }
+  pzFlash('조각을 뺐어요 ✓');
+}
+document.getElementById('pzResetAllBtn').addEventListener('click', async ()=>{
+  if(!(pzCfgA && pzCfgA.id)) return;
+  if(!confirm('오늘 모든 학생이 쓴 퍼즐 기회를 0으로 되돌릴까요?')) return;
+  await db.ref('puzzlePlays/'+pzCfgA.id+'/'+todayStr()).remove();
+  pzFlash('오늘 기회를 초기화했어요 ✓');
+});
 function pzFlash(text){ const m = document.getElementById('pzMsg'); m.textContent = text; setTimeout(()=> m.textContent = '', 2600); }
 document.getElementById('pzToggleBtn').addEventListener('click', async ()=>{
   if(!(pzCfgA && pzCfgA.id)) return;

@@ -308,14 +308,15 @@
 
   #puzzleOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:12px; }
   #puzzleOverlay.open{ display:flex; }
-  .gm-box.pz-box{ max-width:1120px; padding:16px 20px 14px; overflow:hidden; }
+  .gm-box.pz-box{ max-width:1400px; padding:14px 20px 12px; overflow:hidden; }
   .pz-head{ text-align:center; margin-bottom:4px; }
   .pz-head .gm-who{ font-size:17px; padding:5px 18px; margin-right:8px; }
   .pz-head .gm-chip{ margin:0 0 0 4px; }
   #pzSurface{ position:relative; margin:8px auto 4px; -webkit-user-select:none; user-select:none; }
-  .pz-board{ position:absolute; background-color:#fff; border-radius:6px; box-shadow:0 6px 16px rgba(160,140,190,0.25), 0 0 0 4px rgba(255,255,255,0.85); }
+  .pz-board{ position:absolute; background-color:#fbf8fe; border-radius:4px; box-shadow:0 0 0 7px #f9dbe7, 0 8px 18px rgba(160,140,190,0.32); }
+  .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:rgba(246,241,252,0.85); border-radius:18px; border:2px dashed #e2d8ef; box-sizing:border-box; }
-  .pz-cellhl{ position:absolute; background:rgba(180,216,246,0.55); border:2px solid var(--sky-deep); box-sizing:border-box; display:none; }
+  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; }
   .pz-pc img{ display:block; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; }
   .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease; transition:left .3s ease, top .3s ease; }
@@ -328,8 +329,13 @@
   @keyframes pzPop{ 0%{ transform:scale(1.25); opacity:.4; } 100%{ transform:scale(1); opacity:1; } }
   @-webkit-keyframes pzShake{ 0%,100%{ -webkit-transform:translateX(0); } 25%{ -webkit-transform:translateX(-7px); } 75%{ -webkit-transform:translateX(7px); } }
   @keyframes pzShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-7px); } 75%{ transform:translateX(7px); } }
-  #pzNames{ text-align:center; margin-top:4px; }
-  #pzNames.off .pz-name{ opacity:.4; pointer-events:none; }
+  #pzBottom{ text-align:center; height:44px; margin-top:4px; }
+  #pzConfirmBtn{ display:none; border:none; background:var(--sky-deep); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:17px; padding:9px 34px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(90,174,234,0.4); }
+  #pzConfirmBtn:active{ -webkit-transform:scale(.95); transform:scale(.95); }
+  #pzPicker{ display:none; position:absolute; top:0; right:0; bottom:0; left:0; z-index:950; background:rgba(255,255,255,0.95); border-radius:30px; padding:26px 24px 20px; overflow-y:auto; text-align:center; }
+  #pzPicker.open{ display:block; }
+  #pzPicker h3{ font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:22px; color:var(--text); margin:6px 0 14px; }
+  #pzPickerCancel{ border:none; background:#fff; color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:15px; padding:8px 22px; border-radius:14px; margin-top:12px; cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); }
   .pz-name{ display:inline-block; vertical-align:top; min-width:84px; height:44px; box-sizing:border-box; border:none; border-radius:14px; margin:3px; padding:5px 10px; font-family:'MapleStory','Jua',sans-serif; font-size:14px; color:var(--text); cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); white-space:nowrap; }
   .pz-name:active{ -webkit-transform:scale(.94); transform:scale(.94); }
   .pz-name.p0{ background:var(--pink); } .pz-name.p1{ background:var(--sky); } .pz-name.p2{ background:var(--mint); } .pz-name.p3{ background:var(--yellow); } .pz-name.p4{ background:var(--lav); }
@@ -639,7 +645,8 @@
     <button class="gm-x" id="pzCloseBtn">✕</button>
     <div class="pz-head"><span class="gm-who" id="pzWho">🧩 협동 퍼즐</span><span id="pzMeta"></span></div>
     <div id="pzSurface"></div>
-    <div id="pzNames"></div>
+    <div id="pzBottom"><button id="pzConfirmBtn">✓ 확정</button><div id="pzNames"></div></div>
+    <div id="pzPicker"><h3>누가 놓았나요?</h3><div id="pzPickGrid"></div><button id="pzPickerCancel">취소</button></div>
   </div>
 </div>
 
@@ -1817,7 +1824,7 @@ function imgAttachListener(){
    puzzleImg/{id} = dataURL, puzzleBoard/{id}/{칸번호} = {by,name,at} (칸번호 = 조각번호 = 맞는 자리)
    puzzlePlays/{id}/{날짜}/{학생id} = 사용한 기회, puzzleParticipants/{id}/{학생id} = {name,tries,correct}, puzzleDone/{id} */
 let pzCfg = null, pzPlaced = {}, pzPending = null, pzBusy = false, pzBoardRef = null, pzBoardRefId = null;
-let pzData = null, pzEls = [], pzLoose = {}, pzRoster = [], pzLeft = {}, pzZ = 10, pzDrag = null, pzG = null, pzBuiltId = null;
+let pzData = null, pzEls = [], pzLoose = {}, pzRoster = [], pzLeft = {}, pzZ = 10, pzDrag = null, pzG = null, pzBuiltId = null, pzHlSlot = -1, pzBoardKey = '', pzSilCache = {};
 const pzCache = {};
 const pzOverlay = document.getElementById('puzzleOverlay');
 function pzTotal(){ return pzCfg ? (pzCfg.rows * pzCfg.cols) : 0; }
@@ -1918,16 +1925,16 @@ async function pzLoadLeft(){
 // ---------- 화면 배치 ----------
 function pzCalcLayout(done){
   const box = pzOverlay.querySelector('.pz-box');
-  const namesH = done ? 70 : Math.min(190, Math.ceil(pzRoster.length / 9) * 50 + 8);
-  const availW = Math.max(300, Math.min(window.innerWidth - 24 - 40, 1080));
-  const availH = Math.max(260, window.innerHeight - 24 - 32 - 46 - namesH - 28);
+  const namesH = done ? 80 : 50;
+  const availW = Math.max(300, Math.min(window.innerWidth - 24 - 40 - 14, 1340));
+  const availH = Math.max(260, window.innerHeight - 24 - 26 - 44 - namesH - 22);
   const asp = pzData.aspect, gap = 14;
   const g = { done: done };
   if(done){
-    g.bw = Math.min(availW, availH * asp, 640); g.bh = g.bw / asp;
+    g.bw = Math.min(availW, availH * asp, 760); g.bh = g.bw / asp;
     g.bx = (availW - g.bw) / 2; g.by = 0; g.sw = availW; g.sh = g.bh; g.tray = null;
   } else if(availW >= availH * 1.45){
-    g.bw = Math.min(availW * 0.56, availH * asp); g.bh = g.bw / asp;
+    g.bw = Math.min(availW * 0.62, availH * asp); g.bh = g.bw / asp;
     g.bx = 0; g.by = 0; g.sw = availW; g.sh = g.bh;
     g.tray = { x: g.bw + gap, y: 0, w: availW - g.bw - gap, h: g.bh };
   } else {
@@ -1944,9 +1951,41 @@ function pzCalcLayout(done){
   g.px = g.cw * (g.kx - 1) / 2; g.py = g.chh * (g.ky - 1) / 2;
   return g;
 }
+// 퍼즐판: 조각이 들어갈 자리를 직소 모양 홈(윤곽선)으로 그려 둠
+function pzDrawBoard(done){
+  const g = pzG, cv = document.getElementById('pzBoardCv');
+  const key = [Math.round(g.bw), Math.round(g.bh), done ? 1 : 0, pzCfg.id].join('|');
+  if(pzBoardKey === key) return;
+  pzBoardKey = key;
+  const sc = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(g.bw * sc); cv.height = Math.round(g.bh * sc);
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if(done) return;
+  const shape = pzShapes(pzCfg), cw = g.cw * sc, ch = g.chh * sc;
+  ctx.lineWidth = Math.max(1.4, 1.6 * sc); ctx.strokeStyle = 'rgba(176,152,208,0.75)'; ctx.lineJoin = 'round';
+  for(let r=0;r<pzCfg.rows;r++) for(let c=0;c<pzCfg.cols;c++){
+    ctx.save(); ctx.translate(c*cw, r*ch);
+    pzPath(ctx, cw, ch, shape(r, c));
+    ctx.stroke(); ctx.restore();
+  }
+}
+// 놓을 자리 강조용 직소 모양 실루엣
+function pzSilUrl(slot){
+  if(pzSilCache[slot]) return pzSilCache[slot];
+  const d = pzData, r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols, shape = pzShapes(pzCfg);
+  const cv = document.createElement('canvas'); cv.width = d.cw + 2*d.m; cv.height = d.ch + 2*d.m;
+  const ctx = cv.getContext('2d'); ctx.translate(d.m, d.m);
+  pzPath(ctx, d.cw, d.ch, shape(r, c));
+  ctx.fillStyle = 'rgba(120,190,245,0.5)'; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#5aaeea'; ctx.stroke();
+  pzSilCache[slot] = cv.toDataURL('image/png');
+  return pzSilCache[slot];
+}
 function pzBuild(){
   const surf = document.getElementById('pzSurface');
-  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"></div><div class="pz-tray" id="pzTrayEl"></div><div class="pz-cellhl" id="pzHl"></div>';
+  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"></div><img class="pz-cellhl" id="pzHl" alt="">';
+  pzHlSlot = -1; pzBoardKey = ''; pzSilCache = {};
   pzEls = [];
   const total = pzTotal();
   for(let p=0;p<total;p++){
@@ -1975,17 +2014,12 @@ function pzLayout(){
   surf.style.width = g.sw + 'px'; surf.style.height = g.sh + 'px';
   const board = document.getElementById('pzBoardEl');
   board.style.left = g.bx + 'px'; board.style.top = g.by + 'px'; board.style.width = g.bw + 'px'; board.style.height = g.bh + 'px';
-  if(done){ board.style.backgroundImage = 'none'; }
-  else {
-    const line = 'rgba(190,170,215,0.5)';
-    board.style.backgroundImage = 'linear-gradient(to right, ' + line + ' 1px, transparent 1px), linear-gradient(to bottom, ' + line + ' 1px, transparent 1px)';
-    board.style.backgroundSize = g.cw + 'px ' + g.chh + 'px';
-  }
+  pzDrawBoard(done);
   const tray = document.getElementById('pzTrayEl');
   if(g.tray){ tray.style.display = 'block'; tray.style.left = g.tray.x + 'px'; tray.style.top = g.tray.y + 'px'; tray.style.width = g.tray.w + 'px'; tray.style.height = g.tray.h + 'px'; }
   else tray.style.display = 'none';
   const hl = document.getElementById('pzHl');
-  hl.style.width = g.cw + 'px'; hl.style.height = g.chh + 'px';
+  hl.style.width = g.ew + 'px'; hl.style.height = g.eh + 'px';
   const total = pzTotal();
   for(let p=0;p<total;p++){
     const el = pzEls[p];
@@ -2006,22 +2040,29 @@ function pzRenderTop(){
     + '<span class="gm-chip c2">완성하면 참여한 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
 }
 async function pzRenderNames(){
-  const box = document.getElementById('pzNames');
+  const box = document.getElementById('pzNames'), btn = document.getElementById('pzConfirmBtn');
   if(pzIsDone()){
+    btn.style.display = 'none';
     const ps = (await db.ref('puzzleParticipants/'+pzCfg.id).once('value')).val() || {};
     const names = Object.keys(ps).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
     box.className = 'pz-names-done';
-    box.innerHTML = names.length ? '<div class="gm-section">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
+    box.innerHTML = names.length ? '<div class="gm-section" style="margin:6px 0 4px;">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
     return;
   }
-  box.className = pzPending ? '' : 'off';
-  box.innerHTML = pzRoster.map(function(s,k){
+  box.className = ''; box.innerHTML = '';
+  btn.style.display = pzPending ? 'inline-block' : 'none';
+}
+function pzOpenPicker(){
+  if(!pzPending || pzBusy) return;
+  const grid = document.getElementById('pzPickGrid');
+  grid.innerHTML = pzRoster.map(function(s,k){
     const l = pzLeft[s.id] ? pzLeft[s.id].left : 0;
     return '<button class="pz-name p'+(k%5)+(l>0?'':' zero')+'" data-id="'+s.id+'" data-name="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'<small>'+l+'번</small></button>';
   }).join('');
-  box.querySelectorAll('.pz-name:not(.zero)').forEach(function(b){
-    b.addEventListener('click', function(){ pzAttempt({ id: b.dataset.id, name: b.dataset.name }); });
+  grid.querySelectorAll('.pz-name:not(.zero)').forEach(function(b){
+    b.addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); pzAttempt({ id: b.dataset.id, name: b.dataset.name }); });
   });
+  document.getElementById('pzPicker').classList.add('open');
 }
 async function pzRefresh(){
   pzLayout(); pzRenderTop(); await pzRenderNames();
@@ -2053,7 +2094,7 @@ function pzDragStart(e){
   pzDrag = { p: p, el: el, ox: pt.x - sr.left - parseFloat(el.style.left), oy: pt.y - sr.top - parseFloat(el.style.top) };
   el.classList.remove('ret'); el.classList.remove('pend'); el.classList.add('drag'); el.style.zIndex = '';
   if(pzPending && pzPending.piece === p){ pzPending = null; pzRenderNames(); }
-  document.getElementById('pzHl').style.display = 'none';
+  document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
 }
 function pzCellAt(el){
   const g = pzG, cx = parseFloat(el.style.left) + g.ew/2 - g.bx, cy = parseFloat(el.style.top) + g.eh/2 - g.by;
@@ -2069,14 +2110,17 @@ function pzDragMove(e){
   const el = pzDrag.el;
   el.style.left = (pt.x - sr.left - pzDrag.ox) + 'px'; el.style.top = (pt.y - sr.top - pzDrag.oy) + 'px';
   const s = pzCellAt(el), hl = document.getElementById('pzHl');
-  if(s >= 0 && !pzPlaced[s]){ const pos = pzSlotPos(s); hl.style.left = (pos.x + pzG.px) + 'px'; hl.style.top = (pos.y + pzG.py) + 'px'; hl.style.display = 'block'; }
-  else hl.style.display = 'none';
+  if(s >= 0 && !pzPlaced[s]){
+    const pos = pzSlotPos(s);
+    if(pzHlSlot !== s){ hl.src = pzSilUrl(s); pzHlSlot = s; }
+    hl.style.left = pos.x + 'px'; hl.style.top = pos.y + 'px'; hl.style.display = 'block';
+  } else { hl.style.display = 'none'; pzHlSlot = -1; }
 }
 function pzDragEnd(e){
   if(!pzDrag) return;
   const d = pzDrag; pzDrag = null;
   const el = d.el; el.classList.remove('drag'); el.style.zIndex = (++pzZ);
-  document.getElementById('pzHl').style.display = 'none';
+  document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
   const slot = pzCellAt(el);
   if(slot >= 0 && !pzPlaced[slot]){
     pzPending = { piece: d.p, slot: slot };
@@ -2194,6 +2238,7 @@ async function pzOpen(){
   if(!(pzCfg && pzCfg.open && pzCfg.id)) return;
   pzOverlay.classList.add('open');
   pzPending = null; pzDrag = null;
+  document.getElementById('pzPicker').classList.remove('open');
   document.getElementById('pzSurface').innerHTML = '';
   document.getElementById('pzNames').innerHTML = '';
   const snap = await db.ref('puzzleBoard/'+pzCfg.id).once('value');
@@ -2206,6 +2251,8 @@ async function pzOpen(){
   await pzRefresh();
 }
 document.getElementById('puzzleIconBtn').addEventListener('click', pzOpen);
+document.getElementById('pzConfirmBtn').addEventListener('click', pzOpenPicker);
+document.getElementById('pzPickerCancel').addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); });
 document.getElementById('pzCloseBtn').addEventListener('click', function(){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPending = null; pzDrag = null; });
 function pzAttachListener(){
   db.ref('config/puzzle').on('value', function(snap){
