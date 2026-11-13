@@ -318,13 +318,13 @@
   .pz-board{ position:absolute; background:#fff; border-radius:22px; box-shadow:0 10px 26px rgba(160,140,190,0.26), 0 0 0 5px rgba(255,255,255,0.75); }
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
-  .pz-tray-label{ position:absolute; left:16px; top:12px; font-family:'MapleStory','Jua',sans-serif; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
-  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; box-sizing:border-box; border-radius:12px; background:rgba(121,179,236,0.28); border:2px dashed var(--sky-deep); }
+  .pz-tray-label{ position:absolute; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; box-sizing:border-box; border-radius:12px; background:rgba(240,143,192,0.2); border:2px dashed #e59ac4; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
   .pz-pc img{ display:block; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; }
-  .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease; transition:left .3s ease, top .3s ease; }
+  .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
   .pz-pc.drag{ z-index:900; cursor:-webkit-grabbing; cursor:grabbing; -webkit-filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); }
-  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 6px #79b3ec); filter:drop-shadow(0 0 6px #79b3ec); }
+  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 5px #f08fc0); filter:drop-shadow(0 0 5px #f08fc0); }
   .pz-pc.placed{ z-index:1; cursor:default; pointer-events:none; -webkit-filter:none; filter:none; }
   .pz-pc.pop{ -webkit-animation:pzPop .5s ease; animation:pzPop .5s ease; }
   .pz-pc.shake{ -webkit-animation:pzShake .4s ease; animation:pzShake .4s ease; }
@@ -2008,14 +2008,32 @@ function pzBuild(){
   pzBuiltId = pzCfg.id;
   const rnd = pzRng('tray' + pzCfg.id);
   pzLoose = {};
-  for(let p=0;p<total;p++) pzLoose[p] = { fx: rnd(), fy: rnd(), free: false };
+  const keys = []; for(let p=0;p<total;p++) keys.push({ p: p, k: rnd() });
+  keys.sort(function(a,b){ return a.k - b.k; });
+  for(let i=0;i<total;i++) pzLoose[keys[i].p] = { idx: i };
 }
 function pzSlotPos(slot){ const r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols; return { x: pzG.ox + c*pzG.cw - pzG.px, y: pzG.oy + r*pzG.chh - pzG.py }; }
+function pzTrayCalc(){
+  const g = pzG, t = g.tray; if(!t) return;
+  const total = pzTotal(), ix = t.x + 14, iy = t.y + 46, iw = t.w - 28, ih = t.h - 46 - 14;
+  let lo = 0.12, hi = 1, best = null;
+  function fit(s){
+    const pw = g.ew * s * 0.8, ph = g.eh * s * 0.8, cols = Math.max(1, Math.floor(iw / pw)), rows = Math.ceil(total / cols);
+    return { ok: rows * ph <= ih, s: s, pw: pw, ph: ph, cols: cols, rows: rows };
+  }
+  const f1 = fit(1);
+  if(f1.ok) best = f1;
+  else { for(let k=0;k<14;k++){ const mid = (lo + hi) / 2, f = fit(mid); if(f.ok){ best = f; lo = mid; } else hi = mid; } if(!best) best = fit(lo); }
+  best.ix = ix; best.iy = iy; best.iw = iw; best.ih = ih;
+  g.tr = best;
+}
 function pzLoosePos(p){
-  const L = pzLoose[p];
-  if(L.free) return { x: L.fx * pzG.sw - pzG.ew/2, y: L.fy * pzG.sh - pzG.eh/2 };
-  const t = pzG.tray, ix = t.x + 14, iy = t.y + 44, iw = t.w - 28, ih = t.h - 44 - 14;
-  return { x: ix + L.fx * Math.max(0, iw - pzG.ew), y: iy + L.fy * Math.max(0, ih - pzG.eh) };
+  const g = pzG, T = g.tr, L = pzLoose[p], col = L.idx % T.cols, row = Math.floor(L.idx / T.cols);
+  const lastRow = Math.ceil(pzTotal() / T.cols) - 1;
+  const inRow = (row === lastRow) ? (pzTotal() - lastRow * T.cols) : T.cols;
+  const ox = T.ix + (T.iw - inRow * T.pw) / 2, oy = T.iy + (T.ih - T.rows * T.ph) / 2;
+  const w = g.ew * T.s, h = g.eh * T.s;
+  return { x: ox + col * T.pw + (T.pw - w) / 2, y: oy + row * T.ph + (T.ph - h) / 2, w: w, h: h };
 }
 function pzLayout(){
   if(!pzCfg || !pzData) return;
@@ -2032,16 +2050,17 @@ function pzLayout(){
   else tray.style.display = 'none';
   const hl = document.getElementById('pzHl');
   hl.style.width = g.cw + 'px'; hl.style.height = g.chh + 'px';
-  document.getElementById('pzTrayLabel').textContent = '🧩 조각 상자 · 남은 ' + (pzTotal() - Object.keys(pzPlaced).length) + '개';
+  document.getElementById('pzTrayLabel').textContent = (pzTotal() - Object.keys(pzPlaced).length) + '개';
   const total = pzTotal();
+  pzTrayCalc();
   for(let p=0;p<total;p++){
     const el = pzEls[p];
-    el.style.width = g.ew + 'px'; el.style.height = g.eh + 'px';
     if(pzDrag && pzDrag.p === p) continue;
+    el.style.width = g.ew + 'px'; el.style.height = g.eh + 'px';
     let pos;
     if(pzPlaced[p]){ pos = pzSlotPos(p); el.classList.add('placed'); el.classList.remove('pend'); }
     else if(pzPending && pzPending.piece === p){ pos = pzSlotPos(pzPending.slot); el.classList.add('pend'); el.classList.remove('placed'); }
-    else { pos = pzLoosePos(p); el.classList.remove('placed'); el.classList.remove('pend'); }
+    else { pos = pzLoosePos(p); el.style.width = pos.w + 'px'; el.style.height = pos.h + 'px'; el.classList.remove('placed'); el.classList.remove('pend'); }
     el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
     el.style.display = (done || !pzPlaced[p] || true) ? 'block' : 'none';
   }
@@ -2107,8 +2126,12 @@ function pzDragStart(e){
   const p = parseInt(el.dataset.p, 10);
   if(pzPending && pzPending.piece !== p){ pzReturnPending(); }
   const sr = document.getElementById('pzSurface').getBoundingClientRect();
-  pzDrag = { p: p, el: el, ox: pt.x - sr.left - parseFloat(el.style.left), oy: pt.y - sr.top - parseFloat(el.style.top) };
-  el.classList.remove('ret'); el.classList.remove('pend'); el.classList.add('drag'); el.style.zIndex = '';
+  const cw0 = parseFloat(el.style.width) || pzG.ew, ch0 = parseFloat(el.style.height) || pzG.eh;
+  const fx = (pt.x - sr.left - parseFloat(el.style.left)) / cw0, fy = (pt.y - sr.top - parseFloat(el.style.top)) / ch0;
+  el.classList.remove('ret');
+  el.style.width = pzG.ew + 'px'; el.style.height = pzG.eh + 'px';
+  pzDrag = { p: p, el: el, ox: fx * pzG.ew, oy: fy * pzG.eh };
+  el.style.left = (pt.x - sr.left - pzDrag.ox) + 'px'; el.style.top = (pt.y - sr.top - pzDrag.oy) + 'px'; el.classList.remove('pend'); el.classList.add('drag'); el.style.zIndex = '';
   if(pzPending && pzPending.piece === p){ pzPending = null; pzRenderNames(); }
   document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
 }
@@ -2146,18 +2169,14 @@ function pzDragEnd(e){
   } else if(slot >= 0){
     pzSendToTray(d.p, true);
   } else {
-    const sw = pzG.sw, sh = pzG.sh;
-    const cx = Math.max(pzG.ew/2, Math.min(sw - pzG.ew/2, parseFloat(el.style.left) + pzG.ew/2));
-    const cy = Math.max(pzG.eh/2, Math.min(sh - pzG.eh/2, parseFloat(el.style.top) + pzG.eh/2));
-    pzLoose[d.p] = { fx: cx / sw, fy: cy / sh, free: true };
-    el.style.left = (cx - pzG.ew/2) + 'px'; el.style.top = (cy - pzG.eh/2) + 'px';
+    pzSendToTray(d.p, true);
   }
   pzRenderNames();
 }
 function pzSendToTray(p, animate){
-  const el = pzEls[p]; pzLoose[p].free = false;
+  const el = pzEls[p];
   if(animate) el.classList.add('ret');
-  const pos = pzLoosePos(p); el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
+  const pos = pzLoosePos(p); el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px'; el.style.width = pos.w + 'px'; el.style.height = pos.h + 'px';
   el.classList.remove('pend'); el.style.zIndex = (++pzZ);
 }
 function pzReturnPending(){
