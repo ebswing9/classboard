@@ -308,40 +308,37 @@
 
   #puzzleOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:12px; }
   #puzzleOverlay.open{ display:flex; }
-  .gm-box.pz-box{ max-width:1400px; padding:14px 20px 12px; overflow:hidden; }
-  .pz-head{ text-align:center; margin-bottom:4px; }
-  .pz-head .gm-who{ font-size:17px; padding:5px 18px; margin-right:8px; }
-  .pz-head .gm-chip{ margin:0 0 0 4px; }
-  #pzSurface{ position:relative; margin:8px auto 4px; -webkit-user-select:none; user-select:none; }
-  .pz-board{ position:absolute; background-color:#fbf8fe; border-radius:4px; box-shadow:0 0 0 7px #f9dbe7, 0 8px 18px rgba(160,140,190,0.32); }
+  .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
+  .pz-box .gm-hero{ margin-bottom:0; }
+  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 50px 0 14px; border:none; background:var(--pink-deep); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:18px; padding:12px 28px; border-radius:18px; box-shadow:0 5px 12px rgba(247,143,179,0.42); cursor:pointer; white-space:nowrap; }
+  .pz-confirm:active{ -webkit-transform:scale(.95); transform:scale(.95); }
+  .pz-bar{ height:9px; border-radius:6px; background:#fff; box-shadow:inset 0 1px 3px rgba(160,140,190,0.28); overflow:hidden; margin:14px 0 20px; }
+  #pzBarFill{ height:100%; width:0; background:var(--mint-deep); border-radius:6px; -webkit-transition:width .5s ease; transition:width .5s ease; }
+  #pzSurface{ position:relative; margin:0 auto; -webkit-user-select:none; user-select:none; }
+  .pz-board{ position:absolute; background:#fff; border-radius:22px; box-shadow:0 10px 26px rgba(160,140,190,0.26), 0 0 0 5px rgba(255,255,255,0.75); }
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
-  .pz-tray{ position:absolute; background:rgba(246,241,252,0.85); border-radius:18px; border:2px dashed #e2d8ef; box-sizing:border-box; }
-  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; }
-  .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; }
+  .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
+  .pz-tray-label{ position:absolute; left:16px; top:12px; font-family:'MapleStory','Jua',sans-serif; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; box-sizing:border-box; border-radius:12px; background:rgba(121,179,236,0.28); border:2px dashed var(--sky-deep); }
+  .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
   .pz-pc img{ display:block; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; }
   .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease; transition:left .3s ease, top .3s ease; }
-  .pz-pc.drag{ z-index:900; cursor:-webkit-grabbing; cursor:grabbing; -webkit-filter:drop-shadow(0 8px 8px rgba(74,68,88,0.35)); filter:drop-shadow(0 8px 8px rgba(74,68,88,0.35)); }
-  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 5px #5aaeea); filter:drop-shadow(0 0 5px #5aaeea); }
-  .pz-pc.placed{ z-index:1; cursor:default; pointer-events:none; }
+  .pz-pc.drag{ z-index:900; cursor:-webkit-grabbing; cursor:grabbing; -webkit-filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); }
+  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 6px #79b3ec); filter:drop-shadow(0 0 6px #79b3ec); }
+  .pz-pc.placed{ z-index:1; cursor:default; pointer-events:none; -webkit-filter:none; filter:none; }
   .pz-pc.pop{ -webkit-animation:pzPop .5s ease; animation:pzPop .5s ease; }
   .pz-pc.shake{ -webkit-animation:pzShake .4s ease; animation:pzShake .4s ease; }
   @-webkit-keyframes pzPop{ 0%{ -webkit-transform:scale(1.25); opacity:.4; } 100%{ -webkit-transform:scale(1); opacity:1; } }
   @keyframes pzPop{ 0%{ transform:scale(1.25); opacity:.4; } 100%{ transform:scale(1); opacity:1; } }
   @-webkit-keyframes pzShake{ 0%,100%{ -webkit-transform:translateX(0); } 25%{ -webkit-transform:translateX(-7px); } 75%{ -webkit-transform:translateX(7px); } }
   @keyframes pzShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-7px); } 75%{ transform:translateX(7px); } }
-  #pzBottom{ text-align:center; height:44px; margin-top:4px; }
-  #pzConfirmBtn{ display:none; border:none; background:var(--sky-deep); color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:17px; padding:9px 34px; border-radius:16px; cursor:pointer; box-shadow:0 4px 10px rgba(90,174,234,0.4); }
-  #pzConfirmBtn:active{ -webkit-transform:scale(.95); transform:scale(.95); }
-  #pzPicker{ display:none; position:absolute; top:0; right:0; bottom:0; left:0; z-index:950; background:rgba(255,255,255,0.95); border-radius:30px; padding:26px 24px 20px; overflow-y:auto; text-align:center; }
-  #pzPicker.open{ display:block; }
-  #pzPicker h3{ font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:22px; color:var(--text); margin:6px 0 14px; }
-  #pzPickerCancel{ border:none; background:#fff; color:var(--text); font-family:'MapleStory','Jua',sans-serif; font-size:15px; padding:8px 22px; border-radius:14px; margin-top:12px; cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); }
-  .pz-name{ display:inline-block; vertical-align:top; min-width:84px; height:44px; box-sizing:border-box; border:none; border-radius:14px; margin:3px; padding:5px 10px; font-family:'MapleStory','Jua',sans-serif; font-size:14px; color:var(--text); cursor:pointer; box-shadow:0 3px 8px rgba(160,140,190,0.22); white-space:nowrap; }
-  .pz-name:active{ -webkit-transform:scale(.94); transform:scale(.94); }
-  .pz-name.p0{ background:var(--pink); } .pz-name.p1{ background:var(--sky); } .pz-name.p2{ background:var(--mint); } .pz-name.p3{ background:var(--yellow); } .pz-name.p4{ background:var(--lav); }
-  .pz-name.zero{ background:#eceaf1; color:var(--muted); box-shadow:none; pointer-events:none; opacity:.7; }
-  .pz-name small{ display:block; line-height:1.1; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-size:10.5px; font-weight:800; color:var(--muted); }
-  .pz-names-done span{ display:inline-block; background:var(--mint); color:var(--text); font-size:13px; font-weight:800; padding:4px 12px; border-radius:999px; margin:3px; }
+  #pzNames{ text-align:center; }
+  .pz-names-done{ margin-top:6px; }
+  .pz-names-done span{ display:inline-block; background:var(--mint); color:var(--text); font-size:13px; font-weight:800; padding:5px 14px; border-radius:999px; margin:3px; }
+  #pzPicker{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:5100; background:rgba(74,68,88,0.45); align-items:center; justify-content:center; padding:16px; }
+  #pzPicker.open{ display:flex; }
+  .pz-dialog{ max-width:600px; text-align:center; }
+  .pz-dialog .gm-section{ margin:2px 0 14px; text-align:left; }
   .vt-opts{ text-align:center; max-height:50vh; overflow-y:auto; }
   .vt-opt{ display:block; width:100%; box-sizing:border-box; border:2px solid var(--line); background:#fff; color:var(--text); padding:9px 12px; margin:0 0 6px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; text-align:left; word-break:keep-all; }
   .vt-opt:hover{ border-color:var(--sky-deep); }
@@ -643,10 +640,24 @@
 <div id="puzzleOverlay">
   <div class="gm-box pz-box">
     <button class="gm-x" id="pzCloseBtn">✕</button>
-    <div class="pz-head"><span class="gm-who" id="pzWho">🧩 협동 퍼즐</span><span id="pzMeta"></span></div>
+    <div class="gm-hero">
+      <div class="gm-hero-icon">🧩</div>
+      <div style="flex:1; min-width:0;">
+        <div class="gm-title" id="pzTitle">협동 퍼즐</div>
+        <div class="gm-chips" id="pzMeta"></div>
+      </div>
+      <button class="pz-confirm" id="pzConfirmBtn">✓ 확정</button>
+    </div>
+    <div class="pz-bar"><div id="pzBarFill"></div></div>
     <div id="pzSurface"></div>
-    <div id="pzBottom"><button id="pzConfirmBtn">✓ 확정</button><div id="pzNames"></div></div>
-    <div id="pzPicker"><h3>누가 놓았나요?</h3><div id="pzPickGrid"></div><button id="pzPickerCancel">취소</button></div>
+    <div id="pzNames"></div>
+  </div>
+</div>
+<div id="pzPicker">
+  <div class="gm-box pz-dialog">
+    <button class="gm-x" id="pzPickerClose">✕</button>
+    <div class="gm-section">누가 놓았나요?</div>
+    <div id="pzPickGrid"></div>
   </div>
 </div>
 
@@ -1841,7 +1852,7 @@ function pzRng(seedStr){
 function pzShapes(cfg){
   const rnd = pzRng('shape' + cfg.id), R = cfg.rows, C = cfg.cols;
   const hv = [], vv = [];
-  for(let r=0;r<=R;r++){ hv[r] = []; vv[r] = []; for(let c=0;c<=C;c++){ hv[r][c] = (rnd() < 0.5 ? -1 : 1) * (0.85 + 0.3*rnd()); vv[r][c] = (rnd() < 0.5 ? -1 : 1) * (0.85 + 0.3*rnd()); } }
+  for(let r=0;r<=R;r++){ hv[r] = []; vv[r] = []; for(let c=0;c<=C;c++){ hv[r][c] = (rnd() < 0.5 ? -1 : 1); vv[r][c] = (rnd() < 0.5 ? -1 : 1); } }
   return function(r, c){
     return { top: r === 0 ? 0 : -hv[r][c], bottom: r === R-1 ? 0 : hv[r+1][c], left: c === 0 ? 0 : -vv[r][c], right: c === C-1 ? 0 : vv[r][c+1] };
   };
@@ -1890,7 +1901,7 @@ function pzLoadPieces(cfg){
           ctx.drawImage(img, -c*sw*sc, -r*sh*sc, img.width*sc, img.height*sc);
           ctx.restore();
           pzPath(ctx, cw, ch, shape(r, c));
-          ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(70,50,95,0.38)'; ctx.stroke();
+          ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(70,50,95,0.3)'; ctx.stroke();
           ctx.restore();
           urls.push(cv.toDataURL('image/png')); cvs.push(cv);
         }
@@ -1924,68 +1935,58 @@ async function pzLoadLeft(){
 }
 // ---------- 화면 배치 ----------
 function pzCalcLayout(done){
-  const box = pzOverlay.querySelector('.pz-box');
-  const namesH = done ? 80 : 50;
-  const availW = Math.max(300, Math.min(window.innerWidth - 24 - 40 - 14, 1340));
-  const availH = Math.max(260, window.innerHeight - 24 - 26 - 44 - namesH - 22);
-  const asp = pzData.aspect, gap = 14;
-  const g = { done: done };
+  const pad = 16, gap = 22, asp = pzData.aspect;
+  const namesH = done ? 96 : 0;
+  const availW = Math.max(300, Math.min(window.innerWidth - 24 - 60 - 12, 1280));
+  const availH = Math.max(260, window.innerHeight - 24 - 54 - 12 - 112 - namesH);
+  const g = { done: done, pad: pad };
   if(done){
-    g.bw = Math.min(availW, availH * asp, 760); g.bh = g.bw / asp;
-    g.bx = (availW - g.bw) / 2; g.by = 0; g.sw = availW; g.sh = g.bh; g.tray = null;
-  } else if(availW >= availH * 1.45){
-    g.bw = Math.min(availW * 0.62, availH * asp); g.bh = g.bw / asp;
-    g.bx = 0; g.by = 0; g.sw = availW; g.sh = g.bh;
-    g.tray = { x: g.bw + gap, y: 0, w: availW - g.bw - gap, h: g.bh };
+    g.bw = Math.min(availW - 2*pad, (availH - 2*pad) * asp, 760); g.bh = g.bw / asp;
+    g.bpw = g.bw + 2*pad; g.bph = g.bh + 2*pad;
+    g.bx = 0; g.by = 0; g.sw = g.bpw; g.sh = g.bph; g.tray = null;
+  } else if(Math.min(((availW - gap) * 0.6 - 2*pad), (availH - 2*pad) * asp) >= Math.min(availW - 2*pad, (availH * 0.6 - 2*pad) * asp) * 0.95 && availW >= 700){
+    g.bh = Math.min(availH - 2*pad, ((availW - gap) * 0.6 - 2*pad) / asp); g.bw = g.bh * asp;
+    g.bpw = g.bw + 2*pad; g.bph = g.bh + 2*pad; g.bx = 0; g.by = 0;
+    const tw = Math.min(availW - g.bpw - gap, Math.max(g.bpw * 0.8, 380));
+    g.tray = { x: g.bpw + gap, y: 0, w: tw, h: g.bph };
+    g.sw = g.bpw + gap + tw; g.sh = g.bph;
   } else {
-    const bmh = availH * 0.58;
-    g.bw = Math.min(availW, bmh * asp); g.bh = g.bw / asp;
-    g.bx = (availW - g.bw) / 2; g.by = 0; g.sw = availW;
-    const th = Math.max(150, availH - g.bh - gap);
-    g.sh = g.bh + gap + th;
-    g.tray = { x: 0, y: g.bh + gap, w: availW, h: th };
+    g.bw = Math.min(availW - 2*pad, (availH * 0.6 - 2*pad) * asp); g.bh = g.bw / asp;
+    g.bpw = g.bw + 2*pad; g.bph = g.bh + 2*pad;
+    g.sw = Math.max(g.bpw, Math.min(availW, 760)); g.bx = (g.sw - g.bpw) / 2; g.by = 0;
+    const th = Math.max(170, availH - g.bph - gap);
+    g.tray = { x: 0, y: g.bph + gap, w: g.sw, h: th };
+    g.sh = g.bph + gap + th;
   }
+  g.ox = g.bx + pad; g.oy = g.by + pad;
   g.cw = g.bw / pzCfg.cols; g.chh = g.bh / pzCfg.rows;
   g.kx = (pzData.cw + 2*pzData.m) / pzData.cw; g.ky = (pzData.ch + 2*pzData.m) / pzData.ch;
   g.ew = g.cw * g.kx; g.eh = g.chh * g.ky;
   g.px = g.cw * (g.kx - 1) / 2; g.py = g.chh * (g.ky - 1) / 2;
   return g;
 }
-// 퍼즐판: 조각이 들어갈 자리를 직소 모양 홈(윤곽선)으로 그려 둠
+// 퍼즐판: 그림이 들어갈 영역만 점선 테두리와 모서리 점으로 표시 (조각 모양은 보여주지 않음)
 function pzDrawBoard(done){
   const g = pzG, cv = document.getElementById('pzBoardCv');
-  const key = [Math.round(g.bw), Math.round(g.bh), done ? 1 : 0, pzCfg.id].join('|');
+  const key = [Math.round(g.bpw), Math.round(g.bph), done ? 1 : 0, pzCfg.id].join('|');
   if(pzBoardKey === key) return;
   pzBoardKey = key;
   const sc = Math.min(2, window.devicePixelRatio || 1);
-  cv.width = Math.round(g.bw * sc); cv.height = Math.round(g.bh * sc);
+  cv.width = Math.round(g.bpw * sc); cv.height = Math.round(g.bph * sc);
   const ctx = cv.getContext('2d');
   ctx.clearRect(0, 0, cv.width, cv.height);
   if(done) return;
-  const shape = pzShapes(pzCfg), cw = g.cw * sc, ch = g.chh * sc;
-  ctx.lineWidth = Math.max(1.4, 1.6 * sc); ctx.strokeStyle = 'rgba(176,152,208,0.75)'; ctx.lineJoin = 'round';
-  for(let r=0;r<pzCfg.rows;r++) for(let c=0;c<pzCfg.cols;c++){
-    ctx.save(); ctx.translate(c*cw, r*ch);
-    pzPath(ctx, cw, ch, shape(r, c));
-    ctx.stroke(); ctx.restore();
+  ctx.strokeStyle = 'rgba(176,152,208,0.55)'; ctx.lineWidth = 1.6 * sc; ctx.setLineDash([7*sc, 6*sc]);
+  ctx.strokeRect(g.pad*sc - 1*sc, g.pad*sc - 1*sc, g.bw*sc + 2*sc, g.bh*sc + 2*sc);
+  ctx.setLineDash([]); ctx.fillStyle = 'rgba(176,152,208,0.5)';
+  for(let r=0;r<=pzCfg.rows;r++) for(let c=0;c<=pzCfg.cols;c++){
+    ctx.beginPath(); ctx.arc((g.pad + c*g.cw)*sc, (g.pad + r*g.chh)*sc, 2.1*sc, 0, Math.PI*2); ctx.fill();
   }
-}
-// 놓을 자리 강조용 직소 모양 실루엣
-function pzSilUrl(slot){
-  if(pzSilCache[slot]) return pzSilCache[slot];
-  const d = pzData, r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols, shape = pzShapes(pzCfg);
-  const cv = document.createElement('canvas'); cv.width = d.cw + 2*d.m; cv.height = d.ch + 2*d.m;
-  const ctx = cv.getContext('2d'); ctx.translate(d.m, d.m);
-  pzPath(ctx, d.cw, d.ch, shape(r, c));
-  ctx.fillStyle = 'rgba(120,190,245,0.5)'; ctx.fill();
-  ctx.lineWidth = 3; ctx.strokeStyle = '#5aaeea'; ctx.stroke();
-  pzSilCache[slot] = cv.toDataURL('image/png');
-  return pzSilCache[slot];
 }
 function pzBuild(){
   const surf = document.getElementById('pzSurface');
-  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"></div><img class="pz-cellhl" id="pzHl" alt="">';
-  pzHlSlot = -1; pzBoardKey = ''; pzSilCache = {};
+  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"><div class="pz-tray-label" id="pzTrayLabel"></div></div><div class="pz-cellhl" id="pzHl"></div>';
+  pzHlSlot = -1; pzBoardKey = '';
   pzEls = [];
   const total = pzTotal();
   for(let p=0;p<total;p++){
@@ -1999,12 +2000,12 @@ function pzBuild(){
   pzLoose = {};
   for(let p=0;p<total;p++) pzLoose[p] = { fx: rnd(), fy: rnd(), free: false };
 }
-function pzSlotPos(slot){ const r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols; return { x: pzG.bx + c*pzG.cw - pzG.px, y: pzG.by + r*pzG.chh - pzG.py }; }
+function pzSlotPos(slot){ const r = Math.floor(slot / pzCfg.cols), c = slot % pzCfg.cols; return { x: pzG.ox + c*pzG.cw - pzG.px, y: pzG.oy + r*pzG.chh - pzG.py }; }
 function pzLoosePos(p){
   const L = pzLoose[p];
   if(L.free) return { x: L.fx * pzG.sw - pzG.ew/2, y: L.fy * pzG.sh - pzG.eh/2 };
-  const t = pzG.tray;
-  return { x: t.x + L.fx * Math.max(0, t.w - pzG.ew) , y: t.y + L.fy * Math.max(0, t.h - pzG.eh) };
+  const t = pzG.tray, ix = t.x + 14, iy = t.y + 44, iw = t.w - 28, ih = t.h - 44 - 14;
+  return { x: ix + L.fx * Math.max(0, iw - pzG.ew), y: iy + L.fy * Math.max(0, ih - pzG.eh) };
 }
 function pzLayout(){
   if(!pzCfg || !pzData) return;
@@ -2013,13 +2014,15 @@ function pzLayout(){
   const g = pzG, surf = document.getElementById('pzSurface');
   surf.style.width = g.sw + 'px'; surf.style.height = g.sh + 'px';
   const board = document.getElementById('pzBoardEl');
-  board.style.left = g.bx + 'px'; board.style.top = g.by + 'px'; board.style.width = g.bw + 'px'; board.style.height = g.bh + 'px';
+  board.style.left = g.bx + 'px'; board.style.top = g.by + 'px'; board.style.width = g.bpw + 'px'; board.style.height = g.bph + 'px';
+  pzOverlay.querySelector('.pz-box').style.maxWidth = Math.ceil(g.sw + 60) + 'px';
   pzDrawBoard(done);
   const tray = document.getElementById('pzTrayEl');
   if(g.tray){ tray.style.display = 'block'; tray.style.left = g.tray.x + 'px'; tray.style.top = g.tray.y + 'px'; tray.style.width = g.tray.w + 'px'; tray.style.height = g.tray.h + 'px'; }
   else tray.style.display = 'none';
   const hl = document.getElementById('pzHl');
-  hl.style.width = g.ew + 'px'; hl.style.height = g.eh + 'px';
+  hl.style.width = g.cw + 'px'; hl.style.height = g.chh + 'px';
+  document.getElementById('pzTrayLabel').textContent = '🧩 조각 상자 · 남은 ' + (pzTotal() - Object.keys(pzPlaced).length) + '개';
   const total = pzTotal();
   for(let p=0;p<total;p++){
     const el = pzEls[p];
@@ -2034,10 +2037,11 @@ function pzLayout(){
   }
 }
 function pzRenderTop(){
-  const done = pzIsDone();
-  document.getElementById('pzWho').textContent = done ? '🎉 퍼즐 완성!' : '🧩 협동 퍼즐';
-  document.getElementById('pzMeta').innerHTML = '<span class="gm-chip c1">' + Object.keys(pzPlaced).length + ' / ' + pzTotal() + ' 조각</span>'
+  const done = pzIsDone(), n = Object.keys(pzPlaced).length, total = pzTotal();
+  document.getElementById('pzTitle').textContent = done ? '퍼즐 완성! 🎉' : '협동 퍼즐';
+  document.getElementById('pzMeta').innerHTML = '<span class="gm-chip c1">' + n + ' / ' + total + ' 조각</span>'
     + '<span class="gm-chip c2">완성하면 참여한 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
+  document.getElementById('pzBarFill').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
 }
 async function pzRenderNames(){
   const box = document.getElementById('pzNames'), btn = document.getElementById('pzConfirmBtn');
@@ -2046,7 +2050,7 @@ async function pzRenderNames(){
     const ps = (await db.ref('puzzleParticipants/'+pzCfg.id).once('value')).val() || {};
     const names = Object.keys(ps).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
     box.className = 'pz-names-done';
-    box.innerHTML = names.length ? '<div class="gm-section" style="margin:6px 0 4px;">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
+    box.innerHTML = names.length ? '<div class="gm-section" style="margin:14px 0 6px;">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
     return;
   }
   box.className = ''; box.innerHTML = '';
@@ -2057,9 +2061,11 @@ function pzOpenPicker(){
   const grid = document.getElementById('pzPickGrid');
   grid.innerHTML = pzRoster.map(function(s,k){
     const l = pzLeft[s.id] ? pzLeft[s.id].left : 0;
-    return '<button class="pz-name p'+(k%5)+(l>0?'':' zero')+'" data-id="'+s.id+'" data-name="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'<small>'+l+'번</small></button>';
+    return l > 0
+      ? '<button class="gm-pill p'+(k%5)+'" data-id="'+s.id+'" data-name="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'<small>'+l+'번 남음</small></button>'
+      : '<button class="gm-pill done" data-id="'+s.id+'">'+escapeHtml(s.name)+'<small>0번</small></button>';
   }).join('');
-  grid.querySelectorAll('.pz-name:not(.zero)').forEach(function(b){
+  grid.querySelectorAll('.gm-pill:not(.done)').forEach(function(b){
     b.addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); pzAttempt({ id: b.dataset.id, name: b.dataset.name }); });
   });
   document.getElementById('pzPicker').classList.add('open');
@@ -2097,7 +2103,7 @@ function pzDragStart(e){
   document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
 }
 function pzCellAt(el){
-  const g = pzG, cx = parseFloat(el.style.left) + g.ew/2 - g.bx, cy = parseFloat(el.style.top) + g.eh/2 - g.by;
+  const g = pzG, cx = parseFloat(el.style.left) + g.ew/2 - g.ox, cy = parseFloat(el.style.top) + g.eh/2 - g.oy;
   const tolX = g.cw * 0.3, tolY = g.chh * 0.3;
   if(cx < -tolX || cy < -tolY || cx > g.bw + tolX || cy > g.bh + tolY) return -1;
   const col = Math.max(0, Math.min(pzCfg.cols - 1, Math.floor(cx / g.cw))), row = Math.max(0, Math.min(pzCfg.rows - 1, Math.floor(cy / g.chh)));
@@ -2112,8 +2118,8 @@ function pzDragMove(e){
   const s = pzCellAt(el), hl = document.getElementById('pzHl');
   if(s >= 0 && !pzPlaced[s]){
     const pos = pzSlotPos(s);
-    if(pzHlSlot !== s){ hl.src = pzSilUrl(s); pzHlSlot = s; }
-    hl.style.left = pos.x + 'px'; hl.style.top = pos.y + 'px'; hl.style.display = 'block';
+    pzHlSlot = s;
+    hl.style.left = (pos.x + pzG.px) + 'px'; hl.style.top = (pos.y + pzG.py) + 'px'; hl.style.display = 'block';
   } else { hl.style.display = 'none'; pzHlSlot = -1; }
 }
 function pzDragEnd(e){
@@ -2252,7 +2258,8 @@ async function pzOpen(){
 }
 document.getElementById('puzzleIconBtn').addEventListener('click', pzOpen);
 document.getElementById('pzConfirmBtn').addEventListener('click', pzOpenPicker);
-document.getElementById('pzPickerCancel').addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); });
+document.getElementById('pzPickerClose').addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); });
+document.getElementById('pzPicker').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('open'); });
 document.getElementById('pzCloseBtn').addEventListener('click', function(){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPending = null; pzDrag = null; });
 function pzAttachListener(){
   db.ref('config/puzzle').on('value', function(snap){
