@@ -288,14 +288,15 @@
 
   /* 펭귄 게임 */
   #gameIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn, #voteIconBtn, #imgIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
-  #surveyIconBtn:hover, #voteIconBtn:hover, #imgIconBtn:hover{ transform:scale(1.08); }
-  #surveyIconBtn:active, #voteIconBtn:active, #imgIconBtn:active{ transform:scale(0.92); }
+  #surveyIconBtn, #voteIconBtn, #imgIconBtn, #puzzleIconBtn{ width:30px; height:30px; min-width:30px; border-radius:50%; border:none; background:#fff; font-size:15px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; margin-left:6px; box-shadow:0 2px 6px rgba(160,140,190,0.18); transition:transform .12s ease; padding:0; }
+  #surveyIconBtn:hover, #voteIconBtn:hover, #imgIconBtn:hover, #puzzleIconBtn:hover{ transform:scale(1.08); }
+  #surveyIconBtn:active, #voteIconBtn:active, #imgIconBtn:active, #puzzleIconBtn:active{ transform:scale(0.92); }
 
   #imgOverlay{ position:fixed; top:0; right:0; bottom:0; left:0; z-index:300; background:rgba(74,68,88,0.55); display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity .22s ease, visibility 0s linear .22s; }
   #imgOverlay.open{ opacity:1; visibility:visible; transition:opacity .22s ease, visibility 0s; }
   .img-box{ position:relative; background:#fff; border-radius:22px; padding:16px 18px 14px; box-shadow:0 14px 40px rgba(74,68,88,0.35); max-width:92vw; text-align:center; }
-  .img-stage{ display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; gap:10px; }
+  .img-stage{ display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
+  .img-stage > *{ margin:0 5px; }
   #imgMain{ min-width:300px; min-height:300px; max-width:min(78vw,860px); max-height:74vh; object-fit:contain; border-radius:12px; display:block; background:#f6f3fa; }
   .img-nav{ width:38px; height:38px; min-width:38px; border-radius:50%; border:none; background:var(--sky); color:var(--text); font-size:18px; cursor:pointer; padding:0; }
   .img-nav:disabled{ opacity:.3; cursor:default; }
@@ -304,6 +305,32 @@
   #imgDots span{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--line); margin:0 3px; }
   #imgDots span.on{ background:var(--sky-deep); }
   #imgOverlay .close-x{ top:10px; right:10px; width:26px; height:26px; font-size:12px; z-index:2; }
+
+  #puzzleOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:16px; }
+  #puzzleOverlay.open{ display:flex; }
+  .gm-box.pz-box{ max-width:720px; }
+  .pz-meta{ text-align:center; margin:2px 0 4px; }
+  .pz-sub{ text-align:center; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  #pzBoardWrap{ margin:8px auto 4px; }
+  #pzBoard{ position:relative; width:100%; height:0; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 6px 16px rgba(160,140,190,0.25), 0 0 0 4px rgba(255,255,255,0.8); }
+  .pz-slot{ position:absolute; box-sizing:border-box; border:1px dashed #e2d8ef; background:rgba(246,241,252,0.7); cursor:pointer; overflow:hidden; }
+  .pz-slot.sel{ background:var(--sky); border:2px solid var(--sky-deep); }
+  .pz-slot.fill{ border:none; background:#fff; cursor:default; }
+  .pz-slot img{ position:absolute; left:-0.5px; top:-0.5px; width:calc(100% + 1px); height:calc(100% + 1px); display:block; }
+  .pz-slot.pop img{ -webkit-animation:pzPop .5s ease; animation:pzPop .5s ease; }
+  .pz-slot.shake{ -webkit-animation:pzShake .4s ease; animation:pzShake .4s ease; background:#ffd0dd; }
+  .pz-done #pzBoard .pz-slot{ border:none; }
+  @-webkit-keyframes pzPop{ 0%{ -webkit-transform:scale(1.35); opacity:.2; } 100%{ -webkit-transform:scale(1); opacity:1; } }
+  @keyframes pzPop{ 0%{ transform:scale(1.35); opacity:.2; } 100%{ transform:scale(1); opacity:1; } }
+  @-webkit-keyframes pzShake{ 0%,100%{ -webkit-transform:translateX(0); } 25%{ -webkit-transform:translateX(-5px); } 75%{ -webkit-transform:translateX(5px); } }
+  @keyframes pzShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
+  #pzPile{ max-height:190px; overflow-y:auto; text-align:center; background:rgba(255,255,255,0.65); border-radius:18px; padding:6px 4px; }
+  #pzPile.off .pz-piece{ opacity:.45; pointer-events:none; }
+  .pz-piece{ display:inline-block; vertical-align:top; margin:4px; border:3px solid transparent; border-radius:10px; overflow:hidden; background:#fff; box-shadow:0 2px 6px rgba(160,140,190,0.3); cursor:pointer; line-height:0; transition:transform .12s; }
+  .pz-piece img{ height:60px; width:auto; display:block; }
+  .pz-piece.sel{ border-color:var(--pink-deep); -webkit-transform:scale(1.1); transform:scale(1.1); }
+  .pz-names{ text-align:center; margin-top:6px; }
+  .pz-names span{ display:inline-block; background:var(--mint); color:var(--text); font-size:13px; font-weight:800; padding:4px 12px; border-radius:999px; margin:3px; }
   .vt-opts{ text-align:center; max-height:50vh; overflow-y:auto; }
   .vt-opt{ display:block; width:100%; box-sizing:border-box; border:2px solid var(--line); background:#fff; color:var(--text); padding:9px 12px; margin:0 0 6px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; text-align:left; word-break:keep-all; }
   .vt-opt:hover{ border-color:var(--sky-deep); }
@@ -453,6 +480,7 @@
             <h2 id="panelTitle"></h2>
             <button id="luckyDrawIconBtn" title="오늘의 행운번호" style="display:none;">🍀</button>
             <button id="gameIconBtn" title="펭귄 게임">🐧</button>
+            <button id="puzzleIconBtn" title="퍼즐">🧩</button>
             <button id="surveyIconBtn" title="설문">📝</button>
             <button id="voteIconBtn" title="투표">✅</button>
             <button id="imgIconBtn" title="이미지">🖼️</button>
@@ -597,6 +625,34 @@
 
     <div id="svStepDone" style="display:none;">
       <div class="draw-done">🎉 제출 완료 🎉</div>
+    </div>
+  </div>
+</div>
+
+<div id="puzzleOverlay">
+  <div class="gm-box pz-box">
+    <button class="gm-x" id="pzCloseBtn">✕</button>
+    <div id="pzStepPick">
+      <div class="gm-hero">
+        <div class="gm-hero-icon">🧩</div>
+        <div>
+          <div class="gm-title">협동 퍼즐</div>
+          <div class="gm-chips" id="pzNote"></div>
+        </div>
+      </div>
+      <div id="pzNameGrid" style="margin-top:14px;"></div>
+    </div>
+    <div id="pzStepPlay" style="display:none;">
+      <div class="gm-playhead"><span class="gm-who" id="pzWho"></span></div>
+      <div class="pz-meta" id="pzMeta"></div>
+      <div class="pz-sub" id="pzSub"></div>
+      <div id="pzBoardWrap"><div id="pzBoard"></div></div>
+      <div id="pzPileArea">
+        <div class="gm-section" id="pzPileTitle"></div>
+        <div id="pzPile"></div>
+      </div>
+      <div class="pz-names" id="pzNames"></div>
+      <div style="text-align:center;"><button class="gm-btn" id="pzBackBtn">‹ 다른사람</button></div>
     </div>
   </div>
 </div>
@@ -1769,6 +1825,249 @@ function imgAttachListener(){
     else if(imgOverlay.classList.contains('open')) imgShow();
   });
 }
+
+/* ---------- 협동 퍼즐 ----------
+   config/puzzle = { id, rows, cols, open, base, att, quiz, points }
+   puzzleImg/{id} = dataURL, puzzleBoard/{id}/{칸번호} = {by,name,at} (칸번호 = 조각번호 = 맞는 자리)
+   puzzlePlays/{id}/{날짜}/{학생id} = 사용한 기회, puzzleParticipants/{id}/{학생id} = {name,tries,correct}, puzzleDone/{id} */
+let pzCfg = null, pzStudent = null, pzSelPiece = -1, pzSelSlot = -1, pzPlaced = {}, pzPrev = {}, pzBusy = false, pzBoardRef = null, pzBoardRefId = null, pzCalcInfo = null;
+const pzCache = {};
+const pzOverlay = document.getElementById('puzzleOverlay');
+function pzTotal(){ return pzCfg ? (pzCfg.rows * pzCfg.cols) : 0; }
+function pzIsDone(){ return pzTotal() > 0 && Object.keys(pzPlaced).length >= pzTotal(); }
+function updatePuzzleIcon(){
+  const on = !!(pzCfg && pzCfg.open && pzCfg.id && pzCfg.rows && pzCfg.cols && openPanelType === 'attendance');
+  document.getElementById('puzzleIconBtn').style.display = on ? 'flex' : 'none';
+}
+function pzSeededOrder(n, seedStr){
+  let h = 7; for(let k=0;k<seedStr.length;k++) h = (h*31 + seedStr.charCodeAt(k)) % 2147483647;
+  const arr = []; for(let k=0;k<n;k++) arr.push(k);
+  for(let k=n-1;k>0;k--){ h = (h*48271) % 2147483647; const j = h % (k+1); const t = arr[k]; arr[k] = arr[j]; arr[j] = t; }
+  return arr;
+}
+function pzLoadPieces(cfg){
+  if(pzCache[cfg.id]) return Promise.resolve(pzCache[cfg.id]);
+  return db.ref('puzzleImg/'+cfg.id).once('value').then(function(snap){
+    const src = snap.val();
+    return new Promise(function(resolve){
+      if(!src){ resolve(null); return; }
+      const img = new Image();
+      img.onerror = function(){ resolve(null); };
+      img.onload = function(){
+        const sw = img.width / cfg.cols, sh = img.height / cfg.rows;
+        const sc = Math.min(1, 300 / Math.max(sw, sh));
+        const cw = Math.max(1, Math.round(sw*sc)), ch = Math.max(1, Math.round(sh*sc));
+        const pieces = [];
+        for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++){
+          const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          cv.getContext('2d').drawImage(img, c*sw, r*sh, sw, sh, 0, 0, cw, ch);
+          pieces.push(cv.toDataURL('image/jpeg', 0.88));
+        }
+        pzCache[cfg.id] = { pieces: pieces, aspect: img.width / img.height, cellAspect: cw / ch };
+        resolve(pzCache[cfg.id]);
+      };
+      img.src = src;
+    });
+  });
+}
+// 오늘 쓸 수 있는 기회 계산: 기본 + 출석(대시보드로 직접 체크) + 퀴즈 제출, 사용한 횟수 차감
+async function pzCalc(sid){
+  const d = todayStr();
+  const [a, q, u] = await Promise.all([
+    db.ref('attendance/'+d+'/'+sid).once('value'),
+    db.ref('quizAnswers/'+d+'/'+sid+'/submittedAt').once('value'),
+    db.ref('puzzlePlays/'+pzCfg.id+'/'+d+'/'+sid).once('value')
+  ]);
+  const av = a.val();
+  const att = !!(av && av.status === 'present' && av.source === 'dashboard');
+  const quiz = q.exists();
+  const allowed = (parseInt(pzCfg.base,10)||0) + (att ? (parseInt(pzCfg.att,10)||0) : 0) + (quiz ? (parseInt(pzCfg.quiz,10)||0) : 0);
+  const used = u.val() || 0;
+  return { allowed: allowed, used: used, left: Math.max(0, allowed - used), att: att, quiz: quiz };
+}
+function pzShow(step){
+  document.getElementById('pzStepPick').style.display = step === 'pick' ? 'block' : 'none';
+  document.getElementById('pzStepPlay').style.display = step === 'play' ? 'block' : 'none';
+}
+async function pzRenderPick(){
+  const d = todayStr();
+  const [roster, attSnap, playsSnap] = await Promise.all([getRosterList(), db.ref('attendance/'+d).once('value'), db.ref('puzzlePlays/'+pzCfg.id+'/'+d).once('value')]);
+  const att = attSnap.val() || {}, plays = playsSnap.val() || {};
+  const qs = await Promise.all(roster.map(s=> db.ref('quizAnswers/'+d+'/'+s.id+'/submittedAt').once('value')));
+  const base = parseInt(pzCfg.base,10)||0, ab = parseInt(pzCfg.att,10)||0, qb = parseInt(pzCfg.quiz,10)||0;
+  document.getElementById('pzNote').innerHTML = '<span class="gm-chip c1">완성하면 참여한 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
+  const grid = document.getElementById('pzNameGrid');
+  grid.innerHTML = roster.length ? roster.map((s,k)=>{
+    const a = att[s.id], hasAtt = !!(a && a.status === 'present' && a.source === 'dashboard');
+    const allowed = base + (hasAtt ? ab : 0) + (qs[k].exists() ? qb : 0);
+    const left = Math.max(0, allowed - (plays[s.id] || 0));
+    return left > 0
+      ? `<button class="gm-pill p${k%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${escapeHtml(s.name)}<small>${left}번 남음</small></button>`
+      : `<button class="gm-pill p${k%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="opacity:.75;">${escapeHtml(s.name)}<small>0번 · 구경하기</small></button>`;
+  }).join('') : '<div class="gm-empty">등록된 학생이 없어요</div>';
+  grid.querySelectorAll('.gm-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=> pzEnter({ id: btn.dataset.id, name: btn.dataset.name }));
+  });
+}
+async function pzEnter(student){
+  showPendingManualPoints(student.id);
+  pzStudent = student; pzSelPiece = -1; pzSelSlot = -1;
+  pzCalcInfo = await pzCalc(student.id);
+  pzShow('play');
+  await pzRenderPlay();
+}
+function pzFit(data){
+  const wrap = document.getElementById('pzBoardWrap');
+  const maxH = Math.max(220, window.innerHeight * 0.5);
+  const w = Math.min(560, maxH * data.aspect);
+  wrap.style.width = Math.round(w) + 'px';
+  document.getElementById('pzBoard').style.paddingTop = (100 / data.aspect) + '%';
+}
+async function pzRenderPlay(){
+  if(!pzCfg) return;
+  const data = await pzLoadPieces(pzCfg);
+  if(!data){ document.getElementById('pzSub').textContent = '퍼즐 그림을 불러오지 못했어요'; return; }
+  const done = pzIsDone();
+  const total = pzTotal(), filled = Object.keys(pzPlaced).length;
+  pzOverlay.querySelector('.pz-box').classList.toggle('pz-done', done);
+  pzFit(data);
+  // 상단
+  document.getElementById('pzWho').textContent = done ? '🎉 퍼즐 완성!' : ('🧩 ' + (pzStudent ? pzStudent.name + ' 님' : '협동 퍼즐'));
+  const left = pzCalcInfo ? pzCalcInfo.left : 0;
+  document.getElementById('pzMeta').innerHTML = (done || !pzStudent ? '' : '<span class="gm-chip c2">남은 기회 ' + left + '번</span>') + '<span class="gm-chip c1">' + filled + ' / ' + total + ' 조각</span>';
+  document.getElementById('pzSub').textContent = (done || !pzStudent || !pzCalcInfo) ? '' : ('기본 ' + (parseInt(pzCfg.base,10)||0) + ' · 출석 ' + (pzCalcInfo.att ? '+' + (parseInt(pzCfg.att,10)||0) : '–') + ' · 퀴즈 ' + (pzCalcInfo.quiz ? '+' + (parseInt(pzCfg.quiz,10)||0) : '–'));
+  // 보드
+  const board = document.getElementById('pzBoard');
+  let h = '';
+  for(let s=0;s<total;s++){
+    const r = Math.floor(s / pzCfg.cols), c = s % pzCfg.cols;
+    const st = 'left:'+(c*100/pzCfg.cols)+'%; top:'+(r*100/pzCfg.rows)+'%; width:'+(100/pzCfg.cols)+'%; height:'+(100/pzCfg.rows)+'%;';
+    if(pzPlaced[s]) h += '<div class="pz-slot fill'+(pzPrev[s] ? '' : ' pop')+'" style="'+st+'"><img src="'+data.pieces[s]+'" alt=""></div>';
+    else h += '<div class="pz-slot'+(pzSelSlot === s ? ' sel' : '')+'" data-s="'+s+'" style="'+st+'"></div>';
+  }
+  board.innerHTML = h;
+  pzPrev = {}; Object.keys(pzPlaced).forEach(function(k){ pzPrev[k] = true; });
+  // 더미
+  const canPlay = !done && pzStudent && left > 0;
+  document.getElementById('pzPileArea').style.display = done ? 'none' : 'block';
+  document.getElementById('pzPileTitle').textContent = '남은 조각 ' + (total - filled) + '개';
+  const pile = document.getElementById('pzPile');
+  pile.className = canPlay ? '' : 'off';
+  const order = pzSeededOrder(total, String(pzCfg.id)).filter(function(p){ return !pzPlaced[p]; });
+  pile.innerHTML = order.map(function(p){ return '<div class="pz-piece'+(pzSelPiece === p ? ' sel' : '')+'" data-p="'+p+'"><img src="'+data.pieces[p]+'" style="width:'+Math.round(60*data.cellAspect)+'px;" alt=""></div>'; }).join('');
+  // 참여한 친구들 (완성 후)
+  const namesEl = document.getElementById('pzNames');
+  if(done){
+    const ps = (await db.ref('puzzleParticipants/'+pzCfg.id).once('value')).val() || {};
+    const names = Object.keys(ps).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
+    namesEl.innerHTML = names.length ? '<div class="gm-section">함께 맞춘 친구들</div>' + names.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('') : '';
+  } else namesEl.innerHTML = '';
+  document.getElementById('pzBackBtn').style.display = (done && !pzStudent) ? 'none' : 'inline-block';
+  if(canPlay){
+    pile.querySelectorAll('.pz-piece').forEach(function(el){
+      el.addEventListener('click', function(){ const p = parseInt(el.dataset.p,10); pzSelPiece = (pzSelPiece === p) ? -1 : p; pzAfterSelect(); });
+    });
+    board.querySelectorAll('.pz-slot:not(.fill)').forEach(function(el){
+      el.addEventListener('click', function(){ const s = parseInt(el.dataset.s,10); pzSelSlot = (pzSelSlot === s) ? -1 : s; pzAfterSelect(); });
+    });
+  }
+}
+function pzAfterSelect(){
+  if(pzSelPiece >= 0 && pzSelSlot >= 0){ pzAttempt(pzSelPiece, pzSelSlot); }
+  else pzRenderPlay();
+}
+async function pzAttempt(piece, slot){
+  if(pzBusy || !pzStudent || !pzCfg) return;
+  pzBusy = true;
+  const sid = pzStudent.id, name = pzStudent.name, d = todayStr(), pid = pzCfg.id;
+  try{
+    const c = await pzCalc(sid);
+    if(c.left <= 0){ pzCalcInfo = c; pzSelPiece = -1; pzSelSlot = -1; gameToast('오늘 기회를 다 썼어요'); await pzRenderPlay(); return; }
+    const playsRef = db.ref('puzzlePlays/'+pid+'/'+d+'/'+sid);
+    const tr = await playsRef.transaction(function(cur){ cur = cur || 0; if(cur >= c.allowed) return; return cur + 1; });
+    if(!tr.committed){ pzCalcInfo = await pzCalc(sid); pzSelPiece = -1; pzSelSlot = -1; await pzRenderPlay(); return; }
+    const pRef = db.ref('puzzleParticipants/'+pid+'/'+sid);
+    await pRef.transaction(function(cur){ cur = cur || { tries:0, correct:0 }; cur.name = name; cur.tries = (cur.tries||0) + 1; return cur; });
+    if(piece === slot){
+      const pl = await db.ref('puzzleBoard/'+pid+'/'+slot).transaction(function(cur){ return cur ? undefined : { by: sid, name: name, at: Date.now() }; });
+      if(pl.committed){
+        await pRef.transaction(function(cur){ cur = cur || {}; cur.correct = (cur.correct||0) + 1; return cur; });
+        pzPlaced[slot] = { by: sid };
+        pzSelPiece = -1; pzSelSlot = -1;
+        pzCalcInfo = await pzCalc(sid);
+        if(pzIsDone()){ gameToast('🎉 퍼즐 완성!', true); pzSettle(pzCfg); }
+        else gameToast('딱 맞았어요! 🎉');
+      } else {
+        await playsRef.transaction(function(cur){ return Math.max(0, (cur||1) - 1); });
+        await pRef.transaction(function(cur){ cur = cur || {}; cur.tries = Math.max(0,(cur.tries||1) - 1); return cur; });
+        pzSelPiece = -1; pzSelSlot = -1;
+        pzCalcInfo = await pzCalc(sid);
+        gameToast('방금 다른 친구가 먼저 맞췄어요');
+      }
+    } else {
+      const el = document.querySelector('#pzBoard .pz-slot[data-s="'+slot+'"]');
+      if(el){ el.classList.add('shake'); }
+      pzSelPiece = -1; pzSelSlot = -1;
+      pzCalcInfo = await pzCalc(sid);
+      gameToast('앗, 여기가 아니에요');
+      await new Promise(function(r){ setTimeout(r, 450); });
+    }
+    await pzRenderPlay();
+  }catch(e){ console.error('puzzle attempt error', e); pzSelPiece = -1; pzSelSlot = -1; }
+  finally{ pzBusy = false; }
+}
+// 완성되면 한 번만 정산: 참여한(1번이라도 시도한) 모든 학생에게 포인트
+async function pzSettle(cfg){
+  try{
+    const claim = await db.ref('puzzleDone/'+cfg.id).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
+    if(!claim.committed) return;
+    const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
+    const pts = parseInt(cfg.points,10) || 0;
+    const ids = Object.keys(ps);
+    if(pts !== 0){
+      for(let k=0;k<ids.length;k++){
+        await awardPoints(ids[k], pts);
+        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '🧩 협동 퍼즐 완성 참여', at: Date.now() });
+      }
+    }
+    await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(function(k){ return ps[k].name; }) });
+  }catch(e){ console.error('puzzle settle error', e); }
+}
+function pzStartBoardListener(){
+  if(!(pzCfg && pzCfg.id)) return;
+  if(pzBoardRef && pzBoardRefId === pzCfg.id) return;
+  pzStopBoardListener();
+  pzBoardRefId = pzCfg.id;
+  pzBoardRef = db.ref('puzzleBoard/'+pzCfg.id);
+  pzBoardRef.on('value', function(snap){
+    pzPlaced = snap.val() || {};
+    if(pzOverlay.classList.contains('open') && document.getElementById('pzStepPlay').style.display !== 'none' && !pzBusy) pzRenderPlay();
+  });
+}
+function pzStopBoardListener(){ if(pzBoardRef){ pzBoardRef.off(); pzBoardRef = null; pzBoardRefId = null; } }
+async function pzOpen(){
+  if(!(pzCfg && pzCfg.open && pzCfg.id)) return;
+  pzOverlay.classList.add('open');
+  pzStudent = null; pzSelPiece = -1; pzSelSlot = -1; pzPrev = {};
+  document.getElementById('pzNameGrid').innerHTML = '';
+  const snap = await db.ref('puzzleBoard/'+pzCfg.id).once('value');
+  pzPlaced = snap.val() || {};
+  pzStartBoardListener();
+  if(pzIsDone()){ pzCalcInfo = null; pzShow('play'); await pzRenderPlay(); }
+  else { pzShow('pick'); await pzRenderPick(); }
+}
+document.getElementById('puzzleIconBtn').addEventListener('click', pzOpen);
+document.getElementById('pzCloseBtn').addEventListener('click', function(){ pzOverlay.classList.remove('open'); pzStopBoardListener(); });
+document.getElementById('pzBackBtn').addEventListener('click', async function(){ pzStudent = null; pzShow('pick'); await pzRenderPick(); });
+function pzAttachListener(){
+  db.ref('config/puzzle').on('value', function(snap){
+    const prev = pzCfg;
+    pzCfg = snap.val();
+    updatePuzzleIcon();
+    if(!(pzCfg && pzCfg.open && pzCfg.id) || (prev && prev.id !== pzCfg.id)){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPlaced = {}; pzPrev = {}; }
+    if(pzCfg && pzCfg.id && pzOverlay.classList.contains('open') && document.getElementById('pzStepPlay').style.display !== 'none' && !pzBusy) pzRenderPlay();
+  });
+}
 function vtAttachListener(){
   db.ref('config/vote').on('value', (snap)=>{
     vtCfg = snap.val();
@@ -1925,6 +2224,7 @@ function updateGameIcon(){
   updateSurveyIcon();
   updateVoteIcon();
   updateImgIcon();
+  updatePuzzleIcon();
 }
 function gameShowStep(name){
   document.getElementById('gameStepPick').style.display = name === 'pick' ? 'block' : 'none';
@@ -2155,6 +2455,7 @@ function attachRealtimeListeners(){
   svAttachListener();
   vtAttachListener();
   imgAttachListener();
+  pzAttachListener();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });

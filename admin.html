@@ -65,6 +65,12 @@
   .qs-table td{ text-align:center; padding:9px 6px; border-bottom:1px solid var(--border); }
   .qs-table td:first-child{ text-align:left; padding-left:12px; font-weight:700; }
   .qs-table tr.out td{ color:var(--muted); }
+  .qs-red, .qs-card b.qs-red{ color:#e5384f; font-weight:800; }
+  .qs-link{ border:none; background:none; padding:0; font:inherit; font-weight:700; color:var(--primary-text); cursor:pointer; text-decoration:underline; }
+  .qs-link.red{ color:#e5384f; }
+  .qs-ung{ border:none; background:#ffe3e8; color:#e5384f; font-weight:800; font-size:12.5px; padding:2px 10px; border-radius:999px; cursor:pointer; }
+  .qs-warnbox{ background:#fff3f5; border:1px solid #ffd3da; border-radius:14px; padding:10px 12px; margin-bottom:14px; font-size:13px; line-height:2; }
+  .qs-chip{ display:inline-block; border:none; background:#ffe3e8; color:#e5384f; font-weight:800; font-size:12.5px; padding:3px 10px; border-radius:999px; margin:0 4px 0 0; cursor:pointer; }
   .qs-bar{ height:5px; border-radius:5px; background:#eee; margin-top:4px; overflow:hidden; }
   .qs-bar i{ display:block; height:100%; border-radius:5px; background:var(--mint-deep, #4fbe9c); }
   .filter-btn.active{ background:#fff; color:var(--primary-text); box-shadow:var(--shadow); }
@@ -104,6 +110,7 @@
   .cal-day.today{ font-weight:900; color:var(--primary-text); }
   .cal-day.sel{ background:var(--primary); color:var(--primary-text); font-weight:900; }
   .cal-day .cal-dot{ position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--accent-text); }
+  .cal-day .cal-dot.warn{ width:6px; height:6px; background:#ff5d73; }
   .cal-blank{ aspect-ratio:1; }
   .field textarea{ min-height:88px; resize:vertical; line-height:1.5; }
   .btn{ background:var(--primary); color:var(--primary-text); border:none; padding:11px 18px; border-radius:11px; font-weight:800; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:2px; }
@@ -395,6 +402,7 @@
       <div class="tabs subtabs">
         <button class="tab-btn active" data-subtab="quizmain">퀴즈</button>
         <button class="tab-btn" data-subtab="game">게임</button>
+        <button class="tab-btn" data-subtab="puzzle">퍼즐</button>
         <button class="tab-btn" data-subtab="quizstats">통계</button>
       </div>
       <div class="tab-panel" id="subtab-quizstats">
@@ -475,6 +483,57 @@
         </div>
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
+      </div>
+
+      <div class="tab-panel" id="subtab-puzzle">
+        <div class="section">
+          <h3>🧩 협동 퍼즐 현황</h3>
+          <p class="hint">공개를 켜면 대시보드 출결 패널의 🐧 옆에 🧩 버튼이 나타나요. 학생들이 조각을 맞추고, 완성되면 한 번이라도 참여한 모두에게 포인트가 지급돼요.</p>
+          <button class="publish-btn off" id="pzToggleBtn">퍼즐 없음</button>
+          <span class="msg" id="pzMsg"></span>
+          <div id="pzStatus" style="margin-top:14px;"></div>
+        </div>
+        <div class="section">
+          <h3>새 퍼즐 만들기</h3>
+          <div class="field"><label>퍼즐 이미지</label>
+            <input type="file" id="pzFileInput" accept="image/*">
+          </div>
+          <div class="field"><label>가로 칸 수 (2~12)</label>
+            <input type="number" id="pzColsInput" min="2" max="12" value="8">
+          </div>
+          <div class="field"><label>세로 칸 수 (2~12)</label>
+            <input type="number" id="pzRowsInput" min="2" max="12" value="8">
+          </div>
+          <p class="hint">가로 × 세로 = 조각 수예요. 시작하면 이전 퍼즐의 기록은 지워져요.</p>
+          <button class="btn" id="pzStartBtn">새 퍼즐 시작</button>
+        </div>
+        <div class="section">
+          <h3>기회 · 포인트 설정</h3>
+          <div class="field"><label>하루 기본 기회</label>
+            <input type="number" id="pzBaseInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>대시보드 출석 시 추가 기회</label>
+            <input type="number" id="pzAttInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>퀴즈 제출 시 추가 기회</label>
+            <input type="number" id="pzQuizInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>완성 시 참여자 포인트</label>
+            <input type="number" id="pzPointsInput" min="0" max="20" value="1">
+          </div>
+          <p class="hint">기회는 매일 새로 계산돼요 (이월 없음). 진행 중에도 바꿀 수 있고, 바로 반영돼요.</p>
+          <button class="btn" id="pzSaveBtn">설정 저장</button>
+        </div>
+        <div class="section">
+          <h3>참여자 <span class="sub" id="pzPartCount"></span></h3>
+          <div id="pzPartList"></div>
+          <div class="divider"></div>
+          <div class="field"><label>힌트 공개 (막혔을 때 선생님이 대신 맞춰 줄 조각 수)</label>
+            <input type="number" id="pzHintN" min="1" max="50" value="3">
+          </div>
+          <button class="btn secondary" id="pzHintBtn">무작위 조각 맞춰 주기</button>
+          <button class="btn danger" id="pzClearBtn" style="margin-left:8px;">퍼즐 지우기</button>
+        </div>
       </div>
 
       <div class="tab-panel" id="subtab-game">
@@ -949,7 +1008,7 @@ function attachCalendarPicker(inputId, opts){
       const cls = ['cal-day'];
       if(ds===selected) cls.push('sel');
       if(ds===todayStr()) cls.push('today');
-      html += '<button type="button" class="'+cls.join(' ')+'" data-date="'+ds+'">'+d+(marked[ds] ? '<i class="cal-dot"></i>' : '')+'</button>';
+      html += '<button type="button" class="'+cls.join(' ')+'" data-date="'+ds+'">'+d+(marked[ds] ? '<i class="cal-dot'+(marked[ds]==='warn' ? ' warn' : '')+'"></i>' : '')+'</button>';
     }
     html += '</div>';
     pop.innerHTML = html;
@@ -1002,8 +1061,29 @@ async function getQuizMarkedDates(year, month){
   const snap = await db.ref('quiz').orderByKey().startAt(prefix).endAt(prefix+'\uf8ff').once('value');
   const val = snap.val() || {};
   const marked = {};
-  Object.keys(val).forEach(function(d){ marked[d] = true; });
+  const dates = Object.keys(val);
+  dates.forEach(function(d){ marked[d] = true; });
+  // 미채점 답안이 남아 있는 날짜는 빨간 점
+  try{
+    const counts = await Promise.all(dates.map(function(d){ return qsUngradedCount(d); }));
+    dates.forEach(function(d,k){ if(counts[k] > 0) marked[d] = 'warn'; });
+  }catch(e){}
   return marked;
+}
+// 날짜별 미채점 수 (제출했지만 정답/오답 표시가 없는 답안). 1분 동안 캐시
+const qsUngCache = {};
+async function qsUngradedCount(d){
+  const c = qsUngCache[d];
+  if(c && Date.now() - c.t < 60000) return c.n;
+  const students = await getRosterList({all:true});
+  const res = await Promise.all(students.map(async function(s){
+    const r = await Promise.all([ db.ref('quizAnswers/'+d+'/'+s.id+'/submittedAt').once('value'), db.ref('quizAnswers/'+d+'/'+s.id+'/verdict').once('value') ]);
+    const v = r[1].val();
+    return r[0].val() !== null && v !== 'correct' && v !== 'incorrect';
+  }));
+  const n = res.filter(Boolean).length;
+  qsUngCache[d] = { t: Date.now(), n: n };
+  return n;
 }
 attachCalendarPicker('noticeDate', { markedDatesFn: getNoticeMarkedDates });
 attachCalendarPicker('overrideDate');
@@ -1269,6 +1349,7 @@ async function initAdmin(){
   bindSurveyListeners();
   bindVoteListeners();
   bindImgShareListeners();
+  bindPuzzleListeners();
   settleGameRewards(false);
   await loadWeeklyEditor();
   await loadOverrideEditor();
@@ -2366,6 +2447,124 @@ document.getElementById('isClearBtn').addEventListener('click', async ()=>{
   await db.ref('config/imgShare').remove();
 });
 
+/* ---- 협동 퍼즐 ---- */
+let pzCfgA = null, pzBoardA = {}, pzPartA = {}, pzDoneA = null, pzThumbId = null;
+function pzNum(id, def, min, max){ let v = parseInt(document.getElementById(id).value, 10); if(isNaN(v)) v = def; return Math.max(min, Math.min(max, v)); }
+function pzFillSettings(){
+  if(!pzCfgA) return;
+  const set = (id, v)=>{ const el = document.getElementById(id); if(document.activeElement !== el) el.value = v; };
+  set('pzBaseInput', pzCfgA.base != null ? pzCfgA.base : 1);
+  set('pzAttInput', pzCfgA.att != null ? pzCfgA.att : 1);
+  set('pzQuizInput', pzCfgA.quiz != null ? pzCfgA.quiz : 1);
+  set('pzPointsInput', pzCfgA.points != null ? pzCfgA.points : 1);
+}
+async function pzRenderA(){
+  const t = document.getElementById('pzToggleBtn');
+  const st = document.getElementById('pzStatus');
+  if(!(pzCfgA && pzCfgA.id)){
+    t.textContent = '퍼즐 없음'; t.className = 'publish-btn off';
+    st.innerHTML = '<p class="hint">진행 중인 퍼즐이 없어요. 아래에서 새 퍼즐을 만들어 주세요.</p>';
+    document.getElementById('pzPartList').innerHTML = ''; document.getElementById('pzPartCount').textContent = '';
+    return;
+  }
+  const id = pzCfgA.id, total = pzCfgA.rows * pzCfgA.cols, done = Object.keys(pzBoardA[id] || {}).length;
+  if(pzCfgA.open){ t.textContent = '공개 중 (누르면 숨기기)'; t.className = 'publish-btn on'; }
+  else { t.textContent = '숨김 (누르면 공개)'; t.className = 'publish-btn off'; }
+  if(pzThumbId !== id){ pzThumbId = id; try{ pzThumbSrc = (await db.ref('puzzleImg/'+id).once('value')).val() || ''; }catch(e){ pzThumbSrc = ''; } }
+  const isDone = !!pzDoneA[id] || done >= total;
+  const pct = Math.round(done / total * 100);
+  st.innerHTML = '<div style="display:flex; align-items:center;">'
+    + '<img src="'+pzThumbSrc+'" style="width:110px; height:110px; object-fit:contain; border-radius:12px; background:#f4f1f8; margin-right:14px; flex-shrink:0;">'
+    + '<div style="flex:1; min-width:0;">'
+    + '<div style="font-weight:800; font-size:16px;">'+done+' / '+total+' 조각 ('+pct+'%)' + (isDone ? ' · 🎉 완성' : '') + '</div>'
+    + '<div style="height:10px; border-radius:6px; background:var(--line); overflow:hidden; margin:8px 0;"><div style="height:100%; width:'+pct+'%; background:var(--sky-deep); border-radius:6px;"></div></div>'
+    + '<div class="hint">'+pzCfgA.cols+' × '+pzCfgA.rows+' 칸'+(pzDoneA[id] ? (pzDoneA[id].winners ? ' · 포인트 지급 완료 ('+pzDoneA[id].winners.length+'명)' : ' · 정산 중') : '')+'</div>'
+    + '</div></div>';
+  const ps = pzPartA[id] || {};
+  const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k] })).sort((x,y)=> (y.correct||0) - (x.correct||0) || (x.name||'').localeCompare(y.name||'','ko'));
+  document.getElementById('pzPartCount').textContent = rows.length ? '(' + rows.length + '명)' : '';
+  document.getElementById('pzPartList').innerHTML = rows.length
+    ? rows.map(r=> '<span style="display:inline-block; background:var(--mint); border-radius:12px; padding:5px 11px; margin:0 6px 6px 0; font-size:13px; font-weight:700;">'+escapeHtml(r.name||'')+' <span style="font-weight:600; color:var(--muted); font-size:12px;">시도 '+(r.tries||0)+' · 성공 '+(r.correct||0)+'</span></span>').join('')
+    : '<p class="hint">아직 참여한 학생이 없어요.</p>';
+  pzFillSettings();
+  if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
+}
+let pzThumbSrc = '';
+function bindPuzzleListeners(){
+  db.ref('config/puzzle').on('value', s=>{ pzCfgA = s.val(); pzRenderA(); });
+  db.ref('puzzleBoard').on('value', s=>{ pzBoardA = s.val() || {}; pzRenderA(); });
+  db.ref('puzzleParticipants').on('value', s=>{ pzPartA = s.val() || {}; pzRenderA(); });
+  db.ref('puzzleDone').on('value', s=>{ pzDoneA = s.val() || {}; pzRenderA(); });
+  pzDoneA = {};
+}
+async function pzSettleAdmin(cfg){
+  try{
+    const claim = await db.ref('puzzleDone/'+cfg.id).transaction(cur=> cur ? undefined : { at: Date.now() });
+    if(!claim.committed) return;
+    const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
+    const pts = parseInt(cfg.points,10) || 0;
+    const ids = Object.keys(ps);
+    if(pts !== 0){
+      for(let k=0;k<ids.length;k++){
+        await awardPoints(ids[k], pts);
+        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '🧩 협동 퍼즐 완성 참여', at: Date.now() });
+      }
+    }
+    await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(k=> ps[k].name) });
+  }catch(e){ console.error(e); }
+}
+async function pzWipe(id){
+  await Promise.all(['puzzleImg','puzzleBoard','puzzlePlays','puzzleParticipants','puzzleDone'].map(p=> db.ref(p+'/'+id).remove()));
+}
+function pzFlash(text){ const m = document.getElementById('pzMsg'); m.textContent = text; setTimeout(()=> m.textContent = '', 2600); }
+document.getElementById('pzToggleBtn').addEventListener('click', async ()=>{
+  if(!(pzCfgA && pzCfgA.id)) return;
+  await db.ref('config/puzzle/open').set(!pzCfgA.open);
+});
+document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
+  const file = document.getElementById('pzFileInput').files && document.getElementById('pzFileInput').files[0];
+  if(!file){ pzFlash('이미지를 먼저 골라 주세요.'); return; }
+  const cols = pzNum('pzColsInput', 8, 2, 12), rows = pzNum('pzRowsInput', 8, 2, 12);
+  if(pzCfgA && pzCfgA.id && !confirm('진행 중인 퍼즐의 기록이 모두 지워져요. 새 퍼즐을 시작할까요?')) return;
+  try{
+    pzFlash('만드는 중...');
+    const data = await resizeImageFileToDataUrl(file, 1000, 0.88);
+    if(pzCfgA && pzCfgA.id) await pzWipe(pzCfgA.id);
+    const id = String(Date.now());
+    await db.ref('puzzleImg/'+id).set(data);
+    pzThumbId = null;
+    await db.ref('config/puzzle').set({ id:id, rows:rows, cols:cols, open:true,
+      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20) });
+    document.getElementById('pzFileInput').value = '';
+    pzFlash('퍼즐을 시작했어요 ✓');
+  }catch(e){ pzFlash('실패했어요: ' + e.message); }
+});
+document.getElementById('pzSaveBtn').addEventListener('click', async ()=>{
+  if(!(pzCfgA && pzCfgA.id)){ pzFlash('먼저 퍼즐을 만들어 주세요.'); return; }
+  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20) });
+  pzFlash('저장했어요 ✓');
+});
+document.getElementById('pzHintBtn').addEventListener('click', async ()=>{
+  if(!(pzCfgA && pzCfgA.id)) return;
+  const id = pzCfgA.id, total = pzCfgA.rows * pzCfgA.cols, filled = pzBoardA[id] || {};
+  const empty = []; for(let s=0;s<total;s++) if(!filled[s]) empty.push(s);
+  if(!empty.length){ pzFlash('이미 모두 맞췄어요.'); return; }
+  const n = Math.min(pzNum('pzHintN', 3, 1, 50), empty.length);
+  for(let k=empty.length-1;k>0;k--){ const j = Math.floor(Math.random()*(k+1)); const t = empty[k]; empty[k] = empty[j]; empty[j] = t; }
+  const pick = empty.slice(0, n);
+  for(let k=0;k<pick.length;k++){
+    await db.ref('puzzleBoard/'+id+'/'+pick[k]).transaction(cur=> cur ? undefined : { by:'admin', name:'선생님', at: Date.now() });
+  }
+  pzFlash(n + '조각을 맞춰 줬어요 ✓');
+});
+document.getElementById('pzClearBtn').addEventListener('click', async ()=>{
+  if(!(pzCfgA && pzCfgA.id)) return;
+  if(!confirm('퍼즐과 모든 기록을 지울까요? (이미 지급된 포인트는 그대로 남아요)')) return;
+  await pzWipe(pzCfgA.id);
+  await db.ref('config/puzzle').remove();
+  pzThumbId = null;
+});
+
 function resizeImageFileToDataUrl(file, maxDim, quality){
   maxDim = maxDim || 900; quality = quality || 0.85;
   return new Promise((resolve, reject)=>{
@@ -2517,6 +2716,7 @@ async function loadQuizAnswers(date){
       const next = current === btn.dataset.verdict ? null : btn.dataset.verdict;
       const nextAmount = next === 'correct' ? quizPoints : 0;
       await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: next, awardedAmount: nextAmount });
+      delete qsUngCache[date]; qsRaw = null;
       const delta = nextAmount - prevAmount;
       if(delta !== 0) await awardPoints(id, delta);
       await loadQuizAnswers(date);
@@ -2527,6 +2727,7 @@ async function loadQuizAnswers(date){
       const id = btn.dataset.reset;
       const prevAmount = (val[id] && val[id].awardedAmount) || 0;
       await db.ref('quizAnswers/'+date+'/'+id).remove();
+      delete qsUngCache[date]; qsRaw = null;
       if(prevAmount) await awardPoints(id, -prevAmount);
       await loadQuizAnswers(date);
     });
@@ -2601,7 +2802,10 @@ function renderQuizStats(){
     + '<div class="qs-card"><b>'+totSub+'건</b><span>총 제출 (전학생 제외)</span></div>'
     + '<div class="qs-card"><b>'+qsFmt(qsPct(totSub, dates.length * active.length))+'</b><span>평균 제출률</span></div>'
     + '<div class="qs-card"><b>'+qsFmt(qsPct(totCor, totCor+totInc))+'</b><span>전체 정답률</span></div>'
-    + '<div class="qs-card"><b>'+totUng+'건</b><span>미채점</span></div></div>';
+    + '<div class="qs-card"><b'+(totUng>0?' class="qs-red"':'')+'>'+totUng+'건</b><span>미채점</span></div></div>';
+  const ungDates = dates.filter(function(d){ let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return n>0; }).map(function(d){ let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return { d:d, n:n }; });
+  document.getElementById('qsSummary').innerHTML += ungDates.length
+    ? '<div class="qs-warnbox"><b style="color:#e5384f;">🔴 미채점이 남아 있는 날짜</b> <span style="color:var(--muted); font-size:12px;">(누르면 그 날짜 채점 화면으로 이동해요)</span><br>' + ungDates.slice().reverse().map(function(x){ return '<button class="qs-chip" data-jump="'+x.d+'">'+x.d.slice(5)+' · '+x.n+'건</button>'; }).join('') + '</div>' : '';
   if(!dates.length){ document.getElementById('qsStudentTable').innerHTML = '<p class="hint">이 기간에 출제된 퀴즈가 없어요.</p>'; document.getElementById('qsDateTable').innerHTML=''; return; }
   const key = qsSortKey, asc = qsSortAsc ? 1 : -1;
   rows.sort((a,b)=>{
@@ -2614,14 +2818,24 @@ function renderQuizStats(){
   const arrow = k => k === key ? (qsSortAsc ? ' ▲' : ' ▼') : '';
   document.getElementById('qsStudentTable').innerHTML = '<table class="qs-table"><thead><tr>'
     + cols.map(c=>'<th data-k="'+c[0]+'">'+c[1]+arrow(c[0])+'</th>').join('') + '</tr></thead><tbody>'
-    + rows.map(r=>'<tr'+(r.out?' class="out"':'')+'><td>'+escapeHtml(r.name)+'</td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td>'+r.ung+'</td>'
+    + rows.map(r=>'<tr'+(r.out?' class="out"':'')+'><td>'+escapeHtml(r.name)+'</td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td>'+(r.ung>0 ? '<button class="qs-ung" data-ungsid="'+r.id+'">🔴 '+r.ung+'</button>' : '0')+'</td>'
       + '<td>'+qsFmt(r.acc)+(r.acc!==null?'<div class="qs-bar"><i style="width:'+r.acc+'%"></i></div>':'')+'</td>'
       + '<td>'+qsFmt(r.rate)+'</td><td>'+(r.streak ? r.streak+'회' : '-')+'</td></tr>').join('') + '</tbody></table>'
+    + '<div id="qsUngDetail" style="margin-top:10px;"></div>'
     + '<p class="hint" style="margin-top:10px;">제목 줄을 누르면 그 기준으로 정렬돼요. 연속 제출은 가장 최근 퀴즈부터 끊기지 않고 낸 횟수예요.</p>';
   document.querySelectorAll('#qsStudentTable th').forEach(th=>{
     th.addEventListener('click', ()=>{
       if(qsSortKey === th.dataset.k) qsSortAsc = !qsSortAsc; else { qsSortKey = th.dataset.k; qsSortAsc = (qsSortKey === 'name'); }
       renderQuizStats();
+    });
+  });
+  document.querySelectorAll('#qsStudentTable [data-ungsid]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const sid = b.dataset.ungsid;
+      const s = qsRaw.students.filter(function(x){ return x.id === sid; })[0];
+      const ds = dates.filter(function(d){ const c = qsRaw.cell[d+'|'+sid]; return c && c.sub && c.v!=='correct' && c.v!=='incorrect'; });
+      document.getElementById('qsUngDetail').innerHTML = '<div class="qs-warnbox"><b>'+escapeHtml(s ? s.name : '')+'</b> 님의 미채점 날짜<br>' + ds.map(function(d){ return '<button class="qs-chip" data-jump="'+d+'">'+d+'</button>'; }).join('') + '</div>';
+      qsBindJump(document.getElementById('qsUngDetail'));
     });
   });
   // 날짜별
@@ -2631,8 +2845,24 @@ function renderQuizStats(){
     return { d, sub, cor, inc, ung: sub-cor-inc, acc: qsPct(cor, cor+inc), rate: qsPct(sub, active.length) };
   });
   document.getElementById('qsDateTable').innerHTML = '<table class="qs-table"><thead><tr><th style="cursor:default;">날짜</th><th style="cursor:default;">제출</th><th style="cursor:default;">정답</th><th style="cursor:default;">오답</th><th style="cursor:default;">미채점</th><th style="cursor:default;">정답률</th><th style="cursor:default;">제출률</th></tr></thead><tbody>'
-    + drows.map(r=>'<tr><td>'+r.d+'</td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td>'+r.ung+'</td><td>'+qsFmt(r.acc)+'</td><td>'+qsFmt(r.rate)+'</td></tr>').join('') + '</tbody></table>';
+    + drows.map(r=>'<tr><td><button class="qs-link'+(r.ung>0?' red':'')+'" data-jump="'+r.d+'">'+r.d+'</button></td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td'+(r.ung>0?' class="qs-red"':'')+'>'+(r.ung>0?'🔴 ':'')+r.ung+'</td><td>'+qsFmt(r.acc)+'</td><td>'+qsFmt(r.rate)+'</td></tr>').join('') + '</tbody></table>';
+  qsBindJump(document.getElementById('qsSummary'));
+  qsBindJump(document.getElementById('qsDateTable'));
   qsCurrentRows = rows;
+}
+function qsBindJump(root){
+  root.querySelectorAll('[data-jump]').forEach(function(b){
+    b.addEventListener('click', function(){ qsJump(b.dataset.jump); });
+  });
+}
+// 통계에서 날짜를 누르면 그 날짜의 '미분류' 채점 화면으로 이동
+function qsJump(d){
+  switchSubTab('tab-quiz', 'quizmain');
+  quizAnswerFilter = 'unclassified';
+  document.querySelectorAll('#verdictFilterTabs .filter-btn').forEach(function(x){ x.classList.toggle('active', x.dataset.filter === 'unclassified'); });
+  if(datePickers['quizAnswerDate']) datePickers['quizAnswerDate'].setValue(d); else document.getElementById('quizAnswerDate').value = d;
+  loadQuizEditor(d); loadQuizAnswers(d); bindQuizAnswersListener();
+  window.scrollTo(0, 0);
 }
 let qsCurrentRows = [];
 document.querySelectorAll('#qsPeriodTabs .filter-btn').forEach(btn=>{
