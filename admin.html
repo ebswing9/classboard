@@ -576,16 +576,19 @@
         <div class="section">
           <h3>기회 · 포인트 설정</h3>
           <div class="field"><label>하루 기본 기회</label>
-            <input type="number" id="pzBaseInput" min="0" max="20" value="1">
+            <input type="number" id="pzBaseInput" min="0" max="100" value="1">
           </div>
           <div class="field"><label>대시보드 출석 시 추가 기회</label>
-            <input type="number" id="pzAttInput" min="0" max="20" value="1">
+            <input type="number" id="pzAttInput" min="0" max="100" value="1">
           </div>
           <div class="field"><label>퀴즈 제출 시 추가 기회</label>
-            <input type="number" id="pzQuizInput" min="0" max="20" value="1">
+            <input type="number" id="pzQuizInput" min="0" max="100" value="1">
           </div>
           <div class="field"><label>완성 시 참여자 포인트</label>
             <input type="number" id="pzPointsInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>가장 많이 맞춘 친구 추가 포인트 (동점이면 모두, 0이면 없음)</label>
+            <input type="number" id="pzTopInput" min="0" max="20" value="1">
           </div>
           <div class="field"><label>원본 그림 살짝 보기 (반 전체 하루 횟수, 0이면 못 봄, -1이면 제한 없음)</label>
             <input type="number" id="pzPeekInput" min="-1" max="99" value="3">
@@ -2493,6 +2496,7 @@ function pzFillSettings(){
   set('pzAttInput', pzCfgA.att != null ? pzCfgA.att : 1);
   set('pzQuizInput', pzCfgA.quiz != null ? pzCfgA.quiz : 1);
   set('pzPointsInput', pzCfgA.points != null ? pzCfgA.points : 1);
+  set('pzTopInput', pzCfgA.topBonus != null ? pzCfgA.topBonus : 1);
   set('pzPeekInput', pzCfgA.peek != null ? pzCfgA.peek : 3);
   set('pzGroovesInput', pzCfgA.grooves === false ? 'off' : 'on');
 }
@@ -2599,6 +2603,15 @@ async function pzSettleAdmin(cfg){
         await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '🧩 협동 퍼즐 완성 참여', at: Date.now() });
       }
     }
+    const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
+    if(bonus !== 0 && ids.length){
+      const mx = Math.max.apply(null, ids.map(k=> ps[k].correct||0));
+      const tops = ids.filter(k=> (ps[k].correct||0) === mx);
+      for(let k=0;k<tops.length;k++){
+        await awardPoints(tops[k], bonus);
+        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '🧩 협동 퍼즐 최다 기여', at: Date.now() });
+      }
+    }
     await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(k=> ps[k].name) });
   }catch(e){ console.error(e); }
 }
@@ -2658,14 +2671,14 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
     await db.ref('puzzleImg/'+id).set(data);
     pzThumbId = null;
     await db.ref('config/puzzle').set({ id:id, rows:rows, cols:cols, open:true,
-      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99) });
+      base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20) });
     document.getElementById('pzFileInput').value = '';
     pzFlash('퍼즐을 시작했어요 ✓');
   }catch(e){ pzFlash('실패했어요: ' + e.message); }
 });
 document.getElementById('pzSaveBtn').addEventListener('click', async ()=>{
   if(!(pzCfgA && pzCfgA.id)){ pzFlash('먼저 퍼즐을 만들어 주세요.'); return; }
-  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99) });
+  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20) });
   pzFlash('저장했어요 ✓');
 });
 document.getElementById('pzHintBtn').addEventListener('click', async ()=>{
