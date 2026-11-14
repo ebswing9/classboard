@@ -2318,7 +2318,7 @@ async function pzAttempt(student){
         el.classList.add('pop'); setTimeout(function(){ el.classList.remove('pop'); }, 600);
         pzLeft[sid] = await pzCalc(sid);
         if(pzIsDone()){ pzShowWin(parseInt(pzCfg.points,10)||0); pzSettle(pzCfg); await pzRefresh(); }
-        else { pzToast('딱 맞았어요!', 'ok'); pzRenderTop(); pzLayout(); await pzRenderNames(); }
+        else { pzToast('잘 맞췄어요!', 'ok'); pzRenderTop(); pzLayout(); await pzRenderNames(); }
         return;
       }
       await playsRef.transaction(function(cur){ return Math.max(0, (cur||1) - 1); });
