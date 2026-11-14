@@ -310,9 +310,8 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 50px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:19px; letter-spacing:1px; line-height:28px; padding:9px 28px 10px 12px; border-radius:999px; box-shadow:0 4px 0 #e0709a, 0 10px 18px rgba(247,143,179,0.38), inset 0 2px 0 rgba(255,255,255,0.35); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; position:relative; top:-2px; }
-  .pz-confirm .pz-ck{ display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:50%; background:#fff; color:#f0709f; font-size:16px; margin-right:10px; box-shadow:0 1px 3px rgba(224,112,154,0.4); vertical-align:middle; }
-  .pz-confirm:active{ -webkit-transform:translateY(3px); transform:translateY(3px); box-shadow:0 1px 0 #e0709a, 0 3px 8px rgba(247,143,179,0.3), inset 0 2px 0 rgba(255,255,255,0.35); }
+  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-size:19px; letter-spacing:2px; height:48px; min-width:104px; padding:3px 26px 0 28px; box-sizing:border-box; border-radius:24px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; position:relative; text-shadow:0 1px 0 rgba(200,90,130,0.35); }
+  .pz-confirm:active{ -webkit-transform:translateY(3px); transform:translateY(3px); box-shadow:0 1px 0 #e57fa4, 0 3px 8px rgba(247,143,179,0.3); }
   .pz-bar{ height:9px; border-radius:6px; background:#fff; box-shadow:inset 0 1px 3px rgba(160,140,190,0.28); overflow:hidden; margin:14px 0 20px; }
   #pzBarFill{ height:100%; width:0; background:var(--mint-deep); border-radius:6px; -webkit-transition:width .5s ease; transition:width .5s ease; }
   #pzSurface{ position:relative; margin:0 auto; -webkit-user-select:none; user-select:none; }
@@ -648,7 +647,7 @@
         <div class="gm-title" id="pzTitle">협동 퍼즐</div>
         <div class="gm-chips" id="pzMeta"></div>
       </div>
-      <button class="pz-confirm" id="pzConfirmBtn"><span class="pz-ck">✓</span>확정</button>
+      <button class="pz-confirm" id="pzConfirmBtn"><span>확정</span></button>
     </div>
     <div class="pz-bar"><div id="pzBarFill"></div></div>
     <div id="pzSurface"></div>
@@ -917,6 +916,8 @@ setInterval(tickClock,1000); tickClock();
 const sidePanel = document.getElementById('sidePanel');
 const quizCardEl = document.getElementById('quizCard');
 let openPanelType = null;
+let luckyOn = true;
+function updateLuckyIcon(){ document.getElementById('luckyDrawIconBtn').style.display = (luckyOn && openPanelType === 'attendance') ? 'flex' : 'none'; }
 let panelRequestId = 0;
 
 function closePanel(){
@@ -946,7 +947,7 @@ async function openPanel(type){
 
   if(type==='attendance'){
     document.getElementById('panelTitle').textContent = '🙋 출결 체크';
-    document.getElementById('luckyDrawIconBtn').style.display = 'flex';
+    updateLuckyIcon();
     await renderAttendancePanel();
   } else if(type==='roles'){
     document.getElementById('panelTitle').textContent = '📋 역할 체크';
@@ -1093,9 +1094,34 @@ function attSound(rank){
     if(rank === 'sparkle'){ tone('sine', 1568, 0, 0, 0.25, 0.09); tone('sine', 2093, 0, 0.09, 0.3, 0.08); } // 1~3등 반짝
   }catch(e){}
 }
+// 퍼즐 효과음(합성): pick 집기, snap 판에 붙임, confirm 확정 버튼, ok 정답, bad 오답, back 상자로 복귀
+function pzSfx(kind){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    if(!attAudioCtx) attAudioCtx = new AC();
+    const ctx = attAudioCtx; if(ctx.resume) ctx.resume();
+    const now = ctx.currentTime;
+    function tone(type, f0, f1, t0, dur, vol){
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, now+t0);
+      if(f1) o.frequency.exponentialRampToValueAtTime(f1, now+t0+dur*0.7);
+      g.gain.setValueAtTime(0.0001, now+t0);
+      g.gain.exponentialRampToValueAtTime(vol, now+t0+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+t0+dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now+t0); o.stop(now+t0+dur+0.02);
+    }
+    if(kind === 'pick'){ tone('sine', 600, 800, 0, 0.07, 0.07); }
+    else if(kind === 'snap'){ tone('triangle', 420, 300, 0, 0.09, 0.13); tone('sine', 880, 0, 0.02, 0.07, 0.05); }
+    else if(kind === 'back'){ tone('sine', 520, 330, 0, 0.14, 0.07); }
+    else if(kind === 'confirm'){ tone('sine', 784, 0, 0, 0.12, 0.11); tone('sine', 1175, 0, 0.07, 0.16, 0.1); tone('triangle', 1568, 0, 0.13, 0.22, 0.07); }
+    else if(kind === 'ok'){ tone('sine', 659, 0, 0, 0.14, 0.12); tone('sine', 880, 0, 0.09, 0.14, 0.12); tone('triangle', 1319, 0, 0.18, 0.3, 0.1); }
+    else if(kind === 'bad'){ tone('triangle', 300, 200, 0, 0.18, 0.12); tone('triangle', 240, 150, 0.12, 0.24, 0.1); }
+  }catch(e){}
+}
 // 누른 카드에서 색색의 파티클이 사방으로 튀어나감
-function attBurst(cell){
-  const COLORS = ['#4fbe9c','#7fd3b3','#a8e6cf','#6fcf97','#bfe9a8','#c8f0e2','#ffffff'];
+function attBurst(cell, colors){
+  const COLORS = colors || ['#4fbe9c','#7fd3b3','#a8e6cf','#6fcf97','#bfe9a8','#c8f0e2','#ffffff'];
   for(let k=0;k<18;k++){
     const el = document.createElement('span');
     el.className = 'att-pt' + (k%3===0 ? ' star' : '');
@@ -2088,7 +2114,7 @@ async function pzRenderNames(){
     return;
   }
   box.className = ''; box.innerHTML = '';
-  btn.style.display = pzPending ? 'inline-block' : 'none';
+  btn.style.display = pzPending ? 'flex' : 'none';
 }
 function pzOpenPicker(){
   if(!pzPending || pzBusy) return;
@@ -2136,7 +2162,7 @@ function pzDragStart(e){
   el.classList.remove('ret');
   el.style.width = pzG.ew + 'px'; el.style.height = pzG.eh + 'px';
   pzDrag = { p: p, el: el, ox: fx * pzG.ew, oy: fy * pzG.eh };
-  el.style.left = (pt.x - sr.left - pzDrag.ox) + 'px'; el.style.top = (pt.y - sr.top - pzDrag.oy) + 'px'; el.classList.remove('pend'); el.classList.add('drag'); el.style.zIndex = '';
+  el.style.left = (pt.x - sr.left - pzDrag.ox) + 'px'; el.style.top = (pt.y - sr.top - pzDrag.oy) + 'px'; el.classList.remove('pend'); el.classList.add('drag'); el.style.zIndex = ''; pzSfx('pick');
   if(pzPending && pzPending.piece === p){ pzPending = null; pzRenderNames(); }
   document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
 }
@@ -2174,14 +2200,14 @@ function pzDragEnd(e){
   document.getElementById('pzHl').style.display = 'none'; pzHlSlot = -1;
   const slot = pzCellAt(el);
   if(slot >= 0 && !pzPlaced[slot]){
-    pzPending = { piece: d.p, slot: slot };
+    pzPending = { piece: d.p, slot: slot }; pzSfx('snap');
     el.classList.add('ret'); el.classList.add('pend');
     const pos = pzSlotPos(slot); el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
     el.style.zIndex = '';
   } else if(slot >= 0){
     pzSendToTray(d.p, true);
   } else {
-    pzSendToTray(d.p, true);
+    pzSendToTray(d.p, true); pzSfx('back');
   }
   pzRenderNames();
 }
@@ -2228,7 +2254,7 @@ async function pzAttempt(student){
       if(pl.committed){
         await pRef.transaction(function(cur){ cur = cur || {}; cur.correct = (cur.correct||0) + 1; return cur; });
         pzPlaced[slot] = { by: sid }; pzPending = null;
-        el.classList.add('pop'); setTimeout(function(){ el.classList.remove('pop'); }, 600);
+        pzSfx('ok'); el.classList.add('pop'); setTimeout(function(){ el.classList.remove('pop'); }, 600);
         pzLeft[sid] = await pzCalc(sid);
         if(pzIsDone()){ gameToast('🎉 퍼즐 완성!', true); pzSettle(pzCfg); await pzRefresh(); }
         else { gameToast('딱 맞았어요! 🎉'); pzRenderTop(); pzLayout(); await pzRenderNames(); }
@@ -2242,7 +2268,7 @@ async function pzAttempt(student){
       return;
     }
     // 틀림: 흔들린 뒤 조각 더미로 돌아감
-    el.classList.add('shake'); gameToast('앗, 여기가 아니에요');
+    pzSfx('bad'); el.classList.add('shake'); gameToast('앗, 여기가 아니에요');
     await new Promise(function(r){ setTimeout(r, 450); });
     el.classList.remove('shake');
     pzLeft[sid] = await pzCalc(sid);
@@ -2298,7 +2324,12 @@ async function pzOpen(){
   await pzRefresh();
 }
 document.getElementById('puzzleIconBtn').addEventListener('click', pzOpen);
-document.getElementById('pzConfirmBtn').addEventListener('click', pzOpenPicker);
+document.getElementById('pzConfirmBtn').addEventListener('click', function(){
+  if(!pzPending || pzBusy) return;
+  pzSfx('confirm');
+  attBurst(this, ['#f78fb3','#ffb3cf','#ffd3e0','#c9b6f2','#e0d4fa','#ffffff','#ffc2dc']);
+  pzOpenPicker();
+});
 document.getElementById('pzPickerClose').addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); });
 document.getElementById('pzPicker').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('open'); });
 document.getElementById('pzCloseBtn').addEventListener('click', function(){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPending = null; pzDrag = null; });
@@ -2722,6 +2753,7 @@ function attachRealtimeListeners(){
     loadMeal({silent:true});
   });
   // 관리자가 "학생 출결 버튼 막아두기"를 켜면, 이미 출결 패널이 열려있어도 즉시 버튼이 비활성화되도록 함
+  db.ref('config/luckyOpen').on('value', (snap)=>{ luckyOn = snap.val() !== false; updateLuckyIcon(); });
   db.ref('config/attendanceLocked').on('value', (snap)=>{
     attendanceLockedValue = snap.val();
     if(openPanelType === 'attendance') renderAttendancePanel();

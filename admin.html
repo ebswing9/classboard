@@ -651,6 +651,10 @@
           <p class="hint">켜두면 정한 기간 동안, 그날 <b>대시보드에서 직접 출석한</b> 학생 중 빨리 누른 N등까지 출석 포인트(+1)에 더해 보너스가 지급돼요. 관리자가 출석을 취소하면 순위가 다시 계산돼요. 이미 지급된 보너스는 기능을 꺼도 유지되고, 포인트 탭 학생 내역에서 회수할 수 있어요.</p>
         </div>
         <div class="publish-row" style="margin-bottom:14px;">
+          <span>🍀 행운번호 버튼 (대시보드에 표시)</span>
+          <button class="publish-btn on" id="luckyShowToggle">표시 중</button>
+        </div>
+        <div class="publish-row" style="margin-bottom:14px;">
           <span>🍀 오늘의 행운번호</span>
           <button class="btn danger" id="luckyResetBtn" style="margin:0;">초기화(다시 뽑기 허용)</button>
         </div>
@@ -1150,7 +1154,7 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorag
 
 /* ---- 최상위 탭 ---- */
 document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  btn.addEventListener('click', ()=>{ switchTab(btn.dataset.tab); try{ localStorage.setItem('adminLastTab', btn.dataset.tab); }catch(e){} });
 });
 function switchTab(tab){
   document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
@@ -1162,6 +1166,7 @@ document.querySelectorAll('.tabs.subtabs > .tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const container = btn.closest('.tab-panel');
     switchSubTab(container.id, btn.dataset.subtab);
+    try{ localStorage.setItem('adminLastSub_'+container.id, btn.dataset.subtab); }catch(e){}
   });
 });
 function switchSubTab(panelId, subtab){
@@ -1693,6 +1698,17 @@ document.getElementById('attendanceLockToggle').addEventListener('click', async 
   setAttendanceLockBtn(!attendanceLocked);
   // 막아둔 '날짜'를 저장함 → 날짜가 바뀌면 자동으로 풀림
   await db.ref('config/attendanceLocked').set(attendanceLocked ? todayStr() : null);
+});
+let luckyShown = true;
+function setLuckyShowBtn(on){
+  luckyShown = on;
+  const b = document.getElementById('luckyShowToggle');
+  b.textContent = on ? '표시 중' : '숨김';
+  b.className = 'publish-btn ' + (on ? 'on' : 'off');
+}
+document.getElementById('luckyShowToggle').addEventListener('click', async ()=>{
+  setLuckyShowBtn(!luckyShown);
+  await db.ref('config/luckyOpen').set(luckyShown);
 });
 document.getElementById('attExtraHeader').addEventListener('click', ()=>{
   document.getElementById('attExtraHeader').classList.toggle('open');
@@ -2537,6 +2553,7 @@ async function pzRenderA(){
 }
 let pzThumbSrc = '';
 function bindPuzzleListeners(){
+  db.ref('config/luckyOpen').on('value', s=> setLuckyShowBtn(s.val() !== false));
   db.ref('config/puzzle').on('value', s=>{ pzCfgA = s.val(); pzRenderA(); });
   db.ref('puzzleBoard').on('value', s=>{ pzBoardA = s.val() || {}; pzRenderA(); });
   db.ref('puzzleParticipants').on('value', s=>{ pzPartA = s.val() || {}; pzRenderA(); });
@@ -3276,6 +3293,22 @@ if('serviceWorker' in navigator){
 if(window.caches){
   caches.keys().then(keys=> keys.forEach(k=> caches.delete(k))).catch(()=>{});
 }
+
+/* ---- 마지막으로 본 탭 기억 (이 브라우저에만 저장) ---- */
+(function(){
+  try{
+    const t = localStorage.getItem('adminLastTab');
+    if(!t) return;
+    const tb = document.querySelector('.tabs:not(.subtabs) > .tab-btn[data-tab="'+t+'"]');
+    if(!tb) return;
+    tb.click();
+    const sub = localStorage.getItem('adminLastSub_tab-'+t);
+    if(sub){
+      const sb = document.querySelector('#tab-'+t+' .tabs.subtabs > .tab-btn[data-subtab="'+sub+'"]');
+      if(sb) sb.click();
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
