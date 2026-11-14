@@ -301,7 +301,7 @@
   .img-nav{ width:40px; height:40px; min-width:40px; border-radius:50%; border:none; background:#ffe3ec; color:#e56f9a; font-size:20px; line-height:38px; cursor:pointer; padding:0 0 3px; font-weight:700; }
   .img-nav:active{ background:#ffd3e0; }
   .img-nav:disabled{ opacity:.28; cursor:default; }
-  #imgCaption{ margin-top:14px; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:19px; color:var(--text); }
+  #imgCaption{ display:inline-block; margin-top:14px; padding:6px 20px 5px; border-radius:16px; background:#ffe9f0; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:18px; color:#c24d78; }
   #imgDots{ margin-top:10px; height:8px; }
   #imgDots span{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#f0dfe7; margin:0 3px; }
   #imgDots span.on{ background:#f78fb3; }
@@ -318,6 +318,8 @@
   #pzPeekBtn:active{ background:#ffd3e0; }
   #pzPeek{ position:fixed; top:96px; left:50%; z-index:5300; opacity:0; pointer-events:none; background:#fff; padding:6px; border-radius:16px; box-shadow:0 10px 26px rgba(120,100,160,0.28); -webkit-transform:translate(-50%,-8px); transform:translate(-50%,-8px); -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; transition:opacity .22s ease, transform .22s ease; }
   #pzPeek.show{ opacity:1; -webkit-transform:translate(-50%,0); transform:translate(-50%,0); }
+  #pzPeekLeft{ margin-top:5px; font-size:11px; font-weight:700; color:#c24d78; }
+  #pzPeek{ text-align:center; }
   #pzPeek img{ display:block; width:150px; max-height:150px; object-fit:contain; border-radius:11px; }
   .pz-box .gm-chip.c1{ background:#ece2fb; }
   .pz-box .gm-chip.c2{ background:#ffe3ec; }
@@ -513,7 +515,7 @@
             <button id="puzzleIconBtn" title="퍼즐">🧩</button>
             <button id="surveyIconBtn" title="설문">📝</button>
             <button id="voteIconBtn" title="투표">✅</button>
-            <button id="imgIconBtn" title="이미지">📷</button>
+            <button id="imgIconBtn" title="이미지">📌</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -676,7 +678,7 @@
   </div>
 </div>
 <div id="pzToast"></div>
-<div id="pzPeek"><img alt=""></div>
+<div id="pzPeek"><img alt=""><div id="pzPeekLeft"></div></div>
 <div id="pzWin">
   <div class="pz-win-card">
     <div class="pz-win-title">퍼즐 완성!</div>
@@ -1883,7 +1885,7 @@ async function imgShow(){
   im.src = imgCache[it.id]; imgCur = it;
   if(im.complete && im.naturalWidth) imgFit(it);
   document.getElementById('imgCaption').textContent = it.title || '';
-  document.getElementById('imgCaption').style.display = it.title ? 'block' : 'none';
+  document.getElementById('imgCaption').style.display = it.title ? 'inline-block' : 'none';
   document.getElementById('imgPrev').style.visibility = items.length > 1 ? 'visible' : 'hidden';
   document.getElementById('imgNext').style.visibility = items.length > 1 ? 'visible' : 'hidden';
   document.getElementById('imgPrev').disabled = imgIdx === 0;
@@ -2373,9 +2375,20 @@ async function pzOpen(){
   await pzRefresh();
 }
 document.getElementById('puzzleIconBtn').addEventListener('click', pzOpen);
-document.getElementById('pzPeekBtn').addEventListener('click', function(){
+document.getElementById('pzPeekBtn').addEventListener('click', async function(){
   const src = pzCfg && pzSrcMap[pzCfg.id]; if(!src) return;
+  const limit = (pzCfg.peek == null) ? 3 : parseInt(pzCfg.peek, 10);
+  let left = 99;
+  if(limit >= 0 && pzCfg.peek !== -1){
+    let ok = false;
+    try{
+      const r = await db.ref('puzzlePeek/'+pzCfg.id+'/'+todayStr()).transaction(function(v){ v = v || 0; return v >= limit ? undefined : v + 1; });
+      ok = r.committed; left = limit - (r.snapshot.val() || 0);
+    }catch(e){ ok = true; }
+    if(!ok){ pzToast('오늘은 그림을 더 볼 수 없어요', 'info'); return; }
+  }
   const box = document.getElementById('pzPeek'); box.firstChild.src = src; box.className = 'show';
+  document.getElementById('pzPeekLeft').textContent = (pzCfg.peek === -1 || limit < 0) ? '' : '오늘 남은 횟수 ' + left + '번';
   clearTimeout(box._t); box._t = setTimeout(function(){ box.className = ''; }, 1800);
 });
 document.getElementById('pzWinOk').addEventListener('click', function(){ document.getElementById('pzWin').classList.remove('open'); });

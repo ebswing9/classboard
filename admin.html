@@ -346,8 +346,8 @@
 
       <div class="tab-panel" id="subtab-imgshare">
         <div class="section">
-          <h3>📷 이미지 공유 (QR·사진 보여주기)</h3>
-          <p class="hint">공개를 켜면 대시보드 출결 창에 📷 버튼이 나타나요. 학생이 누르면 이미지가 뜨고(크기는 장마다 고를 수 있어요), 여러 장이면 좌우로 넘겨 볼 수 있어요. 공개를 끄면 버튼이 사라져요. (최대 10장)</p>
+          <h3>📌 이미지 공유 (QR·사진 보여주기)</h3>
+          <p class="hint">공개를 켜면 대시보드 출결 창에 📌 버튼이 나타나요. 학생이 누르면 이미지가 뜨고(크기는 장마다 고를 수 있어요), 여러 장이면 좌우로 넘겨 볼 수 있어요. 공개를 끄면 버튼이 사라져요. (최대 10장)</p>
           <div class="field"><label>이미지 추가</label>
             <input type="file" id="isFileInput" accept="image/*" multiple>
           </div>
@@ -586,6 +586,9 @@
           </div>
           <div class="field"><label>완성 시 참여자 포인트</label>
             <input type="number" id="pzPointsInput" min="0" max="20" value="1">
+          </div>
+          <div class="field"><label>원본 그림 살짝 보기 (반 전체 하루 횟수, 0이면 못 봄, -1이면 제한 없음)</label>
+            <input type="number" id="pzPeekInput" min="-1" max="99" value="3">
           </div>
           <div class="field"><label>퍼즐판에 조각 모양 홈 선 표시</label>
             <select id="pzGroovesInput"><option value="on">켜기 (판에 조각 모양 윤곽이 보여요)</option><option value="off">끄기 (점선 테두리와 점만 보여요, 더 어려워요)</option></select>
@@ -2490,6 +2493,7 @@ function pzFillSettings(){
   set('pzAttInput', pzCfgA.att != null ? pzCfgA.att : 1);
   set('pzQuizInput', pzCfgA.quiz != null ? pzCfgA.quiz : 1);
   set('pzPointsInput', pzCfgA.points != null ? pzCfgA.points : 1);
+  set('pzPeekInput', pzCfgA.peek != null ? pzCfgA.peek : 3);
   set('pzGroovesInput', pzCfgA.grooves === false ? 'off' : 'on');
 }
 async function pzRenderA(){
@@ -2654,14 +2658,14 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
     await db.ref('puzzleImg/'+id).set(data);
     pzThumbId = null;
     await db.ref('config/puzzle').set({ id:id, rows:rows, cols:cols, open:true,
-      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off' });
+      base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99) });
     document.getElementById('pzFileInput').value = '';
     pzFlash('퍼즐을 시작했어요 ✓');
   }catch(e){ pzFlash('실패했어요: ' + e.message); }
 });
 document.getElementById('pzSaveBtn').addEventListener('click', async ()=>{
   if(!(pzCfgA && pzCfgA.id)){ pzFlash('먼저 퍼즐을 만들어 주세요.'); return; }
-  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off' });
+  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,20), att: pzNum('pzAttInput',1,0,20), quiz: pzNum('pzQuizInput',1,0,20), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99) });
   pzFlash('저장했어요 ✓');
 });
 document.getElementById('pzHintBtn').addEventListener('click', async ()=>{
