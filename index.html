@@ -311,17 +311,15 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:19px; letter-spacing:2px; height:48px; min-width:104px; padding:3px 26px 0 28px; box-sizing:border-box; border-radius:24px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; position:relative; text-shadow:0 1px 0 rgba(200,90,130,0.35); }
+  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 16px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:19px; letter-spacing:2px; height:48px; min-width:104px; padding:3px 26px 0 28px; box-sizing:border-box; border-radius:24px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; position:relative; text-shadow:0 1px 0 rgba(200,90,130,0.35); }
   .pz-confirm:active{ -webkit-transform:translateY(3px); transform:translateY(3px); box-shadow:0 1px 0 #e57fa4, 0 3px 8px rgba(247,143,179,0.3); }
   .pz-box .gm-hero-icon{ display:none; }
-  #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 14px 0 10px; min-width:128px; }
+  #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 0; width:138px; }
   #pzRank .rk-t{ font-size:11px; font-weight:700; color:#b3a5c9; margin-bottom:3px; }
   #pzRank .rk-r{ display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; font-size:13px; font-weight:700; color:var(--text); line-height:1; margin-top:3px; white-space:nowrap; }
   #pzRank .rk-n{ display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:6px; font-size:11px; color:#fff; margin-right:7px; background:#f78fb3; }
-  #pzRank .rk-r.r2 .rk-n{ background:#b9a3ea; }
-  #pzRank .rk-r.r3 .rk-n{ background:#9fc9ee; }
   #pzRank .rk-c{ margin-left:7px; font-size:11px; color:#a395b8; }
-  @media (max-width:640px){ #pzRank{ display:none; } }
+  @media (max-width:640px){ #pzRank{ display:none; } .pz-confirm{ margin-right:54px; } }
   #pzPeekBtn{ margin-left:10px; width:34px; height:34px; border:none; border-radius:12px; background:#ffe3ec; cursor:pointer; padding:0; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
   #pzPeekBtn:active{ background:#ffd3e0; }
   #pzPeek{ position:fixed; top:96px; left:50%; z-index:5300; opacity:0; pointer-events:none; background:#fff; padding:6px; border-radius:16px; box-shadow:0 10px 26px rgba(120,100,160,0.28); -webkit-transform:translate(-50%,-8px); transform:translate(-50%,-8px); -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; transition:opacity .22s ease, transform .22s ease; }
@@ -678,8 +676,8 @@
         <div style="display:flex; align-items:center;"><div class="gm-title" id="pzTitle">협동 퍼즐</div><button id="pzPeekBtn" title="그림 살짝 보기"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="#f78fb3" d="M9 4v-.5a2.5 2.5 0 0 1 5 0V4h4a1 1 0 0 1 1 1v4h-.5a2.5 2.5 0 0 0 0 5h.5v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4h.5a2.5 2.5 0 0 0 0-5H4V5a1 1 0 0 1 1-1z"/></svg></button></div>
         <div class="gm-chips" id="pzMeta"></div>
       </div>
-      <div id="pzRank"></div>
       <button class="pz-confirm" id="pzConfirmBtn"><span>확정</span></button>
+      <div id="pzRank"></div>
     </div>
     <div class="pz-bar"><div id="pzBarFill"></div></div>
     <div id="pzSurface"></div>
@@ -2656,10 +2654,7 @@ function pzToast(msg, kind){
   pzToast._t = setTimeout(function(){ t.className = ''; }, 2000);
 }
 function pzShowWin(pts){
-  const bonus = (pzCfg.topBonus == null) ? 1 : (parseInt(pzCfg.topBonus,10) || 0);
-  const top = pzRanking().filter(function(x){ return x.rank === 1; }).map(function(x){ return x.name; });
-  document.getElementById('pzWinSub').innerHTML = (pts ? '함께 맞춘 친구들이 모두 +' + pts + '점을 받아요' : '모두의 힘으로 맞췄어요')
-    + (top.length ? '<div style="margin-top:10px; color:#c24d78;">가장 많이 맞춘 ' + escapeHtml(top.join(', ')) + (bonus ? ' +' + bonus + '점 더!' : ' 최고예요!') + '</div>' : '');
+  document.getElementById('pzWinSub').textContent = pts ? '함께 맞춘 친구들이 모두 +' + pts + '점을 받아요' : '모두의 힘으로 맞췄어요';
   document.getElementById('pzWin').classList.add('open');
   pzSfx('win'); gameConfetti(['#f78fb3','#ffb3cf','#ffd3e0','#c9b6f2','#e0d4fa','#ffe6a8','#ffffff']);
 }
