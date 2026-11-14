@@ -2546,8 +2546,8 @@ async function pzRenderA(){
     for(let c=0;c<pzCfgA.cols;c++){
       const s = r*pzCfgA.cols + c, e = bd[s];
       mini += e
-        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+'" style="width:30px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:11px; font-weight:800; cursor:pointer; padding:0;">'+escapeHtml((e.name||'선').charAt(0))+'</button>'
-        : '<span style="display:inline-block; width:30px; height:30px; margin:1px; border-radius:6px; background:#f1edf7; vertical-align:top;"></span>';
+        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+'" style="width:46px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:10px; letter-spacing:-0.5px; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; overflow:hidden; vertical-align:top;">'+escapeHtml(e.name||'선생님')+'</button>'
+        : '<span style="display:inline-block; width:46px; height:30px; margin:1px; border-radius:6px; background:#f1edf7; vertical-align:top;"></span>';
     }
     mini += '<br>';
   }
