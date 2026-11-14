@@ -2366,8 +2366,15 @@ function pzStartBoardListener(){
     if(pzPending && pzPlaced[pzPending.slot]) pzReturnPending();
     pzRenderTop(); pzLayout(); pzRenderNames();
   });
+  // 관리자가 기회를 초기화하면(또는 다른 변화가 생기면) 열려 있는 화면에서도 바로 남은 기회를 다시 계산
+  pzPlaysRef = db.ref('puzzlePlays/'+pzCfg.id+'/'+todayStr());
+  pzPlaysRef.on('value', function(){
+    if(!pzRoster || !pzRoster.length || !pzOverlay.classList.contains('open')) return;
+    pzLoadLeft().then(function(){ if(document.getElementById('pzPicker').classList.contains('open')) pzOpenPicker(); });
+  });
 }
-function pzStopBoardListener(){ if(pzBoardRef){ pzBoardRef.off(); pzBoardRef = null; pzBoardRefId = null; } }
+let pzPlaysRef = null;
+function pzStopBoardListener(){ if(pzBoardRef){ pzBoardRef.off(); pzBoardRef = null; pzBoardRefId = null; } if(pzPlaysRef){ pzPlaysRef.off(); pzPlaysRef = null; } }
 async function pzOpen(){
   if(!(pzCfg && pzCfg.open && pzCfg.id)) return;
   pzOverlay.classList.add('open');
@@ -2398,7 +2405,7 @@ document.getElementById('pzPeekBtn').addEventListener('click', async function(){
     if(!ok){ pzToast('오늘은 그림을 더 볼 수 없어요', 'info'); return; }
   }
   const box = document.getElementById('pzPeek'); box.firstChild.src = src; box.className = 'show';
-  document.getElementById('pzPeekLeft').textContent = (pzCfg.peek === -1 || limit < 0) ? '' : '오늘 남은 횟수 ' + left + '번';
+  document.getElementById('pzPeekLeft').textContent = (pzCfg.peek === -1 || limit < 0) ? '' : '오늘 남은 보기 횟수 ' + left + '번';
   clearTimeout(box._t); box._t = setTimeout(function(){ box.className = ''; }, 1800);
 });
 document.getElementById('pzWinOk').addEventListener('click', function(){ document.getElementById('pzWin').classList.remove('open'); });
