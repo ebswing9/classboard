@@ -220,6 +220,7 @@
     <div style="display:flex; align-items:center; gap:8px;">
       <h1 style="margin:0;">🎒 학급 대시보드 관리자</h1>
       <a href="index.html" target="_blank" rel="noopener" title="대시보드 화면으로 이동" style="width:26px; height:26px; min-width:26px; border-radius:50%; background:transparent; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; flex-shrink:0;">🏠</a>
+      <span id="boardStatus" style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:12px; background:#eee9f3; color:#8a82a0; white-space:nowrap;">칠판 확인 전</span>
     </div>
     <button id="logoutBtn">로그아웃</button>
   </header>
@@ -2549,7 +2550,26 @@ async function pzRenderA(){
   if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
 }
 let pzThumbSrc = '';
+let boardPres = null;
+function boardState(){
+  if(!boardPres) return { k: 'none', txt: '칠판 기록 없음' };
+  const fresh = boardPres.ts && (Date.now() - boardPres.ts) < 120000;
+  if(boardPres.online && fresh){
+    return boardPres.visible === false ? { k: 'sleep', txt: '칠판 화면 꺼짐?' } : { k: 'on', txt: '칠판 켜짐' };
+  }
+  const t = boardPres.offAt || boardPres.ts;
+  const d = t ? new Date(t) : null;
+  return { k: 'off', txt: '칠판 꺼짐' + (d ? ' · 마지막 ' + ((d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')) : '') };
+}
+function renderBoardStatus(){
+  const el = document.getElementById('boardStatus'); if(!el) return;
+  const st = boardState();
+  const col = { on: ['#d9f5e8','#2f8f67','🟢 '], sleep: ['#fff3d6','#a8741a','🟡 '], off: ['#ffe3ec','#c24d78','⚪ '], none: ['#eee9f3','#8a82a0',''] }[st.k];
+  el.style.background = col[0]; el.style.color = col[1]; el.textContent = col[2] + st.txt;
+}
+setInterval(renderBoardStatus, 15000);
 function bindPuzzleListeners(){
+  db.ref('presence/board').on('value', s=>{ boardPres = s.val(); renderBoardStatus(); });
   db.ref('config/luckyOpen').on('value', s=> setLuckyShowBtn(s.val() !== false));
   db.ref('config/puzzle').on('value', s=>{ pzCfgA = s.val(); pzRenderA(); });
   db.ref('puzzleBoard').on('value', s=>{ pzBoardA = s.val() || {}; pzRenderA(); });
@@ -3027,6 +3047,8 @@ document.getElementById('caSendBtn').addEventListener('click', async ()=>{
   const closeMode = document.getElementById('caCloseMode').value;
   let seconds = parseInt(document.getElementById('caSeconds').value, 10);
   if(!(seconds >= 3)) seconds = 30;
+  const bs = boardState();
+  if((bs.k === 'off' || bs.k === 'sleep') && !confirm('칠판이 ' + (bs.k === 'off' ? '꺼져 있는' : '화면이 꺼져 있는') + ' 것 같아요. 그래도 알림을 보낼까요?')) return;
   const id = Date.now().toString(36);
   await db.ref('classAlert').set({
     id: id, message: message, mode: mode, closeMode: closeMode, seconds: seconds,
