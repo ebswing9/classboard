@@ -320,7 +320,7 @@
   #pzPeek.show{ opacity:1; -webkit-transform:translate(-50%,0); transform:translate(-50%,0); }
   #pzPeekLeft{ margin-top:5px; font-size:11px; font-weight:700; color:#c24d78; }
   #pzPeek{ text-align:center; }
-  #pzPeek img{ display:block; width:150px; max-height:150px; object-fit:contain; border-radius:11px; }
+  #pzPeek img{ display:block; width:220px; max-height:220px; object-fit:contain; border-radius:11px; }
   .pz-box .gm-chip.c1{ background:#ece2fb; }
   .pz-box .gm-chip.c2{ background:#ffe3ec; }
   #pzToast{ position:fixed; top:21%; left:50%; z-index:5200; opacity:0; pointer-events:none; white-space:nowrap; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:21px; color:#5a4f6e; padding:13px 30px 12px; border-radius:20px; background:#fff; box-shadow:0 10px 26px rgba(120,100,160,0.22); -webkit-transform:translate(-50%,-10px); transform:translate(-50%,-10px); -webkit-transition:opacity .25s ease, -webkit-transform .25s ease; transition:opacity .25s ease, transform .25s ease; }
@@ -341,7 +341,7 @@
   .pz-board{ position:absolute; background:#fff; border-radius:22px; box-shadow:0 10px 26px rgba(160,140,190,0.26), 0 0 0 5px rgba(255,255,255,0.75); }
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
-  .pz-tray-label{ position:absolute; z-index:950; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
+  .pz-tray-label{ display:none; position:absolute; z-index:950; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
   .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; -webkit-filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); }
   .pz-cellhl img{ display:block; width:100%; height:100%; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
@@ -1157,15 +1157,17 @@ function pzSfx(kind){
   }catch(e){}
 }
 // 누른 카드에서 색색의 파티클이 사방으로 튀어나감
-function attBurst(cell, colors){
+function attBurst(cell, colors, big){
   const COLORS = colors || ['#4fbe9c','#7fd3b3','#a8e6cf','#6fcf97','#bfe9a8','#c8f0e2','#ffffff'];
-  for(let k=0;k<18;k++){
+  const N = big ? 28 : 18;
+  for(let k=0;k<N;k++){
     const el = document.createElement('span');
     el.className = 'att-pt' + (k%3===0 ? ' star' : '');
     el.style.background = COLORS[k % COLORS.length];
+    if(big){ const z = (k%3===0) ? 22 : 12; el.style.width = z + 'px'; el.style.height = z + 'px'; el.style.margin = (-z/2) + 'px 0 0 ' + (-z/2) + 'px'; }
     cell.appendChild(el);
-    const ang = (Math.PI*2) * (k/18) + (Math.random()-0.5)*0.5;
-    const dist = 44 + Math.random()*44;
+    const ang = (Math.PI*2) * (k/N) + (Math.random()-0.5)*0.5;
+    const dist = (big ? 70 : 44) + Math.random()*(big ? 80 : 44);
     const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist*0.9 - 6;
     const rot = Math.round((Math.random()-0.5)*360);
     (function(el,dx,dy,rot){
@@ -2305,7 +2307,15 @@ async function pzAttempt(student){
       if(pl.committed){
         await pRef.transaction(function(cur){ cur = cur || {}; cur.correct = (cur.correct||0) + 1; return cur; });
         pzPlaced[slot] = { by: sid }; pzPending = null;
-        pzSfx('ok'); el.classList.add('pop'); setTimeout(function(){ el.classList.remove('pop'); }, 600);
+        pzSfx('ok');
+        (function(){
+          const sp = pzSlotPos(slot), h = document.createElement('div');
+          h.style.cssText = 'position:absolute; width:0; height:0; z-index:900; pointer-events:none; left:' + (sp.x + pzG.px + pzG.cw/2) + 'px; top:' + (sp.y + pzG.py + pzG.chh/2) + 'px;';
+          document.getElementById('pzSurface').appendChild(h);
+          attBurst(h, ['#f78fb3','#ffb3cf','#ffd3e0','#c9b6f2','#e0d4fa','#ffe6a8','#ffffff'], true);
+          setTimeout(function(){ if(h.parentNode) h.parentNode.removeChild(h); }, 1100);
+        })();
+        el.classList.add('pop'); setTimeout(function(){ el.classList.remove('pop'); }, 600);
         pzLeft[sid] = await pzCalc(sid);
         if(pzIsDone()){ pzShowWin(parseInt(pzCfg.points,10)||0); pzSettle(pzCfg); await pzRefresh(); }
         else { pzToast('딱 맞았어요!', 'ok'); pzRenderTop(); pzLayout(); await pzRenderNames(); }
