@@ -311,17 +311,17 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; -webkit-flex-shrink:0; flex-shrink:0; margin:0 16px 0 14px; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:19px; letter-spacing:2px; height:48px; min-width:104px; padding:3px 26px 0 28px; box-sizing:border-box; border-radius:24px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; position:relative; text-shadow:0 1px 0 rgba(200,90,130,0.35); }
-  .pz-confirm:active{ -webkit-transform:translateY(3px); transform:translateY(3px); box-shadow:0 1px 0 #e57fa4, 0 3px 8px rgba(247,143,179,0.3); }
+  .pz-confirm{ display:none; position:absolute; z-index:900; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:17px; letter-spacing:2px; height:44px; min-width:96px; padding:3px 24px 0 26px; box-sizing:border-box; border-radius:22px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; text-shadow:0 1px 0 rgba(200,90,130,0.35); -webkit-transform:translateX(-50%); transform:translateX(-50%); }
+  .pz-confirm:active{ -webkit-transform:translateX(-50%) translateY(3px); transform:translateX(-50%) translateY(3px); box-shadow:0 1px 0 #e57fa4, 0 3px 8px rgba(247,143,179,0.3); }
   .pz-box .gm-hero-icon{ display:none; }
   #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 0; width:138px; }
   #pzRank .rk-t{ font-size:11px; font-weight:700; color:#b3a5c9; margin-bottom:3px; }
   #pzRank .rk-r{ height:22px; opacity:1; -webkit-transform:translateY(0); transform:translateY(0); -webkit-transition:opacity .35s ease, -webkit-transform .35s ease; transition:opacity .35s ease, transform .35s ease; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; font-size:14px; font-weight:700; color:var(--text); line-height:1; margin-top:4px; white-space:nowrap; }
-  #pzRank .rk-r.in{ opacity:0; -webkit-transform:translateY(8px); transform:translateY(8px); }
-  #pzRank .rk-r.out{ opacity:0; -webkit-transform:translateY(-8px); transform:translateY(-8px); }
+  #pzRank .rk-r.in{ opacity:0; -webkit-transform:translateY(4px); transform:translateY(4px); }
+  #pzRank .rk-r.out{ opacity:0; -webkit-transform:translateY(-4px); transform:translateY(-4px); }
   #pzRank .rk-n{ display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:6px; font-size:11px; color:#fff; margin-right:7px; background:#f78fb3; }
   #pzRank .rk-c{ margin-left:7px; font-size:11px; color:#a395b8; }
-  @media (max-width:640px){ #pzRank{ display:none; } .pz-confirm{ margin-right:54px; } }
+  @media (max-width:640px){ #pzRank{ display:none; } }
   #pzPeekBtn{ margin-left:10px; width:34px; height:34px; border:none; border-radius:12px; background:#ffe3ec; cursor:pointer; padding:0; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
   #pzPeekBtn:active{ background:#ffd3e0; }
   #pzPeek{ position:fixed; top:96px; left:50%; z-index:5300; opacity:0; pointer-events:none; background:#fff; padding:6px; border-radius:16px; box-shadow:0 10px 26px rgba(120,100,160,0.28); -webkit-transform:translate(-50%,-8px); transform:translate(-50%,-8px); -webkit-transition:opacity .22s ease, -webkit-transform .22s ease; transition:opacity .22s ease, transform .22s ease; }
@@ -678,7 +678,6 @@
         <div style="display:flex; align-items:center;"><div class="gm-title" id="pzTitle">협동 퍼즐</div><button id="pzPeekBtn" title="그림 살짝 보기"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="#f78fb3" d="M9 4v-.5a2.5 2.5 0 0 1 5 0V4h4a1 1 0 0 1 1 1v4h-.5a2.5 2.5 0 0 0 0 5h.5v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4h.5a2.5 2.5 0 0 0 0-5H4V5a1 1 0 0 1 1-1z"/></svg></button></div>
         <div class="gm-chips" id="pzMeta"></div>
       </div>
-      <button class="pz-confirm" id="pzConfirmBtn"><span>확정</span></button>
       <div id="pzRank"></div>
     </div>
     <div class="pz-bar"><div id="pzBarFill"></div></div>
@@ -2085,7 +2084,8 @@ function pzDrawBoard(done){
 }
 function pzBuild(){
   const surf = document.getElementById('pzSurface');
-  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"><div class="pz-tray-label" id="pzTrayLabel"></div></div><div class="pz-cellhl" id="pzHl"><img alt=""></div>';
+  surf.innerHTML = '<div class="pz-board" id="pzBoardEl"><canvas id="pzBoardCv"></canvas></div><div class="pz-tray" id="pzTrayEl"><div class="pz-tray-label" id="pzTrayLabel"></div></div><div class="pz-cellhl" id="pzHl"><img alt=""></div><button class="pz-confirm" id="pzConfirmBtn"><span>확정</span></button>';
+  document.getElementById('pzConfirmBtn').addEventListener('click', pzConfirmClick);
   pzHlSlot = -1; pzBoardKey = '';
   pzEls = [];
   const total = pzTotal();
@@ -2157,6 +2157,7 @@ function pzLayout(){
     el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
     el.style.display = (done || !pzPlaced[p] || true) ? 'block' : 'none';
   }
+  pzPlaceConfirm();
 }
 function pzRanking(){
   const m = {};
@@ -2199,10 +2200,20 @@ function pzRenderTop(){
     + '<span class="gm-chip c2">완성하면 맞춘 친구 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
   document.getElementById('pzBarFill').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
 }
+function pzPlaceConfirm(){
+  const btn = document.getElementById('pzConfirmBtn'); if(!btn || !pzG) return;
+  if(!pzPending || pzIsDone() || pzDrag){ btn.style.display = 'none'; return; }
+  const pos = pzSlotPos(pzPending.slot), g = pzG;
+  const cx = pos.x + g.px + g.cw / 2, top = pos.y + g.py, bot = top + g.chh, bh = 44;
+  let y = bot + 8;
+  if(y + bh > g.bph - 4) y = top - bh - 8;
+  const x = Math.max(56, Math.min(g.sw - 56, cx));
+  btn.style.left = x + 'px'; btn.style.top = Math.max(0, y) + 'px'; btn.style.display = 'flex';
+}
 async function pzRenderNames(){
   const box = document.getElementById('pzNames'), btn = document.getElementById('pzConfirmBtn');
   if(pzIsDone()){
-    btn.style.display = 'none';
+    pzPlaceConfirm();
     const ps = (await db.ref('puzzleParticipants/'+pzCfg.id).once('value')).val() || {};
     const names = Object.keys(ps).filter(function(k){ return (ps[k].correct||0) > 0; }).map(function(k){ return ps[k].name; }).sort(function(a,b){ return String(a).localeCompare(String(b),'ko'); });
     box.className = 'pz-names-done';
@@ -2210,7 +2221,7 @@ async function pzRenderNames(){
     return;
   }
   box.className = ''; box.innerHTML = '';
-  btn.style.display = pzPending ? 'flex' : 'none';
+  pzPlaceConfirm();
 }
 function pzOpenPicker(){
   if(!pzPending || pzBusy) return;
@@ -2349,7 +2360,7 @@ async function pzAttempt(student){
       const pl = await db.ref('puzzleBoard/'+pid+'/'+slot).transaction(function(cur){ return cur ? undefined : { by: sid, name: name, at: Date.now() }; });
       if(pl.committed){
         await pRef.transaction(function(cur){ cur = cur || {}; cur.correct = (cur.correct||0) + 1; return cur; });
-        pzPlaced[slot] = { by: sid }; pzPending = null;
+        pzPlaced[slot] = { by: sid, name: name }; pzPending = null;
         pzSfx('ok');
         (function(){
           const sp = pzSlotPos(slot), h = document.createElement('div');
@@ -2461,12 +2472,12 @@ document.getElementById('pzPeekBtn').addEventListener('click', async function(){
   clearTimeout(box._t); box._t = setTimeout(function(){ box.className = ''; }, 1800);
 });
 document.getElementById('pzWinOk').addEventListener('click', function(){ document.getElementById('pzWin').classList.remove('open'); });
-document.getElementById('pzConfirmBtn').addEventListener('click', function(){
+function pzConfirmClick(){
   if(!pzPending || pzBusy) return;
   pzSfx('confirm');
   attBurst(this, ['#f78fb3','#ffb3cf','#ffd3e0','#c9b6f2','#e0d4fa','#ffffff','#ffc2dc']);
   pzOpenPicker();
-});
+}
 document.getElementById('pzPickerClose').addEventListener('click', function(){ document.getElementById('pzPicker').classList.remove('open'); });
 document.getElementById('pzPicker').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('open'); });
 document.getElementById('pzCloseBtn').addEventListener('click', function(){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPending = null; pzDrag = null; });
