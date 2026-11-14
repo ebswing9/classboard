@@ -346,8 +346,8 @@
 
       <div class="tab-panel" id="subtab-imgshare">
         <div class="section">
-          <h3>🖼️ 이미지 공유 (QR·사진 보여주기)</h3>
-          <p class="hint">공개를 켜면 대시보드 출결 창에 🖼️ 버튼이 나타나요. 학생이 누르면 이미지가 크게 뜨고, 여러 장이면 좌우로 넘겨 볼 수 있어요. 공개를 끄면 버튼이 사라져요. (최대 10장)</p>
+          <h3>📷 이미지 공유 (QR·사진 보여주기)</h3>
+          <p class="hint">공개를 켜면 대시보드 출결 창에 📷 버튼이 나타나요. 학생이 누르면 이미지가 뜨고(크기는 장마다 고를 수 있어요), 여러 장이면 좌우로 넘겨 볼 수 있어요. 공개를 끄면 버튼이 사라져요. (최대 10장)</p>
           <div class="field"><label>이미지 추가</label>
             <input type="file" id="isFileInput" accept="image/*" multiple>
           </div>
@@ -2420,6 +2420,7 @@ async function isRender(){
   box.innerHTML = items.map((it,i)=> `<div style="display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:10px 12px; margin-bottom:10px; box-shadow:var(--shadow);">
       <img src="${isThumbCache[it.id]||''}" style="width:72px; height:72px; object-fit:contain; border-radius:10px; background:#f4f1f8; flex-shrink:0;">
       <div class="field" style="flex:1; min-width:0; margin:0;"><input type="text" data-istitle="${i}" value="${escapeHtml(it.title||'')}" placeholder="설명 (선택, 예: 설문 QR)"></div>
+      <div class="field" style="width:96px; margin:0; flex-shrink:0;"><select data-issize="${i}"><option value="s" ${it.size==='s'?'selected':''}>작게</option><option value="m" ${(!it.size||it.size==='m')?'selected':''}>보통</option><option value="l" ${it.size==='l'?'selected':''}>크게</option><option value="f" ${it.size==='f'?'selected':''}>꽉 차게</option></select></div>
       <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-end; flex-shrink:0;">
         <span><button class="del-link" data-isup="${i}" ${i===0?'disabled':''}>▲</button> <button class="del-link" data-isdown="${i}" ${i===items.length-1?'disabled':''}>▼</button></span>
         <button class="del-link" data-isdel="${i}">삭제</button>
@@ -2427,6 +2428,9 @@ async function isRender(){
     </div>`).join('');
   box.querySelectorAll('[data-istitle]').forEach(inp=> inp.addEventListener('change', async ()=>{
     await db.ref('config/imgShare/items/'+inp.dataset.istitle+'/title').set(inp.value.trim());
+  }));
+  box.querySelectorAll('[data-issize]').forEach(sel=> sel.addEventListener('change', async ()=>{
+    await db.ref('config/imgShare/items/'+sel.dataset.issize+'/size').set(sel.value);
   }));
   box.querySelectorAll('[data-isdel]').forEach(b=> b.addEventListener('click', async ()=>{
     const arr = isItems(), it = arr[parseInt(b.dataset.isdel,10)]; if(!it) return;

@@ -294,17 +294,18 @@
 
   #imgOverlay{ position:fixed; top:0; right:0; bottom:0; left:0; z-index:300; background:rgba(74,68,88,0.55); display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity .22s ease, visibility 0s linear .22s; }
   #imgOverlay.open{ opacity:1; visibility:visible; transition:opacity .22s ease, visibility 0s; }
-  .img-box{ position:relative; background:#fff; border-radius:22px; padding:16px 18px 14px; box-shadow:0 14px 40px rgba(74,68,88,0.35); max-width:92vw; text-align:center; }
+  .img-box{ position:relative; background:#fffafc; border-radius:28px; padding:26px 22px 18px; box-shadow:0 18px 46px rgba(74,68,88,0.32), 0 0 0 6px rgba(255,255,255,0.55); max-width:96vw; text-align:center; }
   .img-stage{ display:-webkit-box; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
-  .img-stage > *{ margin:0 5px; }
-  #imgMain{ min-width:300px; min-height:300px; max-width:min(78vw,860px); max-height:74vh; object-fit:contain; border-radius:12px; display:block; background:#f6f3fa; }
-  .img-nav{ width:38px; height:38px; min-width:38px; border-radius:50%; border:none; background:var(--sky); color:var(--text); font-size:18px; cursor:pointer; padding:0; }
-  .img-nav:disabled{ opacity:.3; cursor:default; }
-  #imgCaption{ margin-top:10px; font-size:15px; font-weight:700; color:var(--text); }
-  #imgDots{ margin-top:8px; }
-  #imgDots span{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--line); margin:0 3px; }
-  #imgDots span.on{ background:var(--sky-deep); }
-  #imgOverlay .close-x{ top:10px; right:10px; width:26px; height:26px; font-size:12px; z-index:2; }
+  .img-stage > *{ margin:0 8px; }
+  #imgMain{ display:block; border-radius:14px; background:#fff; box-shadow:0 4px 16px rgba(120,100,160,0.18); width:200px; height:200px; object-fit:contain; }
+  .img-nav{ width:40px; height:40px; min-width:40px; border-radius:50%; border:none; background:#ffe3ec; color:#e56f9a; font-size:20px; line-height:38px; cursor:pointer; padding:0 0 3px; font-weight:700; }
+  .img-nav:active{ background:#ffd3e0; }
+  .img-nav:disabled{ opacity:.28; cursor:default; }
+  #imgCaption{ margin-top:14px; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:19px; color:var(--text); }
+  #imgDots{ margin-top:10px; height:8px; }
+  #imgDots span{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#f0dfe7; margin:0 3px; }
+  #imgDots span.on{ background:#f78fb3; }
+  #imgOverlay .close-x{ top:12px; right:12px; width:28px; height:28px; font-size:12px; z-index:2; }
 
   #puzzleOverlay{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(74,68,88,0.5); z-index:5000; align-items:center; justify-content:center; padding:12px; }
   #puzzleOverlay.open{ display:flex; }
@@ -512,7 +513,7 @@
             <button id="puzzleIconBtn" title="퍼즐">🧩</button>
             <button id="surveyIconBtn" title="설문">📝</button>
             <button id="voteIconBtn" title="투표">✅</button>
-            <button id="imgIconBtn" title="이미지">🖼️</button>
+            <button id="imgIconBtn" title="이미지">📷</button>
           </div>
           <button class="panel-close" id="panelCloseBtn">✕</button>
         </div>
@@ -1856,6 +1857,16 @@ function updateImgIcon(){
   const on = !!(imgCfg && imgCfg.open && imgItems().length && openPanelType === 'attendance');
   document.getElementById('imgIconBtn').style.display = on ? 'flex' : 'none';
 }
+let imgCur = null;
+function imgFit(it){
+  const im = document.getElementById('imgMain'); if(!im.naturalWidth) return;
+  const SZ = { s: 0.34, m: 0.58, l: 0.8, f: 0.97 }, fr = SZ[it.size] || SZ.m;
+  const maxW = fr * (window.innerWidth - 190), maxH = fr * (window.innerHeight - 190);
+  const sc = Math.min(maxW / im.naturalWidth, maxH / im.naturalHeight);
+  im.style.width = Math.max(60, Math.round(im.naturalWidth * sc)) + 'px';
+  im.style.height = Math.max(60, Math.round(im.naturalHeight * sc)) + 'px';
+}
+window.addEventListener('resize', function(){ if(imgCur && imgOverlay.classList.contains('open')) imgFit(imgCur); });
 async function imgShow(){
   const items = imgItems(); if(!items.length) return;
   if(imgIdx >= items.length) imgIdx = items.length - 1;
@@ -1866,7 +1877,11 @@ async function imgShow(){
     imgCache[it.id] = (await db.ref('imgShareData/'+it.id).once('value')).val() || '';
   }
   if(items[imgIdx] !== it && items[imgIdx].id !== it.id) return;
-  document.getElementById('imgMain').src = imgCache[it.id];
+  const im = document.getElementById('imgMain');
+  const SZ = { s: 0.34, m: 0.58, l: 0.8, f: 0.97 }, fr = SZ[it.size] || SZ.m;
+  im.onload = function(){ imgFit(it); };
+  im.src = imgCache[it.id]; imgCur = it;
+  if(im.complete && im.naturalWidth) imgFit(it);
   document.getElementById('imgCaption').textContent = it.title || '';
   document.getElementById('imgCaption').style.display = it.title ? 'block' : 'none';
   document.getElementById('imgPrev').style.visibility = items.length > 1 ? 'visible' : 'hidden';
