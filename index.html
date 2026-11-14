@@ -316,7 +316,8 @@
   .pz-box .gm-hero-icon{ display:none; }
   #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 0; width:138px; }
   #pzRank .rk-t{ font-size:11px; font-weight:700; color:#b3a5c9; margin-bottom:3px; }
-  #pzRank .rk-r{ display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; font-size:13px; font-weight:700; color:var(--text); line-height:1; margin-top:3px; white-space:nowrap; }
+  #pzRank .rk-r{ height:22px; opacity:1; -webkit-transform:translateY(0); transform:translateY(0); -webkit-transition:opacity .35s ease, -webkit-transform .35s ease; transition:opacity .35s ease, transform .35s ease; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; font-size:14px; font-weight:700; color:var(--text); line-height:1; margin-top:4px; white-space:nowrap; }
+  #pzRank .rk-r.out{ opacity:0; -webkit-transform:translateY(-8px); transform:translateY(-8px); }
   #pzRank .rk-n{ display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:6px; font-size:11px; color:#fff; margin-right:7px; background:#f78fb3; }
   #pzRank .rk-c{ margin-left:7px; font-size:11px; color:#a395b8; }
   @media (max-width:640px){ #pzRank{ display:none; } .pz-confirm{ margin-right:54px; } }
@@ -2165,13 +2166,27 @@ function pzRanking(){
   arr.forEach(function(x,i){ if(x.n !== last){ rank = i + 1; last = x.n; } x.rank = rank; });
   return arr;
 }
-function pzRenderRank(){
-  const box = document.getElementById('pzRank'), arr = pzRanking().filter(function(x){ return x.rank <= 3; }).slice(0, 4);
-  if(!arr.length){ box.innerHTML = '<div class="rk-t">많이 맞춘 친구</div><div class="rk-r" style="color:#c9bdd9; font-weight:600;">아직 없어요</div>'; return; }
-  box.innerHTML = '<div class="rk-t">많이 맞춘 친구</div>' + arr.map(function(x){
-    return '<div class="rk-r r' + x.rank + '"><span class="rk-n">' + x.rank + '</span>' + escapeHtml(x.name) + '<span class="rk-c">' + x.n + '개</span></div>';
-  }).join('');
+let pzRankArr = [], pzRankIdx = 0;
+function pzRankRowHtml(x){
+  return '<span class="rk-n">' + x.rank + '</span>' + escapeHtml(x.name) + '<span class="rk-c">' + x.n + '개</span>';
 }
+function pzRenderRank(){
+  const box = document.getElementById('pzRank');
+  pzRankArr = pzRanking().filter(function(x){ return x.rank <= 3; }).slice(0, 6);
+  if(pzRankIdx >= pzRankArr.length) pzRankIdx = 0;
+  box.innerHTML = '<div class="rk-t">많이 맞춘 친구</div><div class="rk-r" id="pzRankRow">'
+    + (pzRankArr.length ? pzRankRowHtml(pzRankArr[pzRankIdx]) : '<span style="color:#c9bdd9; font-weight:600;">아직 없어요</span>') + '</div>';
+}
+setInterval(function(){
+  if(pzRankArr.length < 2 || !pzOverlay.classList.contains('open')) return;
+  const row = document.getElementById('pzRankRow'); if(!row) return;
+  row.className = 'rk-r out';
+  setTimeout(function(){
+    pzRankIdx = (pzRankIdx + 1) % pzRankArr.length;
+    const r2 = document.getElementById('pzRankRow'); if(!r2 || !pzRankArr.length) return;
+    r2.innerHTML = pzRankRowHtml(pzRankArr[pzRankIdx]); r2.className = 'rk-r';
+  }, 380);
+}, 3200);
 function pzRenderTop(){
   pzRenderRank();
   const done = pzIsDone(), n = Object.keys(pzPlaced).length, total = pzTotal();
