@@ -311,8 +311,8 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; position:absolute; z-index:900; border:none; background:#f78fb3; color:#fff; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:17px; letter-spacing:2px; height:44px; min-width:96px; padding:3px 24px 0 26px; box-sizing:border-box; border-radius:22px; box-shadow:0 4px 0 #e57fa4, 0 9px 16px rgba(247,143,179,0.32); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; text-shadow:0 1px 0 rgba(200,90,130,0.35); -webkit-transform:translateX(-50%); transform:translateX(-50%); }
-  .pz-confirm:active{ -webkit-transform:translateX(-50%) translateY(3px); transform:translateX(-50%) translateY(3px); box-shadow:0 1px 0 #e57fa4, 0 3px 8px rgba(247,143,179,0.3); }
+  .pz-confirm{ display:none; position:absolute; z-index:900; border:none; background:#fff3f7; color:#d4608a; font-family:'MapleStory','Jua',sans-serif; font-weight:700; font-size:16px; letter-spacing:1px; height:38px; min-width:84px; padding:2px 22px 0; box-sizing:border-box; border-radius:14px; box-shadow:0 0 0 2px #ffc9dc, 0 6px 14px rgba(247,143,179,0.28); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; -webkit-transform:translateX(-50%); transform:translateX(-50%); }
+  .pz-confirm:active{ background:#ffe3ec; }
   .pz-box .gm-hero-icon{ display:none; }
   #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 0; width:138px; }
   #pzRank .rk-t{ font-size:11px; font-weight:700; color:#b3a5c9; margin-bottom:3px; }
@@ -366,7 +366,7 @@
   @keyframes pzShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-7px); } 75%{ transform:translateX(7px); } }
   #pzNames{ text-align:center; }
   .pz-names-done{ margin-top:6px; }
-  .pz-names-done span{ display:inline-block; background:var(--mint); color:var(--text); font-size:13px; font-weight:800; padding:5px 14px; border-radius:999px; margin:3px; }
+  .pz-names-done span{ display:inline-block; background:#ffe9f0; color:#c24d78; font-size:13px; font-weight:800; padding:5px 14px; border-radius:999px; margin:3px; }
   #pzPicker{ display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:5100; background:rgba(74,68,88,0.45); align-items:center; justify-content:center; padding:16px; }
   #pzPicker.open{ display:flex; }
   .pz-dialog{ max-width:600px; text-align:center; }
@@ -2195,7 +2195,7 @@ setInterval(function(){
 function pzRenderTop(){
   pzRenderRank();
   const done = pzIsDone(), n = Object.keys(pzPlaced).length, total = pzTotal();
-  document.getElementById('pzTitle').textContent = done ? '퍼즐 완성! 🎉' : '협동 퍼즐';
+  document.getElementById('pzTitle').textContent = done ? '퍼즐 완성!' : '협동 퍼즐';
   document.getElementById('pzMeta').innerHTML = '<span class="gm-chip c1">' + n + ' / ' + total + ' 조각</span>'
     + '<span class="gm-chip c2">완성하면 맞춘 친구 모두 +' + (parseInt(pzCfg.points,10)||0) + '점</span>';
   document.getElementById('pzBarFill').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
