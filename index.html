@@ -311,8 +311,8 @@
   #puzzleOverlay.open{ display:flex; }
   .gm-box.pz-box{ max-width:1400px; padding:26px 30px 28px; overflow:hidden; }
   .pz-box .gm-hero{ margin-bottom:0; }
-  .pz-confirm{ display:none; position:absolute; z-index:99999; border:3px solid #cfc2f3; background:#f1edfc; color:#7a63c9; font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif; font-weight:800; font-size:14px; letter-spacing:0; height:36px; min-width:72px; padding:0 20px; box-sizing:border-box; border-radius:999px; box-shadow:0 5px 14px rgba(155,127,234,0.28); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; -webkit-transform:translateX(-50%); transform:translateX(-50%); }
-  .pz-confirm:active{ background:#e6dffa; border-color:#b9a8ee; }
+  .pz-confirm{ display:none; position:absolute; z-index:99999; border:3px solid #f6a5c1; background:#ffe3ec; color:#c24d78; font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif; font-weight:800; font-size:14px; letter-spacing:0; height:36px; min-width:72px; padding:0 20px; box-sizing:border-box; border-radius:999px; box-shadow:0 5px 14px rgba(247,143,179,0.3); cursor:pointer; white-space:nowrap; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; -webkit-transform:translateX(-50%); transform:translateX(-50%); }
+  .pz-confirm:active{ background:#ffd3e0; border-color:#f28cb0; }
   .pz-box .gm-hero-icon{ display:none; }
   #pzRank{ -webkit-flex-shrink:0; flex-shrink:0; margin:0 54px 0 0; width:138px; }
   #pzRank .rk-t{ font-size:11px; font-weight:700; color:#b3a5c9; margin-bottom:3px; }
@@ -350,13 +350,13 @@
   .pz-board canvas{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
   .pz-tray{ position:absolute; background:#f1edfc; border-radius:22px; box-shadow:inset 0 3px 10px rgba(155,127,234,0.16); }
   .pz-tray-label{ display:none; position:absolute; z-index:950; left:16px; top:12px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; font-weight:800; font-size:14px; color:var(--text); background:#fff; padding:4px 14px; border-radius:999px; box-shadow:0 2px 6px rgba(160,140,190,0.2); }
-  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; -webkit-filter:drop-shadow(0 0 5px rgba(155,127,234,0.55)); filter:drop-shadow(0 0 5px rgba(155,127,234,0.55)); }
+  .pz-cellhl{ position:absolute; z-index:700; display:none; pointer-events:none; -webkit-filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); filter:drop-shadow(0 0 5px rgba(244,150,200,0.55)); }
   .pz-cellhl img{ display:block; width:100%; height:100%; }
   .pz-pc{ position:absolute; z-index:2; cursor:-webkit-grab; cursor:grab; touch-action:none; -ms-touch-action:none; -webkit-user-select:none; user-select:none; -webkit-filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); filter:drop-shadow(0 2px 3px rgba(74,68,88,0.26)); }
   .pz-pc img{ display:block; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; }
   .pz-pc.ret{ -webkit-transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
   .pz-pc.drag{ z-index:900; cursor:-webkit-grabbing; cursor:grabbing; -webkit-filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); filter:drop-shadow(0 10px 10px rgba(74,68,88,0.34)); }
-  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 6px #a68eec); filter:drop-shadow(0 0 6px #a68eec); }
+  .pz-pc.pend{ z-index:800; -webkit-filter:drop-shadow(0 0 5px #f08fc0); filter:drop-shadow(0 0 5px #f08fc0); }
   .pz-pc.placed{ z-index:1; cursor:default; pointer-events:none; -webkit-filter:none; filter:none; }
   .pz-pc.pop{ -webkit-animation:pzPop .5s ease; animation:pzPop .5s ease; }
   .pz-pc.shake{ -webkit-animation:pzShake .4s ease; animation:pzShake .4s ease; }
@@ -2286,7 +2286,7 @@ function pzCellAt(el){
 function pzSilhouette(slot){
   if(pzSilCache[pzBuiltId + '_' + slot]) return pzSilCache[pzBuiltId + '_' + slot];
   const src = pzData.cvs[slot], c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
-  const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = 'rgba(155,127,234,0.30)'; x.fillRect(0, 0, c.width, c.height);
+  const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = 'rgba(244,150,200,0.38)'; x.fillRect(0, 0, c.width, c.height);
   return (pzSilCache[pzBuiltId + '_' + slot] = c.toDataURL());
 }
 function pzDragMove(e){
