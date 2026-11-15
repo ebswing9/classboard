@@ -2595,8 +2595,11 @@ async function pzSettleAdmin(cfg){
     const claim = await db.ref('puzzleDone/'+cfg.id).transaction(cur=> cur ? undefined : { at: Date.now() });
     if(!claim.committed) return;
     const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
+    const bd = (await db.ref('puzzleBoard/'+cfg.id).once('value')).val() || {};
+    const cnt = {};
+    Object.keys(bd).forEach(k=>{ const e = bd[k]; if(e && e.by && e.by !== 'admin') cnt[e.by] = (cnt[e.by]||0) + 1; });
+    const ids = Object.keys(cnt).filter(k=> ps[k]);
     const pts = parseInt(cfg.points,10) || 0;
-    const ids = Object.keys(ps).filter(k=> (ps[k].correct||0) > 0);
     if(pts !== 0){
       for(let k=0;k<ids.length;k++){
         await awardPoints(ids[k], pts);
@@ -2605,8 +2608,8 @@ async function pzSettleAdmin(cfg){
     }
     const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
     if(bonus !== 0 && ids.length){
-      const mx = Math.max.apply(null, ids.map(k=> ps[k].correct||0));
-      const tops = ids.filter(k=> (ps[k].correct||0) === mx);
+      const mx = Math.max.apply(null, ids.map(k=> cnt[k]));
+      const tops = ids.filter(k=> cnt[k] === mx);
       for(let k=0;k<tops.length;k++){
         await awardPoints(tops[k], bonus);
         await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '🧩 협동 퍼즐 최다 기여', at: Date.now() });
