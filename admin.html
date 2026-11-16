@@ -38,8 +38,19 @@
   header{ background:linear-gradient(120deg, #ffe1f3, #ffd1ea); color:var(--primary-text); padding:18px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
   header h1{ font-family:'MapleStory','Jua',sans-serif; font-weight:400; font-size:18px; margin:0; }
   #configErrorBanner{ background:#f088a0; color:#fff; padding:14px 20px; font-size:14px; font-weight:700; display:none; }
-  header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
-  #logoutBtn{ background:rgba(255,255,255,0.55); border:none; color:var(--primary-text); padding:7px 14px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; }
+  header h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; white-space:nowrap; }
+  .hd-left{ position:relative; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; min-width:0; }
+  .hd-left > *{ margin-right:8px; }
+  #boardStatus{ cursor:pointer; -webkit-user-select:none; user-select:none; }
+  #boardTip{ display:none; position:absolute; left:0; top:100%; margin-top:8px; background:#fff; color:#5b4a68; font-size:12px; font-weight:700; padding:7px 12px; border-radius:12px; box-shadow:0 6px 16px rgba(120,90,140,0.22); white-space:nowrap; z-index:20; }
+  @media (max-width:520px){
+    header{ padding:12px 12px; }
+    header h1{ font-size:14px; }
+    .hd-long{ display:none; }
+    #boardStatus{ font-size:11px !important; padding:3px 8px !important; }
+    #logoutBtn{ padding:6px 10px; font-size:12px; }
+  }
+  #logoutBtn{ white-space:nowrap; -webkit-flex-shrink:0; flex-shrink:0; margin-left:8px; background:rgba(255,255,255,0.55); border:none; color:var(--primary-text); padding:7px 14px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; }
   main{ max-width:760px; margin:0 auto; padding:20px 16px 60px; }
 
   #loginBox{ max-width:340px; margin:80px auto; background:var(--card); border-radius:20px; padding:32px 28px; box-shadow:var(--shadow); text-align:center; }
@@ -217,10 +228,11 @@
 
 <div id="adminApp" style="display:none;">
   <header>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <h1 style="margin:0;">🎒 학급 대시보드 관리자</h1>
+    <div class="hd-left">
+      <h1 style="margin:0;">🎒 <span class="hd-long">학급 대시보드 </span>관리자</h1>
       <a href="index.html" target="_blank" rel="noopener" title="대시보드 화면으로 이동" style="width:26px; height:26px; min-width:26px; border-radius:50%; background:transparent; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; flex-shrink:0;">🏠</a>
       <span id="boardStatus" style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:12px; background:#eee9f3; color:#8a82a0; white-space:nowrap;">칠판 확인 전</span>
+      <div id="boardTip"></div>
     </div>
     <button id="logoutBtn">로그아웃</button>
   </header>
@@ -2564,21 +2576,34 @@ async function pzRenderA(){
 let pzThumbSrc = '';
 let boardPres = null;
 function boardState(){
-  if(!boardPres) return { k: 'none', txt: '칠판 기록 없음' };
+  if(!boardPres) return { k: 'none', txt: '칠판 기록 없음', detail: '아직 칠판 기기가 등록되지 않았어요' };
   const fresh = boardPres.ts && (Date.now() - boardPres.ts) < 120000;
+  function fmt(t){ const d = new Date(t); return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
   if(boardPres.online && fresh){
-    return boardPres.visible === false ? { k: 'sleep', txt: '칠판 화면 꺼짐?' } : { k: 'on', txt: '칠판 켜짐' };
+    return boardPres.visible === false
+      ? { k: 'sleep', txt: '화면 꺼짐?', detail: '칠판은 연결돼 있는데 화면이 꺼져 있을 수 있어요' }
+      : { k: 'on', txt: '칠판 켜짐', detail: '칠판이 정상적으로 켜져 있어요' };
   }
   const t = boardPres.offAt || boardPres.ts;
-  const d = t ? new Date(t) : null;
-  return { k: 'off', txt: '칠판 꺼짐' + (d ? ' · 마지막 ' + ((d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')) : '') };
+  return { k: 'off', txt: '칠판 꺼짐', detail: t ? '마지막 확인 ' + fmt(t) : '꺼진 시각 기록 없음' };
 }
+let boardTipTimer = null;
 function renderBoardStatus(){
   const el = document.getElementById('boardStatus'); if(!el) return;
   const st = boardState();
   const col = { on: ['#d9f5e8','#2f8f67','🟢 '], sleep: ['#fff3d6','#a8741a','🟡 '], off: ['#ffe3ec','#c24d78','⚪ '], none: ['#eee9f3','#8a82a0',''] }[st.k];
   el.style.background = col[0]; el.style.color = col[1]; el.textContent = col[2] + st.txt;
+  el.title = st.detail;
+  const tip = document.getElementById('boardTip'); if(tip && tip.style.display === 'block') tip.textContent = st.detail;
 }
+document.getElementById('boardStatus').addEventListener('click', function(e){
+  e.stopPropagation();
+  const tip = document.getElementById('boardTip');
+  if(tip.style.display === 'block'){ tip.style.display = 'none'; return; }
+  tip.textContent = boardState().detail; tip.style.display = 'block';
+  clearTimeout(boardTipTimer); boardTipTimer = setTimeout(function(){ tip.style.display = 'none'; }, 4000);
+});
+document.addEventListener('click', function(){ const t = document.getElementById('boardTip'); if(t) t.style.display = 'none'; });
 setInterval(renderBoardStatus, 15000);
 function bindPuzzleListeners(){
   db.ref('presence/board').on('value', s=>{ boardPres = s.val(); renderBoardStatus(); });
