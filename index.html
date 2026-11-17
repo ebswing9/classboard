@@ -2934,7 +2934,26 @@ function attachRealtimeListeners(){
     }catch(e){}
     if(!isBoard) return;
     const pref = db.ref('presence/board');
-    function beat(){ pref.update({ online: true, ts: firebase.database.ServerValue.TIMESTAMP, visible: document.visibilityState !== 'hidden' }); }
+    function curScreen(){
+      function op(id){ const e = document.getElementById(id); return !!(e && e.classList.contains('open')); }
+      if(document.getElementById('suspendOverlay').style.display === 'flex') return '일시정지';
+      if(op('classAlertOverlay')) return '교실 알림';
+      if(op('gameOverlay')) return '펭귄 게임';
+      if(op('puzzleOverlay')) return '퍼즐';
+      if(op('surveyOverlay')) return '설문';
+      if(op('voteOverlay')) return '투표';
+      if(op('imgOverlay')) return '이미지';
+      if(op('drawOverlay')) return '퀴즈 답안';
+      if(op('luckyDrawOverlay')) return '행운번호';
+      if(openPanelType === 'attendance') return '출결 패널';
+      if(openPanelType === 'morning') return '조회 패널';
+      if(openPanelType === 'closing') return '종례 패널';
+      if(openPanelType === 'roles') return '역할 패널';
+      return '기본 화면';
+    }
+    let lastScreen = null;
+    function beat(){ lastScreen = curScreen(); pref.update({ online: true, ts: firebase.database.ServerValue.TIMESTAMP, visible: document.visibilityState !== 'hidden', screen: lastScreen }); }
+    setInterval(function(){ if(curScreen() !== lastScreen) beat(); }, 3000);
     db.ref('.info/connected').on('value', function(snap){
       if(snap.val() === true){ pref.onDisconnect().update({ online: false, offAt: firebase.database.ServerValue.TIMESTAMP }); beat(); }
     });

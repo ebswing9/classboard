@@ -2582,7 +2582,7 @@ function boardState(){
   if(boardPres.online && fresh){
     return boardPres.visible === false
       ? { k: 'sleep', txt: '화면 꺼짐?', detail: '칠판은 연결돼 있는데 화면이 꺼져 있을 수 있어요' }
-      : { k: 'on', txt: '칠판 켜짐', detail: '칠판이 정상적으로 켜져 있어요' };
+      : { k: 'on', txt: '칠판 켜짐', detail: boardPres.screen ? '지금 화면: ' + boardPres.screen : '칠판이 정상적으로 켜져 있어요' };
   }
   const t = boardPres.offAt || boardPres.ts;
   return { k: 'off', txt: '칠판 꺼짐', detail: t ? '마지막 확인 ' + fmt(t) : '꺼진 시각 기록 없음' };
