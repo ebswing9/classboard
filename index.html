@@ -1229,7 +1229,7 @@ async function renderAttendancePanel(){
   const box = document.getElementById('panelBody');
   if(!roster.length){ box.innerHTML = '<p style="color:var(--muted);">등록된 학생이 없습니다.</p>'; return; }
 
-  const checked = roster.filter(s=>att[s.id]).sort((a,b)=> (att[a.id].time||'').localeCompare(att[b.id].time||''));
+  const checked = roster.filter(s=>att[s.id]).sort((a,b)=> (att[a.id].ts && att[b.id].ts && att[a.id].ts !== att[b.id].ts) ? att[a.id].ts - att[b.id].ts : (att[a.id].time||'').localeCompare(att[b.id].time||''));
   const unchecked = roster.filter(s=>!att[s.id]);
   const ordered = [...unchecked, ...checked];
 

@@ -1800,7 +1800,7 @@ async function loadAttendanceTab(){
   if(attSortMode === 'time'){
     const withTime = roster.filter(s=> att[s.id] && att[s.id].time);
     const withoutTime = roster.filter(s=> !(att[s.id] && att[s.id].time));
-    withTime.sort((a,b)=> att[a.id].time.localeCompare(att[b.id].time));
+    withTime.sort((a,b)=> (att[a.id].ts && att[b.id].ts && att[a.id].ts !== att[b.id].ts) ? att[a.id].ts - att[b.id].ts : (att[a.id].time||'').localeCompare(att[b.id].time||''));
     ordered = [...withTime, ...withoutTime];
   }
 
