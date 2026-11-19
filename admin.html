@@ -239,9 +239,9 @@
   <main>
     <div class="tabs">
       <button class="tab-btn active" data-tab="notice">조회·종례</button>
+      <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="quiz">퀴즈</button>
       <button class="tab-btn" data-tab="game">게임</button>
-      <button class="tab-btn" data-tab="attendance">출결</button>
       <button class="tab-btn" data-tab="points">포인트</button>
       <button class="tab-btn" data-tab="settings">설정</button>
     </div>
@@ -1170,7 +1170,7 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorag
 
 /* ---- 최상위 탭 ---- */
 document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{ switchTab(btn.dataset.tab); try{ localStorage.setItem('adminLastTab', btn.dataset.tab); }catch(e){} });
+  btn.addEventListener('click', ()=>{ switchTab(btn.dataset.tab); saveAdminView(); });
 });
 function switchTab(tab){
   document.querySelectorAll('.tabs:not(.subtabs) > .tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
@@ -1182,7 +1182,6 @@ document.querySelectorAll('.tabs.subtabs > .tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const container = btn.closest('.tab-panel');
     switchSubTab(container.id, btn.dataset.subtab);
-    try{ localStorage.setItem('adminLastSub_'+container.id, btn.dataset.subtab); }catch(e){}
   });
 });
 function switchSubTab(panelId, subtab){
@@ -1195,6 +1194,18 @@ function switchSubTab(panelId, subtab){
   Array.from(container.children).forEach(el=>{
     if(el.classList && el.classList.contains('tab-panel')) el.classList.toggle('active', el.id === 'subtab-'+subtab);
   });
+  saveAdminView();
+}
+/* 마지막으로 '실제로 화면에 보이던' 탭+하위탭을 한 묶음으로 저장 (코드로 탭이 바뀐 경우도 포함) */
+let adminRestoring = false;
+function saveAdminView(){
+  if(adminRestoring) return;
+  try{
+    const tb = document.querySelector('.tabs:not(.subtabs) > .tab-btn.active'); if(!tb) return;
+    const t = tb.dataset.tab, panel = document.getElementById('tab-'+t);
+    const sb = panel ? panel.querySelector('.tabs.subtabs > .tab-btn.active') : null;
+    localStorage.setItem('adminLastView', JSON.stringify({ tab: t, sub: sb ? sb.dataset.subtab : '' }));
+  }catch(e){}
 }
 
 /* ---- 접기/펼치기 ---- */
@@ -3365,17 +3376,17 @@ if(window.caches){
 /* ---- 마지막으로 본 탭 기억 (이 브라우저에만 저장) ---- */
 (function(){
   try{
-    const t = localStorage.getItem('adminLastTab');
-    if(!t) return;
-    const tb = document.querySelector('.tabs:not(.subtabs) > .tab-btn[data-tab="'+t+'"]');
-    if(!tb) return;
-    tb.click();
-    const sub = localStorage.getItem('adminLastSub_tab-'+t);
-    if(sub){
-      const sb = document.querySelector('#tab-'+t+' .tabs.subtabs > .tab-btn[data-subtab="'+sub+'"]');
-      if(sb) sb.click();
+    const raw = localStorage.getItem('adminLastView'); if(!raw) return;
+    const v = JSON.parse(raw);
+    if(!v || !document.getElementById('tab-'+v.tab)) return;
+    adminRestoring = true;
+    switchTab(v.tab);
+    if(v.sub && document.getElementById('subtab-'+v.sub)){
+      const sb = document.querySelector('#tab-'+v.tab+' .tabs.subtabs > .tab-btn[data-subtab="'+v.sub+'"]');
+      if(sb) switchSubTab('tab-'+v.tab, v.sub);
     }
-  }catch(e){}
+    adminRestoring = false;
+  }catch(e){ adminRestoring = false; }
 })();
 </script>
 </body>
