@@ -493,6 +493,10 @@
           <button class="filter-btn active" data-sort="submit">제출 순서대로</button>
           <button class="filter-btn" data-sort="name">이름 순서대로</button>
         </div>
+        <div style="margin-bottom:14px;">
+          <button type="button" class="pill" id="quizSkipBtn" style="font-size:12px; padding:6px 12px;">🔕 이 날짜는 미채점으로 남겨둘게요</button>
+          <div class="hint" id="quizSkipHint" style="margin-top:6px; display:none;">미채점 알림(달력 빨간 점, 통계)에서 제외돼요. 답안은 그대로 남아 있어요.</div>
+        </div>
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
       </div>
@@ -1105,18 +1109,76 @@ async function getQuizMarkedDates(year, month){
   }catch(e){}
   return marked;
 }
-// 날짜별 미채점 수 (제출했지만 정답/오답 표시가 없는 답안). 1분 동안 캐시
+// 퀴즈 제출/채점 요약(quizSum/날짜/학생 = {s:1, v:'correct'|'incorrect'|''})을 따로 두어 통계·달력이 가볍게 읽도록 함
+let qsSkipCache = null;
+async function getQuizSkip(){
+  if(!qsSkipCache) qsSkipCache = (await db.ref('quizSkip').once('value')).val() || {};
+  return qsSkipCache;
+}
+let qsSumReady = false, qsMigrating = null;
+async function isQuizSumReady(){
+  if(qsSumReady) return true;
+  qsSumReady = (await db.ref('quizSumReady').once('value')).val() === true;
+  return qsSumReady;
+}
+// 기존 답안 기록을 요약으로 한 번만 옮겨 담음(처음 한 번은 오래 걸릴 수 있음)
+function migrateQuizSum(onProgress){
+  if(qsMigrating) return qsMigrating;
+  qsMigrating = (async function(){
+    const quizSnap = await db.ref('quiz').once('value');
+    const qv = quizSnap.val() || {};
+    const dates = Object.keys(qv).filter(function(d){ return /^\d{4}-\d{2}-\d{2}$/.test(d); }).sort();
+    const students = await getRosterList({all:true});
+    const cell = {}, jobs = [];
+    dates.forEach(function(d){ students.forEach(function(s){ jobs.push([d, s.id]); }); });
+    let done = 0;
+    for(let i=0; i<jobs.length; i+=150){
+      const chunk = jobs.slice(i, i+150);
+      await Promise.all(chunk.map(async function(j){
+        const r = await Promise.all([
+          db.ref('quizAnswers/'+j[0]+'/'+j[1]+'/submittedAt').once('value'),
+          db.ref('quizAnswers/'+j[0]+'/'+j[1]+'/verdict').once('value')
+        ]);
+        cell[j[0]+'|'+j[1]] = { sub: r[0].val() !== null, v: r[1].val() || '' };
+      }));
+      done += chunk.length;
+      if(onProgress) onProgress(Math.min(100, Math.round(done / jobs.length * 100)));
+    }
+    const up = {};
+    Object.keys(cell).forEach(function(k){
+      if(!cell[k].sub) return;
+      const p = k.split('|');
+      up['quizSum/'+p[0]+'/'+p[1]] = { s: 1, v: cell[k].v };
+    });
+    up['quizSumReady'] = true;
+    await db.ref().update(up);
+    qsSumReady = true;
+    return { dates: dates, students: students, cell: cell };
+  })();
+  qsMigrating.then(function(){ qsMigrating = null; }, function(){ qsMigrating = null; });
+  return qsMigrating;
+}
+// 날짜별 미채점 수 (제출했지만 정답/오답 표시가 없는 답안). 1분 동안 캐시. '예외 처리'한 날짜는 0
 const qsUngCache = {};
 async function qsUngradedCount(d){
+  const skip = await getQuizSkip();
+  if(skip[d]) return 0;
   const c = qsUngCache[d];
   if(c && Date.now() - c.t < 60000) return c.n;
-  const students = await getRosterList({all:true});
-  const res = await Promise.all(students.map(async function(s){
-    const r = await Promise.all([ db.ref('quizAnswers/'+d+'/'+s.id+'/submittedAt').once('value'), db.ref('quizAnswers/'+d+'/'+s.id+'/verdict').once('value') ]);
-    const v = r[1].val();
-    return r[0].val() !== null && v !== 'correct' && v !== 'incorrect';
-  }));
-  const n = res.filter(Boolean).length;
+  let n = 0;
+  if(await isQuizSumReady()){
+    const sum = (await db.ref('quizSum/'+d).once('value')).val() || {};
+    Object.keys(sum).forEach(function(id){ const e = sum[id]; if(e && e.s && e.v !== 'correct' && e.v !== 'incorrect') n++; });
+  } else {
+    migrateQuizSum().catch(function(){});   // 처음 한 번만: 백그라운드로 요약 만들기
+    const students = await getRosterList({all:true});
+    const res = await Promise.all(students.map(async function(s){
+      const r = await Promise.all([ db.ref('quizAnswers/'+d+'/'+s.id+'/submittedAt').once('value'), db.ref('quizAnswers/'+d+'/'+s.id+'/verdict').once('value') ]);
+      const v = r[1].val();
+      return r[0].val() !== null && v !== 'correct' && v !== 'incorrect';
+    }));
+    n = res.filter(Boolean).length;
+  }
   qsUngCache[d] = { t: Date.now(), n: n };
   return n;
 }
@@ -2223,6 +2285,8 @@ async function revokePointEvent(id, e){
     await db.ref('pointMeta/'+id+'/pendingManual/'+e.logId).remove();
   } else if(e.type === 'quiz'){
     await db.ref('quizAnswers/'+e.date+'/'+id).update({ verdict: null, awardedAmount: 0 });
+    await db.ref('quizSum/'+e.date+'/'+id).set({ s: 1, v: '' });
+    delete qsUngCache[e.date]; qsRaw = null;
     await awardPoints(id, -e.delta);
   } else if(e.type === 'attBonus'){
     await awardPoints(id, -e.delta);
@@ -2849,7 +2913,25 @@ document.querySelectorAll('#quizSortTabs .filter-btn').forEach(btn=>{
     loadQuizAnswers(document.getElementById('quizAnswerDate').value || todayStr());
   });
 });
+async function refreshQuizSkipBtn(date){
+  const skip = await getQuizSkip();
+  const on = !!skip[date];
+  const b = document.getElementById('quizSkipBtn');
+  b.classList.toggle('on-present', on);
+  b.textContent = on ? '🔕 미채점 예외 처리됨 (눌러서 해제)' : '🔕 이 날짜는 미채점으로 남겨둘게요';
+  document.getElementById('quizSkipHint').style.display = on ? 'block' : 'none';
+}
+document.getElementById('quizSkipBtn').addEventListener('click', async function(){
+  const date = document.getElementById('quizAnswerDate').value || todayStr();
+  const skip = await getQuizSkip();
+  if(skip[date]){ delete skip[date]; await db.ref('quizSkip/'+date).remove(); }
+  else { skip[date] = true; await db.ref('quizSkip/'+date).set(true); }
+  delete qsUngCache[date];
+  if(qsRaw) renderQuizStats();
+  refreshQuizSkipBtn(date);
+});
 async function loadQuizAnswers(date){
+  refreshQuizSkipBtn(date);
   const box = document.getElementById('quizAnswerGrid');
   box.innerHTML = '불러오는 중...';
   const [snap, quizPointsSnap] = await Promise.all([
@@ -2892,6 +2974,7 @@ async function loadQuizAnswers(date){
       const next = current === btn.dataset.verdict ? null : btn.dataset.verdict;
       const nextAmount = next === 'correct' ? quizPoints : 0;
       await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: next, awardedAmount: nextAmount });
+      await db.ref('quizSum/'+date+'/'+id).set({ s: 1, v: next || '' });
       delete qsUngCache[date]; qsRaw = null;
       const delta = nextAmount - prevAmount;
       if(delta !== 0) await awardPoints(id, delta);
@@ -2903,6 +2986,7 @@ async function loadQuizAnswers(date){
       const id = btn.dataset.reset;
       const prevAmount = (val[id] && val[id].awardedAmount) || 0;
       await db.ref('quizAnswers/'+date+'/'+id).remove();
+      await db.ref('quizSum/'+date+'/'+id).remove();
       delete qsUngCache[date]; qsRaw = null;
       if(prevAmount) await awardPoints(id, -prevAmount);
       await loadQuizAnswers(date);
@@ -2923,28 +3007,25 @@ async function loadQuizStats(force){
   document.getElementById('qsSummary').innerHTML = '<p class="hint">불러오는 중...</p>';
   document.getElementById('qsStudentTable').innerHTML = ''; document.getElementById('qsDateTable').innerHTML = '';
   try{
-    const quizSnap = await db.ref('quiz').once('value');
-    const qv = quizSnap.val() || {};
-    const dates = Object.keys(qv).filter(d=> /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
-    const students = await getRosterList({all:true});
-    const cell = {};
-    const jobs = [];
-    dates.forEach(d=> students.forEach(s=> jobs.push([d, s.id])));
-    let done = 0;
-    for(let i=0; i<jobs.length; i+=150){
-      const chunk = jobs.slice(i, i+150);
-      await Promise.all(chunk.map(async ([d,id])=>{
-        const [a,b] = await Promise.all([
-          db.ref('quizAnswers/'+d+'/'+id+'/submittedAt').once('value'),
-          db.ref('quizAnswers/'+d+'/'+id+'/verdict').once('value')
-        ]);
-        cell[d+'|'+id] = { sub: a.val() !== null, v: b.val() || '' };
+    const skip = await getQuizSkip();
+    let dates, students, cell = {};
+    if(await isQuizSumReady()){
+      const quizSnap = await db.ref('quiz').once('value');
+      const qv = quizSnap.val() || {};
+      dates = Object.keys(qv).filter(d=> /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+      students = await getRosterList({all:true});
+      const sum = (await db.ref('quizSum').once('value')).val() || {};
+      dates.forEach(d=> students.forEach(s=>{
+        const e = sum[d] && sum[d][s.id];
+        cell[d+'|'+s.id] = { sub: !!(e && e.s), v: (e && e.v) || '' };
       }));
-      done += chunk.length;
-      msg.textContent = '불러오는 중... ' + Math.min(100, Math.round(done / jobs.length * 100)) + '%';
+    } else {
+      msg.textContent = '처음 한 번만 기록을 정리해요. 잠시만 기다려 주세요...';
+      const r = await migrateQuizSum(function(p){ msg.textContent = '처음 한 번만 기록을 정리해요... ' + p + '%'; });
+      dates = r.dates; students = r.students; cell = r.cell;
     }
     msg.textContent = '';
-    qsRaw = { dates, students, cell };
+    qsRaw = { dates, students, cell, skip };
   }catch(e){
     console.error(e); msg.textContent = '불러오지 못했어요. 다시 시도해 주세요.';
   }
@@ -2961,25 +3042,26 @@ function qsPeriodDates(){
 }
 function renderQuizStats(){
   if(!qsRaw) return;
+  const skip = qsRaw.skip || {};
   const dates = qsPeriodDates();
   const rows = qsRaw.students.map(s=>{
-    let sub=0, cor=0, inc=0;
-    dates.forEach(d=>{ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub){ sub++; if(c.v==='correct') cor++; else if(c.v==='incorrect') inc++; } });
+    let sub=0, cor=0, inc=0, sk=0;
+    dates.forEach(d=>{ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub){ sub++; if(c.v==='correct') cor++; else if(c.v==='incorrect') inc++; else if(skip[d]) sk++; } });
     let streak = 0;
     for(let k=dates.length-1; k>=0; k--){ const c = qsRaw.cell[dates[k]+'|'+s.id]; if(c && c.sub) streak++; else break; }
-    return { id:s.id, name:s.name + (s.transferred ? ' (전학)' : ''), out:!!s.transferred, sub, cor, inc, ung: sub-cor-inc,
+    return { id:s.id, name:s.name + (s.transferred ? ' (전학)' : ''), out:!!s.transferred, sub, cor, inc, ung: sub-cor-inc-sk,
              acc: qsPct(cor, cor+inc), rate: qsPct(sub, dates.length), streak };
   });
   const active = rows.filter(r=>!r.out);
   const totSub = active.reduce((a,r)=>a+r.sub,0), totCor = active.reduce((a,r)=>a+r.cor,0), totInc = active.reduce((a,r)=>a+r.inc,0);
-  const totUng = totSub - totCor - totInc;
+  const totUng = active.reduce((x,r)=>x+r.ung,0);
   document.getElementById('qsSummary').innerHTML = '<div class="qs-cards">'
     + '<div class="qs-card"><b>'+dates.length+'회</b><span>출제된 퀴즈</span></div>'
     + '<div class="qs-card"><b>'+totSub+'건</b><span>총 제출 (전학생 제외)</span></div>'
     + '<div class="qs-card"><b>'+qsFmt(qsPct(totSub, dates.length * active.length))+'</b><span>평균 제출률</span></div>'
     + '<div class="qs-card"><b>'+qsFmt(qsPct(totCor, totCor+totInc))+'</b><span>전체 정답률</span></div>'
     + '<div class="qs-card"><b'+(totUng>0?' class="qs-red"':'')+'>'+totUng+'건</b><span>미채점</span></div></div>';
-  const ungDates = dates.filter(function(d){ let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return n>0; }).map(function(d){ let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return { d:d, n:n }; });
+  const ungDates = dates.filter(function(d){ if(skip[d]) return false; let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return n>0; }).map(function(d){ let n=0; qsRaw.students.forEach(function(s){ const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub && c.v!=='correct' && c.v!=='incorrect') n++; }); return { d:d, n:n }; });
   document.getElementById('qsSummary').innerHTML += ungDates.length
     ? '<div class="qs-warnbox"><b style="color:#e5384f;">🔴 미채점이 남아 있는 날짜</b> <span style="color:var(--muted); font-size:12px;">(누르면 그 날짜 채점 화면으로 이동해요)</span><br>' + ungDates.slice().reverse().map(function(x){ return '<button class="qs-chip" data-jump="'+x.d+'">'+x.d.slice(5)+' · '+x.n+'건</button>'; }).join('') + '</div>' : '';
   if(!dates.length){ document.getElementById('qsStudentTable').innerHTML = '<p class="hint">이 기간에 출제된 퀴즈가 없어요.</p>'; document.getElementById('qsDateTable').innerHTML=''; return; }
@@ -3009,7 +3091,7 @@ function renderQuizStats(){
     b.addEventListener('click', function(){
       const sid = b.dataset.ungsid;
       const s = qsRaw.students.filter(function(x){ return x.id === sid; })[0];
-      const ds = dates.filter(function(d){ const c = qsRaw.cell[d+'|'+sid]; return c && c.sub && c.v!=='correct' && c.v!=='incorrect'; });
+      const ds = dates.filter(function(d){ if(skip[d]) return false; const c = qsRaw.cell[d+'|'+sid]; return c && c.sub && c.v!=='correct' && c.v!=='incorrect'; });
       document.getElementById('qsUngDetail').innerHTML = '<div class="qs-warnbox"><b>'+escapeHtml(s ? s.name : '')+'</b> 님의 미채점 날짜<br>' + ds.map(function(d){ return '<button class="qs-chip" data-jump="'+d+'">'+d+'</button>'; }).join('') + '</div>';
       qsBindJump(document.getElementById('qsUngDetail'));
     });
@@ -3018,10 +3100,10 @@ function renderQuizStats(){
   const drows = dates.slice().reverse().map(d=>{
     let sub=0, cor=0, inc=0;
     qsRaw.students.forEach(s=>{ if(s.transferred) return; const c = qsRaw.cell[d+'|'+s.id]; if(c && c.sub){ sub++; if(c.v==='correct') cor++; else if(c.v==='incorrect') inc++; } });
-    return { d, sub, cor, inc, ung: sub-cor-inc, acc: qsPct(cor, cor+inc), rate: qsPct(sub, active.length) };
+    return { d, skip: !!skip[d], sub, cor, inc, ung: skip[d] ? 0 : sub-cor-inc, acc: qsPct(cor, cor+inc), rate: qsPct(sub, active.length) };
   });
   document.getElementById('qsDateTable').innerHTML = '<table class="qs-table"><thead><tr><th style="cursor:default;">날짜</th><th style="cursor:default;">제출</th><th style="cursor:default;">정답</th><th style="cursor:default;">오답</th><th style="cursor:default;">미채점</th><th style="cursor:default;">정답률</th><th style="cursor:default;">제출률</th></tr></thead><tbody>'
-    + drows.map(r=>'<tr><td><button class="qs-link'+(r.ung>0?' red':'')+'" data-jump="'+r.d+'">'+r.d+'</button></td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td'+(r.ung>0?' class="qs-red"':'')+'>'+(r.ung>0?'🔴 ':'')+r.ung+'</td><td>'+qsFmt(r.acc)+'</td><td>'+qsFmt(r.rate)+'</td></tr>').join('') + '</tbody></table>';
+    + drows.map(r=>'<tr><td><button class="qs-link'+(r.ung>0?' red':'')+'" data-jump="'+r.d+'">'+r.d+(r.skip ? ' 🔕' : '')+'</button></td><td>'+r.sub+'</td><td>'+r.cor+'</td><td>'+r.inc+'</td><td'+(r.ung>0?' class="qs-red"':'')+'>'+(r.ung>0?'🔴 ':'')+r.ung+'</td><td>'+qsFmt(r.acc)+'</td><td>'+qsFmt(r.rate)+'</td></tr>').join('') + '</tbody></table>';
   qsBindJump(document.getElementById('qsSummary'));
   qsBindJump(document.getElementById('qsDateTable'));
   qsCurrentRows = rows;

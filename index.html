@@ -1705,6 +1705,7 @@ document.getElementById('submitDrawingBtn').addEventListener('click', async ()=>
   await db.ref(`quizAnswers/${todayStr()}/${selectedStudent.id}`).set({
     name: selectedStudent.name, dataUrl, submittedAt: Date.now()
   });
+  try{ await db.ref(`quizSum/${todayStr()}/${selectedStudent.id}`).set({ s: 1, v: '' }); }catch(e){}
   await checkAndCelebrateReward(selectedStudent.id, selectedStudent.name);
   document.getElementById('drawStepCanvas').style.display = 'none';
   document.getElementById('drawStepDone').style.display = 'block';
