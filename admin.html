@@ -70,15 +70,18 @@
   .qs-card{ flex:1; min-width:110px; background:var(--primary-soft); border-radius:16px; padding:12px 14px; text-align:center; }
   .qs-card b{ display:block; font-size:22px; color:var(--primary-text); }
   .qs-card span{ font-size:12px; color:var(--muted); font-weight:600; }
-  .pz-badge{ display:inline-block; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:8px; margin-left:4px; vertical-align:1px; }
+  .pz-badge{ display:inline-block; min-width:62px; text-align:center; box-sizing:border-box; font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px; }
   .pz-badge.ok{ background:var(--mint); color:#2f6f54; }
   .pz-badge.try{ background:#eee9f3; color:var(--muted); }
   .pz-part-table td:last-child{ text-align:right; padding-right:4px; }
   .pz-part-table td:first-child, .pz-badge{ white-space:nowrap; }
   @media (max-width:520px){
-    .pz-part-table th, .pz-part-table td{ padding:7px 3px; font-size:12px; }
+    .pz-part-table th, .pz-part-table td{ padding:7px 2px; font-size:11px; }
+    .pz-part-table .del-link{ font-size:11px; }
+    .pz-part-table th{ font-size:11px; }
+    #pzPartList{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .pz-part-table th:first-child, .pz-part-table td:first-child{ padding-left:6px; }
-    .pz-part-table .pz-badge{ display:block; margin:3px 0 0 0; width:-webkit-fit-content; width:fit-content; }
+    .pz-part-table .pz-badge{ min-width:0; padding:2px 5px; font-size:10.5px; }
     .pz-part-table .del-link{ display:block; margin:0 0 4px auto; }
   }
   .qs-table{ width:100%; border-collapse:collapse; font-size:13.5px; }
@@ -2635,17 +2638,31 @@ async function pzRenderA(){
     + '<div class="hint">'+pzCfgA.cols+' × '+pzCfgA.rows+' 칸'+(pzDoneA[id] ? (pzDoneA[id].winners ? ' · 포인트 지급 완료 ('+pzDoneA[id].winners.length+'명)' : ' · 정산 중') : '')+'</div>'
     + '</div></div>';
   const ps = pzPartA[id] || {};
-  const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k] })).sort((x,y)=> (y.correct||0) - (x.correct||0) || (x.name||'').localeCompare(y.name||'','ko'));
+  const todayK = todayStr(), usedM = (pzPlaysA[id] && pzPlaysA[id][todayK]) || {};
+  const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k], used: usedM[k]||0, ok: (ps[k].correct||0) > 0 ? 1 : 0 }));
+  const sk = pzSortKey, sd = pzSortAsc ? 1 : -1;
+  rows.sort((x,y)=>{
+    if(sk === 'name') return sd * (x.name||'').localeCompare(y.name||'','ko');
+    const xv = sk === 'correct' ? (x.correct||0) : sk === 'tries' ? (x.tries||0) : x[sk], yv = sk === 'correct' ? (y.correct||0) : sk === 'tries' ? (y.tries||0) : y[sk];
+    return (xv - yv) * sd || (x.name||'').localeCompare(y.name||'','ko');
+  });
   const okN = rows.filter(r=> (r.correct||0) > 0).length;
   document.getElementById('pzPartCount').textContent = rows.length ? '(포인트 대상 ' + okN + '명 · 시도만 ' + (rows.length - okN) + '명)' : '';
   const today = todayStr(), usedMap = (pzPlaysA[id] && pzPlaysA[id][today]) || {};
   document.getElementById('pzPartList').innerHTML = rows.length
-    ? '<table class="qs-table pz-part-table"><thead><tr><th style="cursor:default;">이름</th><th style="cursor:default;">성공</th><th style="cursor:default;">시도</th><th style="cursor:default;">오늘 사용</th><th style="cursor:default;">관리</th></tr></thead><tbody>'
-      + rows.map(r=> '<tr><td>'+escapeHtml(r.name||'')+' <span class="pz-badge '+((r.correct||0) > 0 ? 'ok' : 'try')+'">'+((r.correct||0) > 0 ? '포인트 대상' : '시도만')+'</span></td>'
-        + '<td>'+(r.correct||0)+'</td><td>'+(r.tries||0)+'</td><td>'+(usedMap[r.id]||0)+'회</td>'
+    ? '<table class="qs-table pz-part-table"><thead><tr>'
+      + [['name','이름'],['ok','상태'],['correct','성공'],['tries','시도'],['used','오늘']].map(c=> '<th data-pzk="'+c[0]+'">'+c[1]+(pzSortKey===c[0] ? (pzSortAsc ? ' ▲' : ' ▼') : '')+'</th>').join('')
+      + '<th style="cursor:default;">관리</th></tr></thead><tbody>'
+      + rows.map(r=> '<tr><td>'+escapeHtml(r.name||'')+'</td>'
+        + '<td><span class="pz-badge '+(r.ok ? 'ok' : 'try')+'">'+(r.ok ? '포인트 대상' : '시도만')+'</span></td>'
+        + '<td>'+(r.correct||0)+'</td><td>'+(r.tries||0)+'</td><td>'+r.used+'회</td>'
         + '<td style="white-space:nowrap;"><button class="del-link" data-pzreset="'+r.id+'" title="오늘 쓴 기회를 0으로 되돌려요" style="color:#d14a6f;">기회 초기화</button> <button class="del-link" data-pzunpart="'+r.id+'" title="시도 기록을 지웁니다" style="color:#d14a6f;">참여 취소</button></td></tr>').join('')
-      + '</tbody></table>'
+      + '</tbody></table><p class="hint" style="margin-top:8px;">제목 줄을 누르면 그 기준으로 정렬돼요.</p>'
     : '<p class="hint">아직 참여한 학생이 없어요.</p>';
+  document.querySelectorAll('#pzPartList th[data-pzk]').forEach(th=> th.addEventListener('click', ()=>{
+    if(pzSortKey === th.dataset.pzk) pzSortAsc = !pzSortAsc; else { pzSortKey = th.dataset.pzk; pzSortAsc = (pzSortKey === 'name'); }
+    pzRenderA();
+  }));
   document.querySelectorAll('#pzPartList [data-pzreset]').forEach(b=> b.addEventListener('click', async ()=>{
     if(!confirm('이 학생의 오늘 사용한 기회를 0으로 되돌릴까요?')) return;
     await db.ref('puzzlePlays/'+id+'/'+todayStr()+'/'+b.dataset.pzreset).remove();
@@ -2678,6 +2695,7 @@ async function pzRenderA(){
   if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
 }
 let pzThumbSrc = '';
+let pzSortKey = 'correct', pzSortAsc = false;
 function pzFmtTime(t){ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 let boardPres = null;
 function boardState(){
