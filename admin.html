@@ -605,11 +605,11 @@
           <div class="field"><label>퍼즐 이미지</label>
             <input type="file" id="pzFileInput" accept="image/*">
           </div>
-          <div class="field"><label>가로 칸 수 (2~12)</label>
-            <input type="number" id="pzColsInput" min="2" max="12" value="8">
+          <div class="field"><label>가로 칸 수 (2~20)</label>
+            <input type="number" id="pzColsInput" min="2" max="20" value="8">
           </div>
-          <div class="field"><label>세로 칸 수 (2~12)</label>
-            <input type="number" id="pzRowsInput" min="2" max="12" value="8">
+          <div class="field"><label>세로 칸 수 (2~20)</label>
+            <input type="number" id="pzRowsInput" min="2" max="20" value="8">
           </div>
           <p class="hint">가로 × 세로 = 조각 수예요. <b>이미지를 고르지 않으면 지금 퍼즐의 그림을 그대로 쓰고 조각 수만 바꿔요.</b> 어느 쪽이든 시작하면 이전 퍼즐의 진행 기록(놓인 조각, 참여자)은 지워지고, 완성되지 않은 퍼즐이면 포인트도 지급되지 않아요.</p>
           <button class="btn" id="pzStartBtn">새 퍼즐 시작</button>
@@ -2703,7 +2703,7 @@ async function pzRenderA(){
   // 놓인 조각 관리용 미니 판
   const bd = pzBoardA[id] || {};
   document.getElementById('pzBoardCount').textContent = '(' + done + ' / ' + total + ')';
-  let mini = '<div style="display:inline-block; line-height:0;">';
+  let mini = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;"><div style="display:inline-block; line-height:0;">';
   for(let r=0;r<pzCfgA.rows;r++){
     for(let c=0;c<pzCfgA.cols;c++){
       const s = r*pzCfgA.cols + c, e = bd[s];
@@ -2713,7 +2713,7 @@ async function pzRenderA(){
     }
     mini += '<br>';
   }
-  mini += '</div><p class="hint">초록: 학생이 놓음 · 보라: 선생님 힌트 · 칸에 마우스를 올리면 위치·이름·놓은 시각이 보여요</p>';
+  mini += '</div></div><p class="hint">초록: 학생이 놓음 · 보라: 선생님 힌트 · 칸에 마우스를 올리면 위치·이름·놓은 시각이 보여요</p>';
   document.getElementById('pzMini').innerHTML = mini;
   document.querySelectorAll('#pzMini [data-pzcancel]').forEach(b=> b.addEventListener('click', ()=> pzCancelPiece(parseInt(b.dataset.pzcancel,10))));
   pzFillSettings();
@@ -2845,7 +2845,7 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
   const file = document.getElementById('pzFileInput').files && document.getElementById('pzFileInput').files[0];
   const reuse = !file && pzCfgA && pzCfgA.id;
   if(!file && !reuse){ pzFlash('이미지를 먼저 골라 주세요.'); return; }
-  const cols = pzNum('pzColsInput', 8, 2, 12), rows = pzNum('pzRowsInput', 8, 2, 12);
+  const cols = pzNum('pzColsInput', 8, 2, 20), rows = pzNum('pzRowsInput', 8, 2, 20);
   if(pzCfgA && pzCfgA.id){
     const dn = !!(pzDoneA && pzDoneA[pzCfgA.id]);
     const msg = (reuse ? '같은 그림으로 ' + cols + '×' + rows + ' 퍼즐을 새로 시작할까요?\n' : '새 퍼즐을 시작할까요?\n')
@@ -2854,7 +2854,7 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
   }
   try{
     pzFlash('만드는 중...');
-    const data = reuse ? ((await db.ref('puzzleImg/'+pzCfgA.id).once('value')).val() || '') : await resizeImageFileToDataUrl(file, 1000, 0.88);
+    const data = reuse ? ((await db.ref('puzzleImg/'+pzCfgA.id).once('value')).val() || '') : await resizeImageFileToDataUrl(file, 1600, 0.85);
     if(!data){ pzFlash('기존 그림을 찾지 못했어요. 이미지를 다시 골라 주세요.'); return; }
     if(pzCfgA && pzCfgA.id) await pzWipe(pzCfgA.id);
     const id = String(Date.now());
