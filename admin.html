@@ -2601,7 +2601,10 @@ async function pzRenderA(){
   const id = pzCfgA.id, total = pzCfgA.rows * pzCfgA.cols, done = Object.keys(pzBoardA[id] || {}).length;
   if(pzCfgA.open){ t.textContent = '공개 중 (누르면 숨기기)'; t.className = 'publish-btn on'; }
   else { t.textContent = '숨김 (누르면 공개)'; t.className = 'publish-btn off'; }
-  if(pzThumbId !== id){ pzThumbId = id; try{ pzThumbSrc = (await db.ref('puzzleImg/'+id).once('value')).val() || ''; }catch(e){ pzThumbSrc = ''; } }
+  if(pzThumbId !== id){
+    pzThumbId = id; pzThumbSrc = '';
+    db.ref('puzzleImg/'+id).once('value').then(function(s){ if(pzThumbId === id){ pzThumbSrc = s.val() || ''; pzRenderA(); } }).catch(function(){});
+  }
   const isDone = !!pzDoneA[id] || done >= total;
   const pct = Math.round(done / total * 100);
   st.innerHTML = '<div style="display:flex; align-items:center;">'
