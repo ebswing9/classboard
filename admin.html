@@ -76,6 +76,7 @@
   .pz-part-table td:last-child{ text-align:right; padding-right:4px; }
   .pz-part-table{ table-layout:auto; }
   .pz-times-m{ display:none; }
+  .pz-sortk{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:8px; background:#fff; font-size:11px; font-weight:700; cursor:pointer; }
   .pz-part-table th, .pz-part-table td{ width:1%; white-space:nowrap; padding-left:10px; padding-right:10px; }
   .pz-part-table th:first-child, .pz-part-table td:first-child{ padding-left:12px; }
   .pz-part-table td.pz-times, .pz-part-table th:nth-last-child(2){ width:auto; text-align:left; white-space:normal; font-size:12px; line-height:1.55; color:#6f6482; font-weight:600; }
@@ -2656,10 +2657,15 @@ async function pzRenderA(){
     (timesBy[e.by] = timesBy[e.by] || []).push(e.at);
   });
   function hm(t){ const d = new Date(t); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-  const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k], used: usedM[k]||0, times: (timesBy[k]||[]).sort(function(x,y){ return x-y; }).map(hm), ok: (ps[k].correct||0) > 0 ? 1 : 0 }));
+  const rows = Object.keys(ps).map(k=> ({ id:k, ...ps[k], used: usedM[k]||0, times: (timesBy[k]||[]).slice().sort(function(x,y){ return x-y; }).map(hm), first: (timesBy[k]||[]).length ? Math.min.apply(null, timesBy[k]) : null, last: (timesBy[k]||[]).length ? Math.max.apply(null, timesBy[k]) : null, ok: (ps[k].correct||0) > 0 ? 1 : 0 }));
   const sk = pzSortKey, sd = pzSortAsc ? 1 : -1;
   rows.sort((x,y)=>{
     if(sk === 'name') return sd * (x.name||'').localeCompare(y.name||'','ko');
+    if(sk === 'first' || sk === 'last'){
+      if(x[sk] === null && y[sk] === null) return (x.name||'').localeCompare(y.name||'','ko');
+      if(x[sk] === null) return 1; if(y[sk] === null) return -1;
+      return (x[sk] - y[sk]) * sd || (x.name||'').localeCompare(y.name||'','ko');
+    }
     const xv = sk === 'correct' ? (x.correct||0) : sk === 'tries' ? (x.tries||0) : x[sk], yv = sk === 'correct' ? (y.correct||0) : sk === 'tries' ? (y.tries||0) : y[sk];
     return (xv - yv) * sd || (x.name||'').localeCompare(y.name||'','ko');
   });
@@ -2669,7 +2675,7 @@ async function pzRenderA(){
   document.getElementById('pzPartList').innerHTML = rows.length
     ? '<table class="qs-table pz-part-table"><thead><tr>'
       + [['name','이름'],['ok','상태'],['correct','성공'],['tries','시도'],['used','오늘']].map(c=> '<th data-pzk="'+c[0]+'">'+c[1]+(pzSortKey===c[0] ? (pzSortAsc ? ' ▲' : ' ▼') : '')+'</th>').join('')
-      + '<th style="cursor:default; text-align:left;">맞춘 시각</th><th style="cursor:default;">관리</th></tr></thead><tbody>'
+      + '<th style="cursor:default; text-align:left;">맞춘 시각 <span class="pz-sortk" data-pzk="first">처음'+(pzSortKey==='first' ? (pzSortAsc ? ' ▲' : ' ▼') : '')+'</span><span class="pz-sortk" data-pzk="last">마지막'+(pzSortKey==='last' ? (pzSortAsc ? ' ▲' : ' ▼') : '')+'</span></th><th style="cursor:default;">관리</th></tr></thead><tbody>'
       + rows.map(r=> '<tr><td>'+escapeHtml(r.name||'')+(r.times.length ? '<div class="pz-times-m">'+r.times.join(' · ')+'</div>' : '')+'</td>'
         + '<td><span class="pz-badge '+(r.ok ? 'ok' : 'try')+'">'+(r.ok ? '포인트 대상' : '시도만')+'</span></td>'
         + '<td>'+(r.correct||0)+'</td><td>'+(r.tries||0)+'</td><td>'+r.used+'회</td>'
@@ -2677,8 +2683,9 @@ async function pzRenderA(){
         + '<td style="white-space:nowrap;"><button class="del-link" data-pzreset="'+r.id+'" title="오늘 쓴 기회를 0으로 되돌려요" style="color:#d14a6f;">기회 초기화</button> <button class="del-link" data-pzunpart="'+r.id+'" title="시도 기록을 지웁니다" style="color:#d14a6f;">참여 취소</button></td></tr>').join('')
       + '</tbody></table><p class="hint" style="margin-top:8px;">제목 줄을 누르면 그 기준으로 정렬돼요.</p>'
     : '<p class="hint">아직 참여한 학생이 없어요.</p>';
-  document.querySelectorAll('#pzPartList th[data-pzk]').forEach(th=> th.addEventListener('click', ()=>{
-    if(pzSortKey === th.dataset.pzk) pzSortAsc = !pzSortAsc; else { pzSortKey = th.dataset.pzk; pzSortAsc = (pzSortKey === 'name'); }
+  document.querySelectorAll('#pzPartList [data-pzk]').forEach(th=> th.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(pzSortKey === th.dataset.pzk) pzSortAsc = !pzSortAsc; else { pzSortKey = th.dataset.pzk; pzSortAsc = (pzSortKey === 'name' || pzSortKey === 'first' || pzSortKey === 'last'); }
     pzRenderA();
   }));
   document.querySelectorAll('#pzPartList [data-pzreset]').forEach(b=> b.addEventListener('click', async ()=>{
