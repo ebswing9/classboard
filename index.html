@@ -524,7 +524,7 @@
             <h2 id="panelTitle"></h2>
             <button id="luckyDrawIconBtn" title="오늘의 행운번호" style="display:none;">🍀</button>
             <button id="gameIconBtn" title="펭귄 게임">🐧</button>
-            <button id="puzzleIconBtn" title="퍼즐">🧩</button>
+            <button id="puzzleIconBtn" title="퍼즐"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="#f78fb3" d="M9 4v-.5a2.5 2.5 0 0 1 5 0V4h4a1 1 0 0 1 1 1v4h-.5a2.5 2.5 0 0 0 0 5h.5v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4h.5a2.5 2.5 0 0 0 0-5H4V5a1 1 0 0 1 1-1z"/></svg></button>
             <button id="surveyIconBtn" title="설문">📝</button>
             <button id="voteIconBtn" title="투표">✅</button>
             <button id="imgIconBtn" title="이미지">📌</button>
@@ -2415,7 +2415,7 @@ async function pzSettle(cfg){
     if(pts !== 0){
       for(let k=0;k<ids.length;k++){
         await awardPoints(ids[k], pts);
-        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '🧩 협동 퍼즐 완성 참여', at: Date.now() });
+        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '협동 퍼즐 완성 참여', at: Date.now() });
       }
     }
     const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
@@ -2424,7 +2424,7 @@ async function pzSettle(cfg){
       const tops = ids.filter(function(k){ return cnt[k] === mx; });
       for(let k=0;k<tops.length;k++){
         await awardPoints(tops[k], bonus);
-        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '🧩 협동 퍼즐 최다 기여', at: Date.now() });
+        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '협동 퍼즐 최다 기여', at: Date.now() });
       }
     }
     await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(function(k){ return ps[k].name; }) });

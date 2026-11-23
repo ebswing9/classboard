@@ -2609,6 +2609,7 @@ async function pzRenderA(){
     + '<div style="flex:1; min-width:0;">'
     + '<div style="font-weight:800; font-size:16px;">'+done+' / '+total+' 조각 ('+pct+'%)' + (isDone ? ' · 🎉 완성' : '') + '</div>'
     + '<div style="height:10px; border-radius:6px; background:var(--line); overflow:hidden; margin:8px 0;"><div style="height:100%; width:'+pct+'%; background:var(--sky-deep); border-radius:6px;"></div></div>'
+    + (pzReadErr ? '<div style="color:#e5384f; font-size:12px; font-weight:700; margin-bottom:4px;">⚠️ 퍼즐 기록을 읽지 못했어요. Firebase 보안 규칙에서 puzzleBoard/puzzleParticipants/puzzleDone/puzzlePlays 읽기 권한을 확인해 주세요.</div>' : '')
     + '<div class="hint">'+pzCfgA.cols+' × '+pzCfgA.rows+' 칸'+(pzDoneA[id] ? (pzDoneA[id].winners ? ' · 포인트 지급 완료 ('+pzDoneA[id].winners.length+'명)' : ' · 정산 중') : '')+'</div>'
     + '</div></div>';
   const ps = pzPartA[id] || {};
@@ -2639,18 +2640,19 @@ async function pzRenderA(){
     for(let c=0;c<pzCfgA.cols;c++){
       const s = r*pzCfgA.cols + c, e = bd[s];
       mini += e
-        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+'" style="width:46px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:10px; letter-spacing:-0.5px; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; overflow:hidden; vertical-align:top;">'+escapeHtml(e.name||'선생님')+'</button>'
+        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+(e.at ? ' · '+pzFmtTime(e.at) : '')+'" style="width:46px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:10px; letter-spacing:-0.5px; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; overflow:hidden; vertical-align:top;">'+escapeHtml(e.name||'선생님')+'</button>'
         : '<span style="display:inline-block; width:46px; height:30px; margin:1px; border-radius:6px; background:#f1edf7; vertical-align:top;"></span>';
     }
     mini += '<br>';
   }
-  mini += '</div><p class="hint">초록: 학생이 놓음 · 보라: 선생님 힌트 · 칸에 마우스를 올리면 위치와 이름이 보여요</p>';
+  mini += '</div><p class="hint">초록: 학생이 놓음 · 보라: 선생님 힌트 · 칸에 마우스를 올리면 위치·이름·놓은 시각이 보여요</p>';
   document.getElementById('pzMini').innerHTML = mini;
   document.querySelectorAll('#pzMini [data-pzcancel]').forEach(b=> b.addEventListener('click', ()=> pzCancelPiece(parseInt(b.dataset.pzcancel,10))));
   pzFillSettings();
   if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
 }
 let pzThumbSrc = '';
+function pzFmtTime(t){ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 let boardPres = null;
 function boardState(){
   if(!boardPres) return { k: 'none', txt: '칠판 기록 없음', detail: '아직 칠판 기기가 등록되지 않았어요' };
@@ -2685,12 +2687,26 @@ setInterval(renderBoardStatus, 15000);
 function bindPuzzleListeners(){
   db.ref('presence/board').on('value', s=>{ boardPres = s.val(); renderBoardStatus(); });
   db.ref('config/luckyOpen').on('value', s=> setLuckyShowBtn(s.val() !== false));
-  db.ref('config/puzzle').on('value', s=>{ pzCfgA = s.val(); pzRenderA(); });
-  db.ref('puzzleBoard').on('value', s=>{ pzBoardA = s.val() || {}; pzRenderA(); });
-  db.ref('puzzleParticipants').on('value', s=>{ pzPartA = s.val() || {}; pzRenderA(); });
-  db.ref('puzzleDone').on('value', s=>{ pzDoneA = s.val() || {}; pzRenderA(); });
-  db.ref('puzzlePlays').on('value', s=>{ pzPlaysA = s.val() || {}; pzRenderA(); });
   pzDoneA = {};
+  db.ref('config/puzzle').on('value', s=>{ pzCfgA = s.val(); pzBindData(pzCfgA && pzCfgA.id); pzRenderA(); });
+}
+// 퍼즐 데이터는 지금 진행 중인 퍼즐(id) 경로만 읽음 (전체 경로를 읽으면 보안 규칙·용량 문제가 생길 수 있음)
+let pzBoundId = null, pzBoundRefs = [], pzReadErr = false;
+function pzBindData(id){
+  if(id === pzBoundId) return;
+  pzBoundRefs.forEach(function(r){ r.off(); });
+  pzBoundRefs = []; pzBoundId = id || null; pzReadErr = false;
+  pzBoardA = {}; pzPartA = {}; pzPlaysA = {}; pzDoneA = {};
+  if(!id) return;
+  function bind(path, assign){
+    const r = db.ref(path + '/' + id);
+    r.on('value', function(s){ assign(s.val()); pzRenderA(); }, function(err){ console.error(path, err); pzReadErr = true; pzRenderA(); });
+    pzBoundRefs.push(r);
+  }
+  bind('puzzleBoard', function(v){ pzBoardA = {}; if(v) pzBoardA[id] = v; });
+  bind('puzzleParticipants', function(v){ pzPartA = {}; if(v) pzPartA[id] = v; });
+  bind('puzzleDone', function(v){ pzDoneA = {}; if(v) pzDoneA[id] = v; });
+  bind('puzzlePlays', function(v){ pzPlaysA = {}; if(v) pzPlaysA[id] = v; });
 }
 async function pzSettleAdmin(cfg){
   try{
@@ -2705,7 +2721,7 @@ async function pzSettleAdmin(cfg){
     if(pts !== 0){
       for(let k=0;k<ids.length;k++){
         await awardPoints(ids[k], pts);
-        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '🧩 협동 퍼즐 완성 참여', at: Date.now() });
+        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '협동 퍼즐 완성 참여', at: Date.now() });
       }
     }
     const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
@@ -2714,7 +2730,7 @@ async function pzSettleAdmin(cfg){
       const tops = ids.filter(k=> cnt[k] === mx);
       for(let k=0;k<tops.length;k++){
         await awardPoints(tops[k], bonus);
-        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '🧩 협동 퍼즐 최다 기여', at: Date.now() });
+        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '협동 퍼즐 최다 기여', at: Date.now() });
       }
     }
     await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(k=> ps[k].name) });
