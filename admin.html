@@ -74,6 +74,16 @@
   .pz-badge.ok{ background:var(--mint); color:#2f6f54; }
   .pz-badge.try{ background:#eee9f3; color:var(--muted); }
   .pz-part-table td:last-child{ text-align:right; padding-right:4px; }
+  .pz-grp{ border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:10px; background:#fff; }
+  .pz-grp .pz-sum{ font-size:12px; font-weight:600; color:var(--muted); margin-left:8px; }
+  .pz-grp-b{ margin-top:10px; }
+  .pz-row{ display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-flex-wrap:wrap; flex-wrap:wrap; margin:8px 0; }
+  .pz-row .lbl{ width:170px; font-size:13px; font-weight:700; color:var(--primary-text); }
+  .pz-row .unit{ font-size:12.5px; color:var(--muted); font-weight:600; margin:0 12px 0 6px; }
+  .pz-num{ width:64px; padding:8px 8px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; text-align:center; outline:none; background:#fff; }
+  .pz-num:focus, .pz-sel:focus{ border-color:var(--primary-dark); }
+  .pz-sel{ padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; font-size:13.5px; font-family:inherit; background:#fff; outline:none; }
+  @media (max-width:520px){ .pz-row .lbl{ width:100%; margin-bottom:4px; } }
   .pz-part-table{ table-layout:auto; }
   .pz-times-m{ display:none; }
   .pz-sortk{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:8px; background:#fff; font-size:11px; font-weight:700; cursor:pointer; }
@@ -224,6 +234,41 @@
   .school-item.selected{ border-color:var(--primary-dark); background:var(--primary-soft); font-weight:700; }
 
 /* 포인트 내역 팝업 */
+.qh-toggle{ margin-left:auto; margin-right:10px; padding:5px 12px; font-size:12px; }
+.qh-toggle-wrap{ display:flex; align-items:center; }
+.collapse-header .qh-title{ min-width:0; }
+.btn-prev{ border:none; background:var(--sky); color:var(--sky-text); padding:9px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; margin-bottom:12px; }
+#quizPreviewOverlay{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(74,68,88,.4);z-index:210;align-items:center;justify-content:center;padding:16px;}
+#quizPreviewOverlay.open{display:flex;}
+#quizPreviewBox{background:#fff;border-radius:18px;padding:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 10px 30px rgba(0,0,0,.2);}
+.qp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.qp-head h3{margin:0;font-size:15px;}
+.qp-modes{display:flex;margin-bottom:12px;}
+.qp-mode{border:none;background:var(--bg);color:var(--muted);padding:7px 14px;border-radius:16px;font-size:12.5px;font-weight:700;cursor:pointer;margin-right:6px;}
+.qp-mode.on{background:var(--sky);color:var(--sky-text);}
+.qp-stage{background:#f4f0f8;border-radius:14px;padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.qp-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5;}
+/* 대시보드(index.html) 퀴즈 카드 CSS 복사본 — 디자인 바꾸면 같이 맞춰주세요 */
+#qpCard{ --sd:#79b3ec; --mu:#a79fc0; --tx:#4a4458; color:var(--tx); width:520px; max-width:none; margin:0 auto; position:relative; overflow:hidden; border-radius:26px; padding:20px 22px; min-height:300px; display:flex; flex-direction:column; background:linear-gradient(160deg,#fff,#d3ecfb 230%); box-shadow:0 4px 14px rgba(220,180,220,.14),0 10px 24px rgba(220,180,220,.12); border:1px solid rgba(255,255,255,.6); font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; }
+#qpCard.sq{ width:300px; }
+#qpCard::before{ content:"?"; position:absolute; font-family:'MapleStory','Jua',sans-serif; font-size:220px; color:rgba(121,179,236,0.09); right:-30px; bottom:-56px; line-height:1; pointer-events:none; }
+#qpCard.sq::before{ display:none; }
+#qpCard .qi{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6px 10px; }
+#qpCard .qi > *{ margin-top:14px; }
+#qpCard .qi > *:first-child{ margin-top:0; }
+#qpCard .q-icon{ font-size:30px; color:var(--sd); line-height:1; }
+#qpCard.sq .q-icon{ font-size:22px; }
+#qpCard .q-q, #qpCard .q-h, #qpCard .q-cs{ word-break:keep-all; overflow-wrap:break-word; word-wrap:break-word; }
+#qpCard .q-q{ font-size:28px; font-weight:800; line-height:1.4; white-space:pre-line; }
+#qpCard.sq .q-q{ font-size:13px; font-weight:700; line-height:1.45; }
+#qpCard .q-h{ font-size:13px; font-weight:600; color:var(--mu); line-height:1.5; white-space:pre-line; margin-top:8px; max-width:420px; }
+#qpCard .q-img{ max-width:min(100%,320px); max-height:220px; border-radius:16px; box-shadow:0 6px 18px rgba(74,68,88,0.18); object-fit:contain; }
+#qpCard .q-cs{ width:100%; max-width:420px; margin-left:auto; margin-right:auto; }
+#qpCard .q-c{ background:rgba(255,255,255,0.85); border-radius:14px; padding:12px 18px; font-size:16px; font-weight:700; text-align:left; display:flex; align-items:center; box-shadow:0 2px 6px rgba(74,68,88,0.06); margin-top:10px; }
+#qpCard .q-c:first-child{ margin-top:0; }
+#qpCard .q-n{ width:20px; height:20px; min-width:20px; border-radius:50%; background:var(--sd); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; margin-right:10px; }
+#qpCard .q-b{ border:none; background:var(--sd); color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:700; box-shadow:0 4px 10px rgba(121,179,236,0.3); margin-top:18px; }
+#qpCard.sq .q-b{ font-size:12px; padding:8px 12px; }
 #pointHistoryOverlay{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(74,68,88,.35);z-index:200;align-items:center;justify-content:center;padding:16px;}
 #pointHistoryOverlay.open{display:flex;}
 #pointHistoryBox{background:#fff;border-radius:18px;padding:18px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.2);}
@@ -466,8 +511,8 @@
       <div class="tab-panel active" id="subtab-quizmain">
       <div class="section">
         <div class="collapse-header" id="quizEditorCollapseHeader">
-          <h3 style="margin:0;">📝 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
-          <span class="chev">▾</span>
+          <h3 style="margin:0;" class="qh-title">📝 오늘의 퀴즈 문제 <span class="sub" id="quizEditorDateSub"></span></h3>
+          <span class="qh-toggle-wrap"><button type="button" class="publish-btn off qh-toggle" id="quizHeadToggle" title="선택한 날짜의 퀴즈 공개/비공개">비공개</button><span class="chev">▾</span></span>
         </div>
         <div class="collapse-body" id="quizEditorCollapseBody">
           <div class="field"><label>날짜</label>
@@ -501,6 +546,7 @@
               <button class="del-link" id="quizImageRemoveBtn" type="button" style="margin-top:6px;">이미지 삭제</button>
             </div>
           </div>
+          <button class="btn-prev" id="quizPreviewBtn" type="button">👀 미리보기</button><br>
           <button class="btn" id="saveQuizBtn">퀴즈 저장</button>
           <button class="btn danger" id="deleteQuizBtn" style="margin-top:8px;">이 날짜 퀴즈 삭제</button>
           <span class="msg" id="quizMsg"></span>
@@ -616,26 +662,30 @@
         </div>
         <div class="section">
           <h3>기회 · 포인트 설정</h3>
-          <div class="field"><label>하루 기본 기회</label>
-            <input type="number" id="pzBaseInput" min="0" max="100" value="1">
+          <div class="pz-grp">
+            <div class="collapse-header pz-grp-h"><div><b>하루 기회</b> <span class="pz-sum" id="pzSumChance"></span></div><span class="chev">▾</span></div>
+            <div class="collapse-body pz-grp-b">
+              <div class="pz-row"><span class="lbl">기본</span><input type="number" class="pz-num" id="pzBaseInput" min="0" max="100" value="1"><span class="unit">번</span></div>
+              <div class="pz-row"><span class="lbl">대시보드 출석 시 추가</span><input type="number" class="pz-num" id="pzAttInput" min="0" max="100" value="1"><span class="unit">번</span></div>
+              <div class="pz-row"><span class="lbl">퀴즈 제출 시 추가</span><input type="number" class="pz-num" id="pzQuizInput" min="0" max="100" value="1"><span class="unit">번</span></div>
+            </div>
           </div>
-          <div class="field"><label>대시보드 출석 시 추가 기회</label>
-            <input type="number" id="pzAttInput" min="0" max="100" value="1">
+          <div class="pz-grp">
+            <div class="collapse-header pz-grp-h"><div><b>완성 포인트</b> <span class="pz-sum" id="pzSumPoints"></span></div><span class="chev">▾</span></div>
+            <div class="collapse-body pz-grp-b">
+              <div class="pz-row"><span class="lbl">참여한 모든 친구</span><input type="number" class="pz-num" id="pzPointsInput" min="0" max="20" value="1"><span class="unit">점</span></div>
+              <div class="pz-row"><span class="lbl">가장 많이 맞춘 친구</span><input type="number" class="pz-num" id="pzTopNInput" min="0" max="20" value="1"><span class="unit">등까지</span><input type="number" class="pz-num" id="pzTopInput" min="0" max="20" value="1"><span class="unit">점 추가</span></div>
+              <div class="pz-row"><span class="lbl">가장 먼저 맞춘 친구</span><input type="number" class="pz-num" id="pzFirstNInput" min="0" max="20" value="3"><span class="unit">명까지</span><input type="number" class="pz-num" id="pzFirstPtsInput" min="0" max="20" value="1"><span class="unit">점 추가</span></div>
+              <p class="hint" style="margin:6px 0 0;">모두 퍼즐이 완성될 때 한꺼번에 지급돼요. 점수나 인원이 0이면 그 항목은 지급하지 않아요. 최다 기여는 동점이면 같은 등수로 모두 받아요. 한 친구가 여러 항목을 받을 수도 있어요.</p>
+            </div>
           </div>
-          <div class="field"><label>퀴즈 제출 시 추가 기회</label>
-            <input type="number" id="pzQuizInput" min="0" max="100" value="1">
-          </div>
-          <div class="field"><label>완성 시 참여자 포인트</label>
-            <input type="number" id="pzPointsInput" min="0" max="20" value="1">
-          </div>
-          <div class="field"><label>가장 많이 맞춘 친구 추가 포인트 (동점이면 모두, 0이면 없음)</label>
-            <input type="number" id="pzTopInput" min="0" max="20" value="1">
-          </div>
-          <div class="field"><label>원본 그림 살짝 보기 (반 전체 하루 횟수, 0이면 못 봄, -1이면 제한 없음)</label>
-            <input type="number" id="pzPeekInput" min="-1" max="99" value="3">
-          </div>
-          <div class="field"><label>퍼즐판에 조각 모양 홈 선 표시</label>
-            <select id="pzGroovesInput"><option value="on">켜기 (판에 조각 모양 윤곽이 보여요)</option><option value="off">끄기 (점선 테두리와 점만 보여요, 더 어려워요)</option></select>
+          <div class="pz-grp">
+            <div class="collapse-header pz-grp-h"><div><b>화면 설정</b> <span class="pz-sum" id="pzSumView"></span></div><span class="chev">▾</span></div>
+            <div class="collapse-body pz-grp-b">
+              <div class="pz-row"><span class="lbl">원본 그림 살짝 보기</span><input type="number" class="pz-num" id="pzPeekInput" min="-1" max="99" value="3"><span class="unit">번 (반 전체, 하루)</span></div>
+              <p class="hint" style="margin:0 0 8px;">0이면 못 보고, -1이면 제한이 없어요.</p>
+              <div class="pz-row"><span class="lbl">판의 조각 모양 홈 선</span><select id="pzGroovesInput" class="pz-sel"><option value="on">켜기</option><option value="off">끄기 (더 어려워요)</option></select></div>
+            </div>
           </div>
           <p class="hint">기회는 매일 새로 계산돼요 (이월 없음). 진행 중에도 바꿀 수 있고, 바로 반영돼요.</p>
           <button class="btn" id="pzSaveBtn">설정 저장</button>
@@ -955,6 +1005,12 @@
   </main>
 </div>
 
+<div id="quizPreviewOverlay"><div id="quizPreviewBox">
+  <div class="qp-head"><h3>퀴즈 미리보기 <span class="sub" id="qpDate"></span></h3><button class="ph-close" id="quizPreviewClose">✕</button></div>
+  <div class="qp-modes"><button class="qp-mode on" data-qpm="0" type="button">칠판 기본</button><button class="qp-mode" data-qpm="1" type="button">출결 패널 열림(좁게)</button></div>
+  <div class="qp-stage"><div id="qpCard"></div></div>
+  <p class="qp-note">지금 입력창에 적힌 내용(저장 전이어도)으로 보여줘요. 이 PC 브라우저 기준이라 칠판의 구형 브라우저와는 글자 크기·줄바꿈이 조금 다를 수 있어요.</p>
+</div></div>
 <div id="pointHistoryOverlay"><div id="pointHistoryBox"><div class="ph-head"><h3 id="pointHistoryTitle"></h3><button class="ph-close" id="pointHistoryClose">✕</button></div><div class="ph-total" id="pointHistoryTotal"></div><div id="pointHistoryList"></div></div></div>
 
 <script>
@@ -2517,6 +2573,8 @@ function setQuizPublishBtn(on){
   const btn = document.getElementById('quizPublishToggle');
   btn.textContent = on ? '공개' : '비공개';
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
+  const hb = document.getElementById('quizHeadToggle');
+  if(hb){ hb.textContent = on ? '공개' : '비공개'; hb.className = 'publish-btn qh-toggle ' + (on ? 'on' : 'off'); }
 }
 function setQuizImagePreview(dataUrl){
   quizImageDataUrl = dataUrl || null;
@@ -2609,6 +2667,23 @@ document.getElementById('isClearBtn').addEventListener('click', async ()=>{
 
 /* ---- 협동 퍼즐 ---- */
 let pzCfgA = null, pzBoardA = {}, pzPartA = {}, pzDoneA = null, pzThumbId = null, pzPlaysA = {};
+function pzUpdateSums(){
+  const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  document.getElementById('pzSumChance').textContent = '기본 ' + v('pzBaseInput') + ' · 출석 +' + v('pzAttInput') + ' · 퀴즈 +' + v('pzQuizInput');
+  const bits = ['참여 ' + v('pzPointsInput') + '점'];
+  if(+v('pzTopInput') > 0 && +v('pzTopNInput') > 0) bits.push('최다 ' + v('pzTopNInput') + '등 +' + v('pzTopInput'));
+  if(+v('pzFirstPtsInput') > 0 && +v('pzFirstNInput') > 0) bits.push('선착 ' + v('pzFirstNInput') + '명 +' + v('pzFirstPtsInput'));
+  document.getElementById('pzSumPoints').textContent = bits.join(' · ');
+  const pk = +v('pzPeekInput');
+  document.getElementById('pzSumView').textContent = '그림 보기 ' + (pk < 0 ? '제한 없음' : pk + '번') + ' · 홈 선 ' + (v('pzGroovesInput') === 'off' ? '끔' : '켬');
+}
+document.querySelectorAll('.pz-grp-h').forEach(function(h){
+  h.addEventListener('click', function(){ h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); });
+});
+['pzBaseInput','pzAttInput','pzQuizInput','pzPointsInput','pzTopInput','pzTopNInput','pzFirstNInput','pzFirstPtsInput','pzPeekInput','pzGroovesInput'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', pzUpdateSums);
+  document.getElementById(id).addEventListener('change', pzUpdateSums);
+});
 function pzNum(id, def, min, max){ let v = parseInt(document.getElementById(id).value, 10); if(isNaN(v)) v = def; return Math.max(min, Math.min(max, v)); }
 function pzFillSettings(){
   if(!pzCfgA) return;
@@ -2618,6 +2693,10 @@ function pzFillSettings(){
   set('pzQuizInput', pzCfgA.quiz != null ? pzCfgA.quiz : 1);
   set('pzPointsInput', pzCfgA.points != null ? pzCfgA.points : 1);
   set('pzTopInput', pzCfgA.topBonus != null ? pzCfgA.topBonus : 1);
+  set('pzTopNInput', pzCfgA.topN != null ? pzCfgA.topN : 1);
+  set('pzFirstNInput', pzCfgA.firstN != null ? pzCfgA.firstN : 3);
+  set('pzFirstPtsInput', pzCfgA.firstPts != null ? pzCfgA.firstPts : 0);
+  pzUpdateSums();
   set('pzPeekInput', pzCfgA.peek != null ? pzCfgA.peek : 3);
   set('pzGroovesInput', pzCfgA.grooves === false ? 'off' : 'on');
 }
@@ -2703,7 +2782,7 @@ async function pzRenderA(){
   // 놓인 조각 관리용 미니 판
   const bd = pzBoardA[id] || {};
   document.getElementById('pzBoardCount').textContent = '(' + done + ' / ' + total + ')';
-  let mini = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;"><div style="display:inline-block; line-height:0;">';
+  let mini = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;"><div style="display:inline-block; line-height:0; white-space:nowrap;">';
   for(let r=0;r<pzCfgA.rows;r++){
     for(let c=0;c<pzCfgA.cols;c++){
       const s = r*pzCfgA.cols + c, e = bd[s];
@@ -2777,33 +2856,48 @@ function pzBindData(id){
   bind('puzzleDone', function(v){ pzDoneA = {}; if(v) pzDoneA[id] = v; });
   bind('puzzlePlays', function(v){ pzPlaysA = {}; if(v) pzPlaysA[id] = v; });
 }
+
+// 완성 시 지급할 포인트 계산 (판에 놓인 조각 기록 기준): 참여 / 최다 기여 상위 N등 / 선착순 N명
+function pzComputeAwards(cfg, ps, bd){
+  const cnt = {}, firstAt = {};
+  Object.keys(bd).forEach(function(k){
+    const e = bd[k]; if(!e || !e.by || e.by === 'admin') return;
+    cnt[e.by] = (cnt[e.by] || 0) + 1;
+    const t = e.at || 0;
+    if(firstAt[e.by] === undefined || t < firstAt[e.by]) firstAt[e.by] = t;
+  });
+  const ids = Object.keys(cnt).filter(function(k){ return ps[k]; });
+  const out = [];
+  const pts = parseInt(cfg.points, 10) || 0;
+  if(pts !== 0) ids.forEach(function(k){ out.push({ id: k, delta: pts, reason: '협동 퍼즐 완성 참여' }); });
+  const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus, 10) || 0);
+  const topN = (cfg.topN == null) ? 1 : (parseInt(cfg.topN, 10) || 0);
+  if(bonus !== 0 && topN > 0 && ids.length){
+    const byCnt = ids.slice().sort(function(a,b){ return cnt[b] - cnt[a]; });
+    let rank = 0, last = -1;
+    byCnt.forEach(function(k, i){ if(cnt[k] !== last){ rank = i + 1; last = cnt[k]; } if(rank <= topN) out.push({ id: k, delta: bonus, reason: '협동 퍼즐 최다 기여' }); });
+  }
+  const fPts = parseInt(cfg.firstPts, 10) || 0;
+  const fN = (cfg.firstN == null) ? 3 : (parseInt(cfg.firstN, 10) || 0);
+  if(fPts !== 0 && fN > 0){
+    ids.slice().sort(function(a,b){ return firstAt[a] - firstAt[b]; }).slice(0, fN).forEach(function(k){ out.push({ id: k, delta: fPts, reason: '협동 퍼즐 선착순' }); });
+  }
+  return { ids: ids, awards: out };
+}
 async function pzSettleAdmin(cfg){
   try{
-    const claim = await db.ref('puzzleDone/'+cfg.id).transaction(cur=> cur ? undefined : { at: Date.now() });
+    const claim = await db.ref('puzzleDone/'+cfg.id).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
     if(!claim.committed) return;
     const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
     const bd = (await db.ref('puzzleBoard/'+cfg.id).once('value')).val() || {};
-    const cnt = {};
-    Object.keys(bd).forEach(k=>{ const e = bd[k]; if(e && e.by && e.by !== 'admin') cnt[e.by] = (cnt[e.by]||0) + 1; });
-    const ids = Object.keys(cnt).filter(k=> ps[k]);
-    const pts = parseInt(cfg.points,10) || 0;
-    if(pts !== 0){
-      for(let k=0;k<ids.length;k++){
-        await awardPoints(ids[k], pts);
-        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '협동 퍼즐 완성 참여', at: Date.now() });
-      }
+    const res = pzComputeAwards(cfg, ps, bd);
+    for(let k=0;k<res.awards.length;k++){
+      const a = res.awards[k];
+      await awardPoints(a.id, a.delta);
+      await db.ref('pointLog/'+a.id).push({ delta: a.delta, reason: a.reason, at: Date.now() });
     }
-    const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
-    if(bonus !== 0 && ids.length){
-      const mx = Math.max.apply(null, ids.map(k=> cnt[k]));
-      const tops = ids.filter(k=> cnt[k] === mx);
-      for(let k=0;k<tops.length;k++){
-        await awardPoints(tops[k], bonus);
-        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '협동 퍼즐 최다 기여', at: Date.now() });
-      }
-    }
-    await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(k=> ps[k].name) });
-  }catch(e){ console.error(e); }
+    await db.ref('puzzleDone/'+cfg.id).update({ winners: res.ids.map(function(k){ return ps[k].name; }) });
+  }catch(e){ console.error('puzzle settle error', e); }
 }
 async function pzWipe(id){
   await Promise.all(['puzzleImg','puzzleBoard','puzzlePlays','puzzleParticipants','puzzleDone'].map(p=> db.ref(p+'/'+id).remove()));
@@ -2861,14 +2955,14 @@ document.getElementById('pzStartBtn').addEventListener('click', async ()=>{
     await db.ref('puzzleImg/'+id).set(data);
     pzThumbId = null;
     await db.ref('config/puzzle').set({ id:id, rows:rows, cols:cols, open:true,
-      base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20) });
+      base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20), topN: pzNum('pzTopNInput',1,0,20), firstN: pzNum('pzFirstNInput',3,0,20), firstPts: pzNum('pzFirstPtsInput',0,0,20) });
     document.getElementById('pzFileInput').value = '';
     pzFlash('퍼즐을 시작했어요 ✓');
   }catch(e){ pzFlash('실패했어요: ' + e.message); }
 });
 document.getElementById('pzSaveBtn').addEventListener('click', async ()=>{
   if(!(pzCfgA && pzCfgA.id)){ pzFlash('먼저 퍼즐을 만들어 주세요.'); return; }
-  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20) });
+  await db.ref('config/puzzle').update({ base: pzNum('pzBaseInput',1,0,100), att: pzNum('pzAttInput',1,0,100), quiz: pzNum('pzQuizInput',1,0,100), points: pzNum('pzPointsInput',1,0,20), grooves: document.getElementById('pzGroovesInput').value !== 'off', peek: pzNum('pzPeekInput',3,-1,99), topBonus: pzNum('pzTopInput',1,0,20), topN: pzNum('pzTopNInput',1,0,20), firstN: pzNum('pzFirstNInput',3,0,20), firstPts: pzNum('pzFirstPtsInput',0,0,20) });
   pzFlash('저장했어요 ✓');
 });
 document.getElementById('pzHintBtn').addEventListener('click', async ()=>{
@@ -2945,11 +3039,41 @@ async function loadQuizEditor(date){
   setQuizImagePreview(data.imageDataUrl || null);
   setQuizPublishBtn(!!data.published);
 }
-document.getElementById('quizPublishToggle').addEventListener('click', async ()=>{
+async function toggleQuizPublish(){
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   setQuizPublishBtn(!quizPublished);
   await db.ref('quiz/'+date+'/published').set(quizPublished);
+}
+document.getElementById('quizPublishToggle').addEventListener('click', toggleQuizPublish);
+document.getElementById('quizHeadToggle').addEventListener('click', (ev)=>{ ev.stopPropagation(); toggleQuizPublish(); });
+
+// ---- 퀴즈 미리보기 (대시보드 카드 모양, 입력창 값 기준 / Firebase 접근 없음) ----
+let qpSquished = false;
+function renderQuizPreview(){
+  const q = document.getElementById('quizQuestionInput').value.trim();
+  const choices = document.getElementById('quizChoicesInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const hint = document.getElementById('quizHintInput').value.trim();
+  const card = document.getElementById('qpCard');
+  card.className = qpSquished ? 'sq' : '';
+  let h = '<div class="qi"><div class="q-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M12 2.5c.5 3.2 1.3 5.3 2.5 6.5s3.3 2 6.5 2.5c-3.2.5-5.3 1.3-6.5 2.5s-2 3.3-2.5 6.5c-.5-3.2-1.3-5.3-2.5-6.5S6.2 12 3 11.5c3.2-.5 5.3-1.3 6.5-2.5S11.5 5.7 12 2.5z"/></svg></div>';
+  h += '<div class="q-q">' + (q ? escapeHtml(q) : '(문제가 비어 있어요)') + '</div>';
+  if(!qpSquished){
+    if(hint) h += '<div class="q-h">' + escapeHtml(hint) + '</div>';
+    if(quizImageDataUrl) h += '<img class="q-img" alt="" src="' + quizImageDataUrl + '">';
+    if(choices.length) h += '<div class="q-cs">' + choices.map((c,i)=>'<div class="q-c"><span class="q-n">' + (i+1) + '</span><span>' + escapeHtml(c) + '</span></div>').join('') + '</div>';
+  }
+  h += '<div class="q-b">✏️ 답안 제출</div></div>';
+  card.innerHTML = h;
+  document.querySelectorAll('.qp-mode').forEach(b=> b.classList.toggle('on', (b.dataset.qpm==='1') === qpSquished));
+}
+document.getElementById('quizPreviewBtn').addEventListener('click', ()=>{
+  document.getElementById('qpDate').textContent = document.getElementById('quizAnswerDate').value || todayStr();
+  renderQuizPreview();
+  document.getElementById('quizPreviewOverlay').classList.add('open');
 });
+document.querySelectorAll('.qp-mode').forEach(b=> b.addEventListener('click', ()=>{ qpSquished = b.dataset.qpm==='1'; renderQuizPreview(); }));
+document.getElementById('quizPreviewClose').addEventListener('click', ()=> document.getElementById('quizPreviewOverlay').classList.remove('open'));
+document.getElementById('quizPreviewOverlay').addEventListener('click', (ev)=>{ if(ev.target.id==='quizPreviewOverlay') ev.target.classList.remove('open'); });
 document.getElementById('saveQuizBtn').addEventListener('click', async ()=>{
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   const question = document.getElementById('quizQuestionInput').value.trim();
