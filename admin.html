@@ -568,6 +568,10 @@
           <button type="button" class="pill" id="quizSkipBtn" style="font-size:12px; padding:6px 12px;">🔕 이 날짜는 미채점으로 남겨둘게요</button>
           <div class="hint" id="quizSkipHint" style="margin-top:6px; display:none;">미채점 알림(달력 빨간 점, 통계)에서 제외돼요. 답안은 그대로 남아 있어요.</div>
         </div>
+        <div id="quizBulkBar" style="display:none; margin-bottom:14px; padding:12px 14px; background:var(--bg); border-radius:12px; align-items:center; flex-wrap:wrap;">
+          <span id="quizBulkTxt" style="font-size:13px; font-weight:700; margin-right:10px;"></span>
+          <span style="white-space:nowrap;"><button type="button" class="pill on-present" id="quizBulkOk" style="font-size:12px; padding:6px 12px; margin:4px 6px 4px 0;">모두 정답 처리</button><button type="button" class="pill on-out" id="quizBulkNo" style="font-size:12px; padding:6px 12px; margin:4px 0;">모두 오답 처리</button></span>
+        </div>
         <div id="quizAnswerGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;"></div>
       </div>
       </div>
@@ -2764,7 +2768,7 @@ async function pzRenderA(){
     : '<p class="hint">아직 참여한 학생이 없어요.</p>';
   document.querySelectorAll('#pzPartList [data-pzk]').forEach(th=> th.addEventListener('click', (e)=>{
     e.stopPropagation();
-    if(pzSortKey === th.dataset.pzk) pzSortAsc = !pzSortAsc; else { pzSortKey = th.dataset.pzk; pzSortAsc = (pzSortKey === 'name' || pzSortKey === 'first' || pzSortKey === 'last'); }
+    if(pzSortKey === th.dataset.pzk) pzSortAsc = !pzSortAsc; else { pzSortKey = th.dataset.pzk; pzSortAsc = (pzSortKey === 'name' || pzSortKey === 'first'); }
     pzRenderA();
   }));
   document.querySelectorAll('#pzPartList [data-pzreset]').forEach(b=> b.addEventListener('click', async ()=>{
@@ -2782,13 +2786,19 @@ async function pzRenderA(){
   // 놓인 조각 관리용 미니 판
   const bd = pzBoardA[id] || {};
   document.getElementById('pzBoardCount').textContent = '(' + done + ' / ' + total + ')';
-  let mini = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;"><div style="display:inline-block; line-height:0; white-space:nowrap;">';
+  // 칸 크기: 열 수에 맞춰 한 줄에 다 들어가게 자동 계산 (최대 46x30), 글씨도 칸에 맞춰 축소
+  const mw = document.getElementById('pzMini').clientWidth || 640;
+  pzMiniW = mw;
+  const cw = Math.max(10, Math.min(46, Math.floor(mw / pzCfgA.cols) - 2));
+  const ch = Math.max(8, Math.round(cw * 30 / 46));
+  const fs = Math.max(4, Math.min(10, Math.floor((cw - 2) / 3.2 * 10) / 10));
+  let mini = '<div style="max-width:100%;"><div style="display:inline-block; line-height:0; white-space:nowrap;">';
   for(let r=0;r<pzCfgA.rows;r++){
     for(let c=0;c<pzCfgA.cols;c++){
       const s = r*pzCfgA.cols + c, e = bd[s];
       mini += e
-        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+(e.at ? ' · '+pzFmtTime(e.at) : '')+'" style="width:46px; height:30px; margin:1px; border:none; border-radius:6px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:10px; letter-spacing:-0.5px; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; overflow:hidden; vertical-align:top;">'+escapeHtml(e.name||'선생님')+'</button>'
-        : '<span style="display:inline-block; width:46px; height:30px; margin:1px; border-radius:6px; background:#f1edf7; vertical-align:top;"></span>';
+        ? '<button data-pzcancel="'+s+'" title="'+(r+1)+'행 '+(c+1)+'열 · '+escapeHtml(e.name||'선생님')+(e.at ? ' · '+pzFmtTime(e.at) : '')+'" style="width:'+cw+'px; height:'+ch+'px; margin:1px; border:none; border-radius:'+(cw<30?3:6)+'px; background:'+(e.by==='admin'?'#e6d8f8':'#c8f0e0')+'; font-size:'+fs+'px; letter-spacing:-0.5px; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; overflow:hidden; vertical-align:top;">'+escapeHtml(e.name||'선생님')+'</button>'
+        : '<span style="display:inline-block; width:'+cw+'px; height:'+ch+'px; margin:1px; border-radius:'+(cw<30?3:6)+'px; background:#f1edf7; vertical-align:top;"></span>';
     }
     mini += '<br>';
   }
@@ -2799,6 +2809,16 @@ async function pzRenderA(){
   if(done >= total && !pzDoneA[id]) pzSettleAdmin(pzCfgA);
 }
 let pzThumbSrc = '';
+let pzMiniW = 0, pzMiniTimer = null;
+function pzMiniCheck(){
+  clearTimeout(pzMiniTimer);
+  pzMiniTimer = setTimeout(()=>{
+    const el = document.getElementById('pzMini');
+    if(el && el.clientWidth && Math.abs(el.clientWidth - pzMiniW) > 8 && typeof pzRenderA === 'function' && pzCfgA && pzCfgA.id) pzRenderA();
+  }, 250);
+}
+window.addEventListener('resize', pzMiniCheck);
+if(window.ResizeObserver){ try{ new ResizeObserver(pzMiniCheck).observe(document.getElementById('pzMini')); }catch(e){} }
 let pzSortKey = 'correct', pzSortAsc = false;
 function pzFmtTime(t){ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 let boardPres = null;
@@ -3141,18 +3161,33 @@ document.getElementById('quizSkipBtn').addEventListener('click', async function(
   if(qsRaw) renderQuizStats();
   refreshQuizSkipBtn(date);
 });
+let qaSeq = 0, qaShownDate = null;
 async function loadQuizAnswers(date){
   refreshQuizSkipBtn(date);
   const box = document.getElementById('quizAnswerGrid');
-  box.innerHTML = '불러오는 중...';
+  const mySeq = ++qaSeq;
+  // 같은 날짜를 이미 보여주고 있으면 '불러오는 중'으로 비우지 않아 깜빡임이 없어요
+  if(qaShownDate !== date) box.innerHTML = '불러오는 중...';
   const [snap, quizPointsSnap] = await Promise.all([
     db.ref('quizAnswers/'+date).once('value'),
     db.ref('quiz/'+date+'/points').once('value')
   ]);
+  if(mySeq !== qaSeq) return;
+  qaShownDate = date;
   const val = snap.val() || {};
   const quizPointsRaw = quizPointsSnap.val();
   const quizPoints = (quizPointsRaw === null || quizPointsRaw === undefined) ? 1 : quizPointsRaw;
   let entries = Object.keys(val).map(id=>({id, ...val[id]}));
+
+  // 미분류 한꺼번에 처리 막대
+  const ungIds = Object.keys(val).filter(id=> !val[id].verdict);
+  const bar = document.getElementById('quizBulkBar');
+  if(quizAnswerFilter === 'unclassified' && ungIds.length){
+    bar.style.display = 'flex';
+    document.getElementById('quizBulkTxt').textContent = '미분류 ' + ungIds.length + '개를 한꺼번에';
+    document.getElementById('quizBulkOk').onclick = ()=> quizBulkGrade(date, ungIds, 'correct', quizPoints);
+    document.getElementById('quizBulkNo').onclick = ()=> quizBulkGrade(date, ungIds, 'incorrect', quizPoints);
+  } else bar.style.display = 'none';
 
   if(quizAnswerFilter === 'unclassified') entries = entries.filter(e => !e.verdict);
   else if(quizAnswerFilter !== 'all') entries = entries.filter(e => e.verdict === quizAnswerFilter);
@@ -3189,20 +3224,35 @@ async function loadQuizAnswers(date){
       delete qsUngCache[date]; qsRaw = null;
       const delta = nextAmount - prevAmount;
       if(delta !== 0) await awardPoints(id, delta);
-      await loadQuizAnswers(date);
     });
   });
   box.querySelectorAll('[data-reset]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.reset;
       const prevAmount = (val[id] && val[id].awardedAmount) || 0;
+      if(!confirm((val[id] && val[id].name ? val[id].name + ' 학생의 ' : '') + '제출 답안을 삭제할까요?\n(그림이 사라지고, 학생이 다시 제출할 수 있어요' + (prevAmount ? ' · 받은 포인트 ' + prevAmount + '점은 회수돼요' : '') + ')')) return;
       await db.ref('quizAnswers/'+date+'/'+id).remove();
       await db.ref('quizSum/'+date+'/'+id).remove();
       delete qsUngCache[date]; qsRaw = null;
       if(prevAmount) await awardPoints(id, -prevAmount);
-      await loadQuizAnswers(date);
     });
   });
+}
+async function quizBulkGrade(date, ids, verdict, pts){
+  const amt = verdict === 'correct' ? pts : 0;
+  const label = verdict === 'correct' ? '정답' : '오답';
+  if(!confirm('미분류 ' + ids.length + '개를 모두 ' + label + '으로 처리할까요?' + (amt ? '\n(' + ids.length + '명에게 각 ' + amt + '점 지급)' : ''))) return;
+  const okb = document.getElementById('quizBulkOk'), nob = document.getElementById('quizBulkNo');
+  okb.disabled = nob.disabled = true;
+  try{
+    for(const id of ids){
+      await db.ref('quizAnswers/'+date+'/'+id).update({ verdict: verdict, awardedAmount: amt });
+      await db.ref('quizSum/'+date+'/'+id).set({ s: 1, v: verdict });
+      if(amt) await awardPoints(id, amt);
+    }
+    delete qsUngCache[date]; qsRaw = null;
+  } finally { okb.disabled = nob.disabled = false; }
+  loadQuizAnswers(date);
 }
 
 /* ---------- 퀴즈 통계 ---------- */
@@ -3383,7 +3433,11 @@ function bindQuizAnswersListener(){
   if(quizAnswersListenerRef) quizAnswersListenerRef.off();
   const date = document.getElementById('quizAnswerDate').value || todayStr();
   quizAnswersListenerRef = db.ref('quizAnswers/'+date);
-  quizAnswersListenerRef.on('value', ()=>{ if(initedOnce) loadQuizAnswers(date); });
+  quizAnswersListenerRef.on('value', ()=>{
+    if(!initedOnce) return;
+    clearTimeout(bindQuizAnswersListener.t);
+    bindQuizAnswersListener.t = setTimeout(()=> loadQuizAnswers(date), 120);
+  });
 }
 
 /* ---- 교실 알림 ---- */
