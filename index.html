@@ -2968,6 +2968,18 @@ function attachRealtimeListeners(){
   vtAttachListener();
   imgAttachListener();
   pzAttachListener();
+  // 관리자 '모든 화면 새로고침' : config/reloadToken 이 처음 읽은 값과 달라지면, 아무것도 조작 중이 아닐 때 새로고침
+  (function(){
+    let base, got = false, timer = null;
+    const busyIds = ['classAlertOverlay','gameOverlay','puzzleOverlay','pzPicker','surveyOverlay','voteOverlay','imgOverlay','drawOverlay','luckyDrawOverlay'];
+    function busy(){ return busyIds.some(function(id){ const e = document.getElementById(id); return !!(e && e.classList.contains('open')); }); }
+    function tryReload(){ if(busy()){ timer = setTimeout(tryReload, 5000); return; } location.reload(); }
+    db.ref('config/reloadToken').on('value', function(snap){
+      const v = snap.val() || '';
+      if(!got){ got = true; base = v; return; }
+      if(v !== base && !timer){ timer = setTimeout(tryReload, 1500 + Math.floor(Math.random() * 4000)); }
+    });
+  })();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = (parseInt(snap.val(),10) >= 0) ? parseInt(snap.val(),10) : 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
