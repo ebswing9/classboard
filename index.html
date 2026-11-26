@@ -2810,7 +2810,7 @@ async function gameRenderPick(){
     const left = allowed - (plays[s.id] || 0);
     return left > 0
       ? `<button class="gm-pill p${i%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-left="${left}" data-allowed="${allowed}">${escapeHtml(s.name)}<small>${left}번 남음</small></button>`
-      : `<button class="gm-pill done" disabled>${escapeHtml(s.name)}<small>완료</small></button>`;
+      : `<button class="gm-pill done" disabled>${escapeHtml(s.name)}<small>${(plays[s.id] || 0) > 0 ? '완료' : '0번'}</small></button>`;
   }).join('') : '<div class="gm-empty">등록된 학생이 없어요</div>';
   grid.querySelectorAll('.gm-pill:not(.done)').forEach(btn=>{
     btn.addEventListener('click', ()=> gameStartFor({ id: btn.dataset.id, name: btn.dataset.name, allowed: parseInt(btn.dataset.allowed,10) }, parseInt(btn.dataset.left,10)));
@@ -2969,7 +2969,7 @@ function attachRealtimeListeners(){
   imgAttachListener();
   pzAttachListener();
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
-  db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
+  db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = (parseInt(snap.val(),10) >= 0) ? parseInt(snap.val(),10) : 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
   db.ref('config/gameBonus').on('value', (snap)=>{ const v = snap.val() || {}; const g = function(x){ const n = parseInt(x,10); return n >= 0 ? n : 1; }; gameBonus = { att: g(v.att), quiz: g(v.quiz), puzzle: g(v.puzzle) }; });
   // 역할이 하나라도 등록돼 있을 때만 "📋 역할" 버튼을 보여줌

@@ -592,7 +592,7 @@
           </div>
           <p class="hint" style="margin-top:-6px;">켜면 대시보드 "출결" 패널의 🍀 옆에 🐧 버튼이 나타나요. 꺼두면 학생 화면에는 아무것도 안 보여요.</p>
           <div class="field"><label>이름당 하루 기본 플레이 횟수</label>
-            <input type="number" id="gameLimitInput" min="1" max="20" value="1">
+            <input type="number" id="gameLimitInput" min="0" max="20" value="1">
           </div>
           <div class="field"><label>활동하면 늘어나는 횟수 (0이면 연동 안 함)</label>
             <div style="display:flex; align-items:center; flex-wrap:wrap;">
@@ -3543,7 +3543,7 @@ async function loadGameSettings(){
   document.getElementById('gameBonusQuiz').value = bg(bv.quiz);
   document.getElementById('gameBonusPuzzle').value = bg(bv.puzzle);
   setGameEnabledBtn(en.val() === true);
-  document.getElementById('gameLimitInput').value = parseInt(lim.val(),10) || 1;
+  document.getElementById('gameLimitInput').value = (parseInt(lim.val(),10) >= 0) ? parseInt(lim.val(),10) : 1;
   const cfg = rw.val() || { mode:'daily-top', topN:1, points:1 };
   document.getElementById('gameRewardMode').value = cfg.mode || 'daily-top';
   document.getElementById('gameRewardTopN').value = cfg.topN || 1;
@@ -3555,7 +3555,7 @@ document.getElementById('gameEnabledToggle').addEventListener('click', async ()=
 });
 document.getElementById('gameSaveBtn').addEventListener('click', async ()=>{
   let limit = parseInt(document.getElementById('gameLimitInput').value, 10);
-  if(!(limit >= 1)) limit = 1;
+  if(!(limit >= 0)) limit = 1;
   let topN = parseInt(document.getElementById('gameRewardTopN').value, 10);
   if(!(topN >= 1)) topN = 1;
   let points = parseInt(document.getElementById('gameRewardPoints').value, 10);
@@ -3644,9 +3644,9 @@ async function renderGameAdmin(){
     db.ref('gameRewarded/'+today).once('value'),
     db.ref('gameLog/'+today).once('value')
   ]);
-  const allowedOf = await gameAllowedLoaderA(parseInt(limSnap.val(),10) || 1);
   const daily = dailySnap.val() || {}, best = bestSnap.val() || {}, plays = playsSnap.val() || {};
-  const limit = parseInt(limSnap.val(),10) || 1;
+  const limit = (parseInt(limSnap.val(),10) >= 0) ? parseInt(limSnap.val(),10) : 1;
+  const allowedOf = await gameAllowedLoaderA(limit);
   const row = (rank, name, score, delAttr)=>`
     <div class="roster-row">
       <span class="name">${rank}위 · ${escapeHtml(name||'')}</span>
