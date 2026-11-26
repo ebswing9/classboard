@@ -747,6 +747,12 @@
         </div>
         <p class="hint" style="margin-top:-8px; margin-bottom:14px;">축하 효과음을 켜두면 대시보드에서 전체 출석(출석률 100%) 시 출석률 막대를 눌러 축하 효과음을 들을 수 있어요. 끄면 눌러도 소리가 나지 않아요. (선택한 날짜 기준)</p>
         <div class="publish-row" style="margin-bottom:8px;">
+          <span>⭐ 출석 기본 포인트</span>
+          <input type="number" id="attBasePts" min="0" max="20" value="1" style="width:64px; margin-left:auto; padding:7px 8px;">
+          <span class="msg" id="attBaseMsg" style="margin-left:8px;"></span>
+        </div>
+        <p class="hint" style="margin-top:0; margin-bottom:14px;">대시보드에서 직접 출석했을 때 기본으로 주는 포인트예요. 0으로 바꾸면 출석 포인트는 안 주고(출석 N등 보너스는 따로 작동), 바꾼 뒤 출석하는 학생부터 적용돼요. 이미 받은 포인트는 그대로 남아요.</p>
+        <div class="publish-row" style="margin-bottom:8px;">
           <span>🏅 출석 N등 보너스 (기간 한정)</span>
           <button class="publish-btn off" id="attBonusToggle">꺼짐</button>
         </div>
@@ -1051,10 +1057,16 @@ async function reconcileAttendancePoint(date, studentId){
   const shouldHave = !!(rec && rec.status === 'present' && rec.source === 'dashboard');
   const already = !!ledgerSnap.val();
   if(shouldHave && !already){
-    await awardPoints(studentId, +1);
-    await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(true);
+    // 출석 기본 포인트(config/attPoints, 기본 1, 0이면 지급 안 함). 지급액은 장부에 숫자로 남겨 나중에 정확히 회수
+    const cfgPts = parseInt((await db.ref('config/attPoints').once('value')).val(), 10);
+    const amt = cfgPts >= 0 ? cfgPts : 1;
+    if(amt > 0){
+      await awardPoints(studentId, +amt);
+      await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(amt);
+    }
   } else if(!shouldHave && already){
-    await awardPoints(studentId, -1);
+    const prev = ledgerSnap.val();
+    await awardPoints(studentId, -(typeof prev === 'number' ? prev : 1));
     await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(false);
   }
   return await reconcileAttendanceBonus(date, studentId);
@@ -1913,7 +1925,15 @@ function setAttBonusBtn(on){
   btn.textContent = on ? '켜짐' : '꺼짐';
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
+document.getElementById('attBasePts').addEventListener('change', async function(){
+  let n = parseInt(this.value, 10); if(!(n >= 0)) n = 0; if(n > 20) n = 20;
+  this.value = n;
+  await db.ref('config/attPoints').set(n);
+  const m = document.getElementById('attBaseMsg'); m.textContent = '저장됨 ✓'; setTimeout(()=>{ m.textContent=''; }, 1800);
+});
 async function loadAttBonusCfg(){
+  const bp = parseInt((await db.ref('config/attPoints').once('value')).val(), 10);
+  document.getElementById('attBasePts').value = bp >= 0 ? bp : 1;
   const c = (await db.ref('config/attBonus').once('value')).val() || {};
   setAttBonusBtn(!!c.enabled);
   datePickers['attBonusStart'].setValue(c.start || todayStr());

@@ -788,10 +788,16 @@ async function reconcileAttendancePoint(date, studentId){
   const shouldHave = !!(rec && rec.status === 'present' && rec.source === 'dashboard');
   const already = !!ledgerSnap.val();
   if(shouldHave && !already){
-    await awardPoints(studentId, +1);
-    await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(true);
+    // 출석 기본 포인트(config/attPoints, 기본 1, 0이면 지급 안 함). 지급액은 장부에 숫자로 남겨 나중에 정확히 회수
+    const cfgPts = parseInt((await db.ref('config/attPoints').once('value')).val(), 10);
+    const amt = cfgPts >= 0 ? cfgPts : 1;
+    if(amt > 0){
+      await awardPoints(studentId, +amt);
+      await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(amt);
+    }
   } else if(!shouldHave && already){
-    await awardPoints(studentId, -1);
+    const prev = ledgerSnap.val();
+    await awardPoints(studentId, -(typeof prev === 'number' ? prev : 1));
     await db.ref(`pointLedger/attendance/${date}/${studentId}`).set(false);
   }
   return await reconcileAttendanceBonus(date, studentId);
