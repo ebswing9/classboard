@@ -591,8 +591,16 @@
             <button class="publish-btn off" id="gameEnabledToggle">꺼짐</button>
           </div>
           <p class="hint" style="margin-top:-6px;">켜면 대시보드 "출결" 패널의 🍀 옆에 🐧 버튼이 나타나요. 꺼두면 학생 화면에는 아무것도 안 보여요.</p>
-          <div class="field"><label>이름당 하루 플레이 횟수</label>
+          <div class="field"><label>이름당 하루 기본 플레이 횟수</label>
             <input type="number" id="gameLimitInput" min="1" max="20" value="1">
+          </div>
+          <div class="field"><label>활동하면 늘어나는 횟수 (0이면 연동 안 함)</label>
+            <div style="display:flex; align-items:center; flex-wrap:wrap;">
+              <span style="font-size:13px; font-weight:700; margin-right:6px;">출석</span><input type="number" id="gameBonusAtt" min="0" max="10" value="1" style="width:64px; margin-right:14px;">
+              <span style="font-size:13px; font-weight:700; margin-right:6px;">퀴즈 제출</span><input type="number" id="gameBonusQuiz" min="0" max="10" value="1" style="width:64px; margin-right:14px;">
+              <span style="font-size:13px; font-weight:700; margin-right:6px;">퍼즐 기여</span><input type="number" id="gameBonusPuzzle" min="0" max="10" value="1" style="width:64px;">
+            </div>
+            <p class="hint">대시보드에서 직접 출석, 퀴즈 답안 제출, 오늘 퍼즐 조각을 맞게 놓은 학생에게 그만큼 더 플레이할 수 있어요. 관리자가 대신 체크한 출석은 해당되지 않아요.</p>
           </div>
           <div class="field"><label>포인트 지급 방식</label>
             <select id="gameRewardMode">
@@ -3504,11 +3512,16 @@ function setGameEnabledBtn(on){
   btn.className = 'publish-btn ' + (on ? 'on' : 'off');
 }
 async function loadGameSettings(){
-  const [en, lim, rw] = await Promise.all([
+  const [en, lim, rw, bn] = await Promise.all([
     db.ref('config/gameEnabled').once('value'),
     db.ref('config/gameDailyLimit').once('value'),
-    db.ref('config/gameReward').once('value')
+    db.ref('config/gameReward').once('value'),
+    db.ref('config/gameBonus').once('value')
   ]);
+  const bv = bn.val() || {}, bg = function(x){ const n = parseInt(x,10); return n >= 0 ? n : 1; };
+  document.getElementById('gameBonusAtt').value = bg(bv.att);
+  document.getElementById('gameBonusQuiz').value = bg(bv.quiz);
+  document.getElementById('gameBonusPuzzle').value = bg(bv.puzzle);
   setGameEnabledBtn(en.val() === true);
   document.getElementById('gameLimitInput').value = parseInt(lim.val(),10) || 1;
   const cfg = rw.val() || { mode:'daily-top', topN:1, points:1 };
@@ -3528,6 +3541,8 @@ document.getElementById('gameSaveBtn').addEventListener('click', async ()=>{
   let points = parseInt(document.getElementById('gameRewardPoints').value, 10);
   if(!(points >= 0)) points = 0;
   await db.ref('config/gameDailyLimit').set(limit);
+  const bgv = function(id){ const n = parseInt(document.getElementById(id).value, 10); return n >= 0 ? Math.min(n,10) : 0; };
+  await db.ref('config/gameBonus').set({ att: bgv('gameBonusAtt'), quiz: bgv('gameBonusQuiz'), puzzle: bgv('gameBonusPuzzle') });
   await db.ref('config/gameReward').set({ mode: document.getElementById('gameRewardMode').value, topN: topN, points: points });
   const msgEl = document.getElementById('gameMsg');
   msgEl.textContent = '저장됐어요 ✓';
@@ -3572,6 +3587,32 @@ document.getElementById('gameSettleBtn').addEventListener('click', async ()=>{
   msgEl.textContent = n ? ('정산했어요 ✓ ('+n+'일치)') : '정산할 새 기록이 없어요.';
   setTimeout(()=> msgEl.textContent = '', 3000);
 });
+// 오늘 학생별 플레이 가능 횟수(기본 + 출석/퀴즈/퍼즐 보너스). index.html과 같은 기준
+async function gameAllowedLoaderA(limit){
+  const d = todayStr();
+  const bv = (await db.ref('config/gameBonus').once('value')).val() || {};
+  const g = function(x){ const n = parseInt(x,10); return n >= 0 ? n : 1; };
+  const b = { att: g(bv.att), quiz: g(bv.quiz), puzzle: g(bv.puzzle) };
+  const dayStart = new Date(d + 'T00:00:00').getTime();
+  let pid = null;
+  if(b.puzzle > 0){ const pc = (await db.ref('config/puzzle').once('value')).val(); if(pc && pc.id) pid = pc.id; }
+  const r = await Promise.all([
+    b.att > 0 ? db.ref('attendance/'+d).once('value') : null,
+    b.quiz > 0 ? db.ref('quizSum/'+d).once('value') : null,
+    pid ? db.ref('puzzleBoard/'+pid).once('value') : null
+  ]);
+  const att = r[0] ? (r[0].val() || {}) : {}, qz = r[1] ? (r[1].val() || {}) : {}, bd = r[2] ? (r[2].val() || {}) : {};
+  const pz = {};
+  Object.keys(bd).forEach(function(k){ const e = bd[k]; if(e && e.by && e.by !== 'admin' && (e.at || 0) >= dayStart) pz[e.by] = true; });
+  return function(sid){
+    let n = limit;
+    const a = att[sid];
+    if(b.att > 0 && a && a.status === 'present' && a.source === 'dashboard') n += b.att;
+    if(b.quiz > 0 && qz[sid]) n += b.quiz;
+    if(b.puzzle > 0 && pz[sid]) n += b.puzzle;
+    return n;
+  };
+}
 async function renderGameAdmin(){
   const today = todayStr();
   const [dailySnap, bestSnap, playsSnap, limSnap, roster, rewardedSnap, logSnap] = await Promise.all([
@@ -3583,6 +3624,7 @@ async function renderGameAdmin(){
     db.ref('gameRewarded/'+today).once('value'),
     db.ref('gameLog/'+today).once('value')
   ]);
+  const allowedOf = await gameAllowedLoaderA(parseInt(limSnap.val(),10) || 1);
   const daily = dailySnap.val() || {}, best = bestSnap.val() || {}, plays = playsSnap.val() || {};
   const limit = parseInt(limSnap.val(),10) || 1;
   const row = (rank, name, score, delAttr)=>`
@@ -3599,7 +3641,7 @@ async function renderGameAdmin(){
   document.getElementById('gamePlaysList').innerHTML = roster.length ? roster.map(s=>`
     <div class="roster-row">
       <span class="name">${escapeHtml(s.name)}</span>
-      <span style="font-weight:700; margin-right:8px; color:${(plays[s.id]||0)>=limit?'#e0556f':'var(--muted)'};">${plays[s.id]||0} / ${limit}</span>
+      <span style="font-weight:700; margin-right:8px; color:${(plays[s.id]||0)>=allowedOf(s.id)?'#e0556f':'var(--muted)'};">${plays[s.id]||0} / ${allowedOf(s.id)}</span>
       <button class="btn secondary" data-reset-plays="${s.id}" style="margin:0;">초기화</button>
     </div>`).join('') : '<p class="hint">등록된 학생이 없어요.</p>';
   const logs = logSnap.val() || {};

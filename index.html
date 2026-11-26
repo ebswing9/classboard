@@ -1973,9 +1973,12 @@ function pzPath(ctx, w, h, s){
   pzEdge(ctx, 0, h, 0, 0, -1, 0, s.left, m);
   ctx.closePath();
 }
+const pzLoading = {};
+let pzProgress = null;
 function pzLoadPieces(cfg){
   if(pzCache[cfg.id]) return Promise.resolve(pzCache[cfg.id]);
-  return db.ref('puzzleImg/'+cfg.id).once('value').then(function(snap){
+  if(pzLoading[cfg.id]) return pzLoading[cfg.id];
+  pzLoading[cfg.id] = db.ref('puzzleImg/'+cfg.id).once('value').then(function(snap){
     const src = snap.val(); pzSrcMap[cfg.id] = src;
     return new Promise(function(resolve){
       if(!src){ resolve(null); return; }
@@ -1987,26 +1990,36 @@ function pzLoadPieces(cfg){
         const cw = Math.max(8, Math.round(sw*sc)), ch = Math.max(8, Math.round(sh*sc));
         const m = Math.ceil(0.27 * Math.max(cw, ch));
         const shape = pzShapes(cfg);
-        const urls = [], cvs = [];
-        for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++){
-          const cv = document.createElement('canvas'); cv.width = cw + 2*m; cv.height = ch + 2*m;
-          const ctx = cv.getContext('2d');
-          ctx.save(); ctx.translate(m, m);
-          pzPath(ctx, cw, ch, shape(r, c));
-          ctx.save(); ctx.clip();
-          ctx.drawImage(img, -c*sw*sc, -r*sh*sc, img.width*sc, img.height*sc);
-          ctx.restore();
-          pzPath(ctx, cw, ch, shape(r, c));
-          ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(70,50,95,0.3)'; ctx.stroke();
-          ctx.restore();
-          urls.push(cv.toDataURL('image/png')); cvs.push(cv);
+        const urls = [], cvs = [], total = cfg.rows * cfg.cols;
+        let n = 0;
+        // 화면이 멈추지 않도록 조금씩 나눠서 만든다
+        function step(){
+          const stop = Math.min(total, n + 12);
+          for(; n < stop; n++){
+            const r = Math.floor(n / cfg.cols), c = n % cfg.cols;
+            const cv = document.createElement('canvas'); cv.width = cw + 2*m; cv.height = ch + 2*m;
+            const ctx = cv.getContext('2d');
+            ctx.save(); ctx.translate(m, m);
+            pzPath(ctx, cw, ch, shape(r, c));
+            ctx.save(); ctx.clip();
+            ctx.drawImage(img, -c*sw*sc, -r*sh*sc, img.width*sc, img.height*sc);
+            ctx.restore();
+            pzPath(ctx, cw, ch, shape(r, c));
+            ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(70,50,95,0.3)'; ctx.stroke();
+            ctx.restore();
+            urls.push(cv.toDataURL('image/png')); cvs.push(cv);
+          }
+          if(pzProgress) pzProgress(Math.round(n / total * 100));
+          if(n < total){ setTimeout(step, 0); return; }
+          pzCache[cfg.id] = { urls: urls, cvs: cvs, cw: cw, ch: ch, m: m, aspect: img.width / img.height };
+          resolve(pzCache[cfg.id]);
         }
-        pzCache[cfg.id] = { urls: urls, cvs: cvs, cw: cw, ch: ch, m: m, aspect: img.width / img.height };
-        resolve(pzCache[cfg.id]);
+        step();
       };
       img.src = src;
     });
   });
+  return pzLoading[cfg.id];
 }
 // 오늘 쓸 수 있는 기회: 기본 + 출석(대시보드로 직접 체크) + 퀴즈 제출, 사용한 횟수 차감
 async function pzCalc(sid){
@@ -2181,7 +2194,8 @@ function pzRankRowHtml(x){
 }
 function pzRenderRank(){
   const box = document.getElementById('pzRank');
-  pzRankArr = pzRanking().filter(function(x){ return x.rank <= 3; }).slice(0, 6);
+  const rkLim = Math.max(3, (pzCfg && parseInt(pzCfg.topN,10)) || 1);
+  pzRankArr = pzRanking().filter(function(x){ return x.rank <= rkLim; }).slice(0, 8);
   if(pzRankIdx >= pzRankArr.length) pzRankIdx = 0;
   box.innerHTML = '<div class="rk-t">많이 맞춘 친구</div><div class="rk-r" id="pzRankRow">'
     + (pzRankArr.length ? pzRankRowHtml(pzRankArr[pzRankIdx]) : '<span style="color:#c9bdd9; font-weight:600;">아직 없어요</span>') + '</div>';
@@ -2401,33 +2415,47 @@ async function pzAttempt(student){
   finally{ pzBusy = false; }
 }
 // 완성되면 한 번만 정산: 조각을 맞게 올려 완성에 기여한 학생에게 포인트
+
+// 완성 시 지급할 포인트 계산 (판에 놓인 조각 기록 기준): 참여 / 최다 기여 상위 N등 / 선착순 N명
+function pzComputeAwards(cfg, ps, bd){
+  const cnt = {}, firstAt = {};
+  Object.keys(bd).forEach(function(k){
+    const e = bd[k]; if(!e || !e.by || e.by === 'admin') return;
+    cnt[e.by] = (cnt[e.by] || 0) + 1;
+    const t = e.at || 0;
+    if(firstAt[e.by] === undefined || t < firstAt[e.by]) firstAt[e.by] = t;
+  });
+  const ids = Object.keys(cnt).filter(function(k){ return ps[k]; });
+  const out = [];
+  const pts = parseInt(cfg.points, 10) || 0;
+  if(pts !== 0) ids.forEach(function(k){ out.push({ id: k, delta: pts, reason: '협동 퍼즐 완성 참여' }); });
+  const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus, 10) || 0);
+  const topN = (cfg.topN == null) ? 1 : (parseInt(cfg.topN, 10) || 0);
+  if(bonus !== 0 && topN > 0 && ids.length){
+    const byCnt = ids.slice().sort(function(a,b){ return cnt[b] - cnt[a]; });
+    let rank = 0, last = -1;
+    byCnt.forEach(function(k, i){ if(cnt[k] !== last){ rank = i + 1; last = cnt[k]; } if(rank <= topN) out.push({ id: k, delta: bonus, reason: '협동 퍼즐 최다 기여' }); });
+  }
+  const fPts = parseInt(cfg.firstPts, 10) || 0;
+  const fN = (cfg.firstN == null) ? 3 : (parseInt(cfg.firstN, 10) || 0);
+  if(fPts !== 0 && fN > 0){
+    ids.slice().sort(function(a,b){ return firstAt[a] - firstAt[b]; }).slice(0, fN).forEach(function(k){ out.push({ id: k, delta: fPts, reason: '협동 퍼즐 선착순' }); });
+  }
+  return { ids: ids, awards: out };
+}
 async function pzSettle(cfg){
   try{
     const claim = await db.ref('puzzleDone/'+cfg.id).transaction(function(cur){ return cur ? undefined : { at: Date.now() }; });
     if(!claim.committed) return;
     const ps = (await db.ref('puzzleParticipants/'+cfg.id).once('value')).val() || {};
     const bd = (await db.ref('puzzleBoard/'+cfg.id).once('value')).val() || {};
-    // 판에 실제로 놓인 조각 기록을 기준으로 기여 수를 센다(참여 기록 갱신 타이밍과 무관하게 정확)
-    const cnt = {};
-    Object.keys(bd).forEach(function(k){ const e = bd[k]; if(e && e.by && e.by !== 'admin') cnt[e.by] = (cnt[e.by]||0) + 1; });
-    const ids = Object.keys(cnt).filter(function(k){ return ps[k]; });
-    const pts = parseInt(cfg.points,10) || 0;
-    if(pts !== 0){
-      for(let k=0;k<ids.length;k++){
-        await awardPoints(ids[k], pts);
-        await db.ref('pointLog/'+ids[k]).push({ delta: pts, reason: '협동 퍼즐 완성 참여', at: Date.now() });
-      }
+    const res = pzComputeAwards(cfg, ps, bd);
+    for(let k=0;k<res.awards.length;k++){
+      const a = res.awards[k];
+      await awardPoints(a.id, a.delta);
+      await db.ref('pointLog/'+a.id).push({ delta: a.delta, reason: a.reason, at: Date.now() });
     }
-    const bonus = (cfg.topBonus == null) ? 1 : (parseInt(cfg.topBonus,10) || 0);
-    if(bonus !== 0 && ids.length){
-      let mx = 0; ids.forEach(function(k){ mx = Math.max(mx, cnt[k]); });
-      const tops = ids.filter(function(k){ return cnt[k] === mx; });
-      for(let k=0;k<tops.length;k++){
-        await awardPoints(tops[k], bonus);
-        await db.ref('pointLog/'+tops[k]).push({ delta: bonus, reason: '협동 퍼즐 최다 기여', at: Date.now() });
-      }
-    }
-    await db.ref('puzzleDone/'+cfg.id).update({ winners: ids.map(function(k){ return ps[k].name; }) });
+    await db.ref('puzzleDone/'+cfg.id).update({ winners: res.ids.map(function(k){ return ps[k].name; }) });
   }catch(e){ console.error('puzzle settle error', e); }
 }
 function pzStartBoardListener(){
@@ -2456,12 +2484,14 @@ async function pzOpen(){
   pzOverlay.classList.add('open');
   pzPending = null; pzDrag = null;
   document.getElementById('pzPicker').classList.remove('open');
-  document.getElementById('pzSurface').innerHTML = '';
+  document.getElementById('pzSurface').innerHTML = '<div id="pzLoadMsg" style="position:absolute; left:0; right:0; top:42%; text-align:center; color:#a89bc2; font-weight:700; font-size:15px;">조각을 준비하고 있어요 <span id="pzLoadPct"></span></div>';
   document.getElementById('pzNames').innerHTML = '';
+  pzProgress = function(p){ const e = document.getElementById('pzLoadPct'); if(e) e.textContent = p + '%'; };
   const snap = await db.ref('puzzleBoard/'+pzCfg.id).once('value');
   pzPlaced = snap.val() || {};
   pzStartBoardListener();
   pzData = await pzLoadPieces(pzCfg);
+  pzProgress = null;
   if(!pzData){ document.getElementById('pzWho').textContent = '퍼즐 그림을 불러오지 못했어요'; return; }
   pzBuild();
   await pzLoadLeft();
@@ -2499,6 +2529,7 @@ function pzAttachListener(){
     const prev = pzCfg;
     pzCfg = snap.val();
     updatePuzzleIcon();
+    if(pzCfg && pzCfg.open && pzCfg.id && !pzCache[pzCfg.id] && !pzLoading[pzCfg.id]){ const pre = pzCfg; setTimeout(function(){ pzLoadPieces(pre).catch(function(){}); }, 2500); }  // 창을 열기 전에 미리 조각을 만들어 둔다
     if(!(pzCfg && pzCfg.open && pzCfg.id) || (prev && prev.id !== pzCfg.id)){ pzOverlay.classList.remove('open'); pzStopBoardListener(); pzPlaced = {}; pzPending = null; pzData = null; }
     else if(pzOverlay.classList.contains('open') && pzData && !pzBusy && !pzDrag){ pzRenderTop(); pzLayout(); }
   });
@@ -2651,6 +2682,30 @@ function attachClassAlertListener(){
    - 일일 상위 포인트: gameRewarded/{날짜} 표시로 한 번만 정산 (아래 settleGameRewards) */
 let gameEnabled = false;
 let gameLimit = 1;
+let gameBonus = { att:1, quiz:1, puzzle:1 };   // config/gameBonus : 활동별 보너스 횟수(0이면 연동 끔)
+// 오늘 학생별로 쓸 수 있는 판 수 = 기본 + 출석 + 퀴즈 제출 + 퍼즐 기여 (필요한 기록만 한 번씩 읽음)
+async function gameAllowedLoader(){
+  const d = todayStr();
+  const b = gameBonus;
+  const dayStart = new Date(d + 'T00:00:00').getTime();
+  const pid = (b.puzzle > 0 && typeof pzCfg !== 'undefined' && pzCfg && pzCfg.id) ? pzCfg.id : null;
+  const r = await Promise.all([
+    b.att > 0 ? db.ref('attendance/'+d).once('value') : null,
+    b.quiz > 0 ? db.ref('quizSum/'+d).once('value') : null,
+    pid ? db.ref('puzzleBoard/'+pid).once('value') : null
+  ]);
+  const att = r[0] ? (r[0].val() || {}) : {}, qz = r[1] ? (r[1].val() || {}) : {}, bd = r[2] ? (r[2].val() || {}) : {};
+  const pz = {};
+  Object.keys(bd).forEach(function(k){ const e = bd[k]; if(e && e.by && e.by !== 'admin' && (e.at || 0) >= dayStart) pz[e.by] = true; });
+  return function(sid){
+    let n = gameLimit;
+    const a = att[sid];
+    if(b.att > 0 && a && a.status === 'present' && a.source === 'dashboard') n += b.att;
+    if(b.quiz > 0 && qz[sid]) n += b.quiz;
+    if(b.puzzle > 0 && pz[sid]) n += b.puzzle;
+    return n;
+  };
+}
 let gameRewardCfg = { mode:'daily-top', topN:1, points:1 };
 let gameStudent = null, gameRemaining = 0, gameStarted = false, gameDenied = false, gameSubmitted = false;
 let gameRankTab = 'today';
@@ -2736,20 +2791,23 @@ function gameConfetti(cols){
   }
 }
 async function gameRenderPick(){
-  const [roster, playsSnap] = await Promise.all([getRosterList(), db.ref('gamePlays/'+todayStr()).once('value')]);
+  const [roster, playsSnap, allowedOf] = await Promise.all([getRosterList(), db.ref('gamePlays/'+todayStr()).once('value'), gameAllowedLoader()]);
   const plays = playsSnap.val() || {};
-  let chips = '<span class="gm-chip c1">하루 ' + gameLimit + '번</span>';
+  let chips = '<span class="gm-chip c1">기본 ' + gameLimit + '번</span>';
+  const bn = []; if(gameBonus.att > 0) bn.push('출석 +' + gameBonus.att); if(gameBonus.quiz > 0) bn.push('퀴즈 +' + gameBonus.quiz); if(gameBonus.puzzle > 0) bn.push('퍼즐 +' + gameBonus.puzzle);
+  if(bn.length) chips += '<span class="gm-chip c1">' + bn.join(' · ') + '</span>';
   if(gameRewardCfg.mode === 'daily-top') chips += '<span class="gm-chip c2">오늘 ' + (gameRewardCfg.topN > 1 ? '상위 '+gameRewardCfg.topN+'명' : '1등') + ' 포인트 +' + gameRewardCfg.points + '</span>';
   document.getElementById('gameNote').innerHTML = chips;
   const grid = document.getElementById('gameNameGrid');
   grid.innerHTML = roster.length ? roster.map((s,i)=>{
-    const left = gameLimit - (plays[s.id] || 0);
+    const allowed = allowedOf(s.id);
+    const left = allowed - (plays[s.id] || 0);
     return left > 0
-      ? `<button class="gm-pill p${i%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-left="${left}">${escapeHtml(s.name)}<small>${left}번 남음</small></button>`
+      ? `<button class="gm-pill p${i%5}" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-left="${left}" data-allowed="${allowed}">${escapeHtml(s.name)}<small>${left}번 남음</small></button>`
       : `<button class="gm-pill done" disabled>${escapeHtml(s.name)}<small>완료</small></button>`;
   }).join('') : '<div class="gm-empty">등록된 학생이 없어요</div>';
   grid.querySelectorAll('.gm-pill:not(.done)').forEach(btn=>{
-    btn.addEventListener('click', ()=> gameStartFor({ id: btn.dataset.id, name: btn.dataset.name }, parseInt(btn.dataset.left,10)));
+    btn.addEventListener('click', ()=> gameStartFor({ id: btn.dataset.id, name: btn.dataset.name, allowed: parseInt(btn.dataset.allowed,10) }, parseInt(btn.dataset.left,10)));
   });
   await gameRenderRank('gameRankArea');
 }
@@ -2771,7 +2829,7 @@ async function gameStartFor(student, left){
   let best = 0;
   try{ const b = (await db.ref('gameBest/'+student.id).once('value')).val(); if(b && b.score) best = b.score; }catch(e){}
   gameShowStep('play');
-  document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님   ( ' + (gameLimit - left + 1) + ' / ' + gameLimit + ' )';
+  document.getElementById('gamePlayHead').textContent = '🐧 ' + student.name + ' 님   ( ' + ((student.allowed || gameLimit) - left + 1) + ' / ' + (student.allowed || gameLimit) + ' )';
   document.getElementById('gameAgainBtn').style.display = 'none';
   const f = document.getElementById('gameFrame');
   f.onload = function(){
@@ -2784,9 +2842,11 @@ async function gameOnStart(){
   gameStarted = true;
   gameStartAt = Date.now();
   gameSetControls(false);          // 플레이 중에는 게임만 보여줌
+  let allowedNow = gameStudent.allowed || gameLimit;
+  try{ allowedNow = (await gameAllowedLoader())(gameStudent.id); }catch(e){}
   const res = await db.ref('gamePlays/'+todayStr()+'/'+gameStudent.id).transaction(function(cur){
     cur = cur || 0;
-    if(cur >= gameLimit) return;          // 이미 횟수를 다 씀(다른 기기에서 플레이했을 수 있음)
+    if(cur >= allowedNow) return;          // 이미 횟수를 다 씀(다른 기기에서 플레이했을 수 있음)
     return cur + 1;
   });
   if(!res.committed){
@@ -2905,6 +2965,7 @@ function attachRealtimeListeners(){
   db.ref('config/gameEnabled').on('value', (snap)=>{ gameEnabled = snap.val() === true; updateGameIcon(); });
   db.ref('config/gameDailyLimit').on('value', (snap)=>{ gameLimit = parseInt(snap.val(),10) || 1; });
   db.ref('config/gameReward').on('value', (snap)=>{ if(snap.val()) gameRewardCfg = snap.val(); });
+  db.ref('config/gameBonus').on('value', (snap)=>{ const v = snap.val() || {}; const g = function(x){ const n = parseInt(x,10); return n >= 0 ? n : 1; }; gameBonus = { att: g(v.att), quiz: g(v.quiz), puzzle: g(v.puzzle) }; });
   // 역할이 하나라도 등록돼 있을 때만 "📋 역할" 버튼을 보여줌
   db.ref('roles').on('value', async (snap)=>{
     rolesExist = !!(snap.val() && Object.keys(snap.val()).length);
